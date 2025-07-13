@@ -5,7 +5,7 @@ from azure.cosmos.aio import CosmosClient
 from azure.cosmos.exceptions import CosmosResourceNotFoundError
 from azure.identity.aio import DefaultAzureCredential
 
-from config import settings
+from app.config import settings
 
 # Initialization
 COSMOS_CONNECTION_STRING = settings.COSMOS_CONNECTION_STRING
