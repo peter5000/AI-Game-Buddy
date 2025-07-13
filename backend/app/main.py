@@ -10,3 +10,7 @@ app.include_router(test_router.router)
 
 # Then mount the static files at the root
 # app.mount("/", StaticFiles(directory="path/to/frontend/build", html=True), name="static")
+
+@app.get("/")
+def test():
+    return {"Hello": "World"}

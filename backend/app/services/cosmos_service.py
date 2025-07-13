@@ -63,7 +63,7 @@ async def get_item(item_id: str, container_type: str, partition_key: str):
         logger.error(f"Failed to get item {item_id} with partition key {partition_key} from {container.id}: {e}")
         raise
 
-# Getting items using a NoSQL Query
+# Getting items using a SQL Query
 async def get_items_by_query(query: str, container_type: str) -> List[Dict[str, Any]]:
     if not query:
         raise ValueError("Query string cannot be empty")
@@ -71,7 +71,7 @@ async def get_items_by_query(query: str, container_type: str) -> List[Dict[str, 
     container = get_container(container_type)
     logger.info(f"Querying items in container {container.id}: {query}")
     try:
-        items = [item async for item in container.query_items(query=query, enable_cross_partition_query=True)]
+        items = [item async for item in container.query_items(query=query)]
         logger.info(f"Query returned {len(items)} items")
         return items
     except Exception as e:
