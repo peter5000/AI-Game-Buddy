@@ -2,7 +2,9 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict, Any
 
-from app.services import cosmos_service
+from app.dependencies import get_cosmos_service
+
+cosmos_service = get_cosmos_service()
 
 router = APIRouter(
     prefix="/test",

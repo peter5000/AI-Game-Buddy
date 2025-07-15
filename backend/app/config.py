@@ -10,6 +10,5 @@ class Settings:
     COSMOS_DATABASE_NAME = os.getenv("COSMOS_DATABASE_NAME")
     BLOB_CONNECTION_STRING = os.getenv("BLOB_CONNECTION_STRING")
     BLOB_ENDPOINT = os.getenv("BLOB_ENDPOINT")
-    
 
 settings = Settings()
