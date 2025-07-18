@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 
-from app.services import cosmos_service
+from app.dependencies import cosmos_service, blob_service
 
 router = APIRouter(
     prefix="/test",
