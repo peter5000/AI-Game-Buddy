@@ -1,14 +1,14 @@
-from fastapi import APIRouter, HTTPException, status, Query, Depends
+from fastapi import APIRouter, File, UploadFile, HTTPException, status, Query, Depends
+from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.security.http import HTTPBearer, HTTPAuthorizationCredentials 
 from pydantic import BaseModel, EmailStr
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta, timezone
 
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 
-from app.dependencies import cosmos_service, blob_service
 from app.dependencies import cosmos_service, blob_service
 
 router = APIRouter(
@@ -125,7 +125,7 @@ async def delete_test_user(
             partition_key=partition_key,
             container_type="users"
         )
-        return {"status": "success", "message": f"User {document_id} deleted"}
+        return {"status": "success", "message": f"User '{document_id}' deleted"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete user: {e}")
 
@@ -139,6 +139,38 @@ async def query_items(query: str):
     if not items:
         raise HTTPException(status_code=404, detail="No items found for given query")
     return items
+
+@router.post("/upload")
+async def upload_blob(container_name: str, file: UploadFile = File(...), filename: Optional[str] = None):
+    filename = filename or file.filename
+
+    try:
+        await blob_service.write_blob(container_name=container_name, filename=filename, blobstream=file.file)
+        return JSONResponse(
+            status_code=200,
+            content={
+                "message": "Blob uploaded successfully",
+                "container": container_name,
+                "filename": filename
+            }
+        )
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+        
+@router.post("/delete")
+async def delete_blob(container_name: str, filename: str):
+    try:
+        await blob_service.delete_blob(container_name=container_name, filename=filename)
+        return JSONResponse(
+            status_code=200,
+            content={
+                "message": "Blob deleted successfully",
+                "container": container_name,
+                "filename": filename
+            }
+        )
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
 
 # NEW POST /login ENDPOINT BELOW ---
 @router.post("/login")
