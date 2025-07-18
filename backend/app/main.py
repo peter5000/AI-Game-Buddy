@@ -1,18 +1,36 @@
 from fastapi import FastAPI
 import logging
 from fastapi.staticfiles import StaticFiles
+from contextlib import asynccontextmanager
 from app.routers import room_router, test_router
+from app.dependencies import cosmos_service, blob_service
 
+from app.config import settings
 from azure.monitor.opentelemetry import configure_azure_monitor
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry import trace, _logs
 
 # Need Azure Application Insights API key
-# configure_azure_monitor()
+if settings.APPLICATION_INSIGHTS_CONNECTION_STRING:
+    configure_azure_monitor()
 
-app = FastAPI()
+# Shutdown
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    yield
+    # Azure Clients
+    if blob_service:
+        await blob_service.close()
+    if cosmos_service:
+        await cosmos_service.close()
+    # OpenTelemetry
+    tracer_provider = trace.get_tracer_provider()
+    if hasattr(tracer_provider, 'shutdown'):
+        tracer_provider.shutdown()
+    logger_provider = _logs.get_logger_provider()
+    if hasattr(logger_provider, 'shutdown'):
+        logger_provider.shutdown()
 
-# Setting up logging configuration
-FastAPIInstrumentor.instrument_app(app)
+app = FastAPI(lifespan=lifespan)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)

@@ -7,29 +7,32 @@ from azure.identity.aio import DefaultAzureCredential
 
 from app.config import settings
 
-
 class CosmosService:
     def __init__(self):
         self.logger = logging.getLogger("CosmosService")
-        client: Optional[CosmosClient] = None
+        self.client: Optional[CosmosClient] = None
 
         if settings.COSMOS_CONNECTION_STRING:
             self.logger.info("Initializing Cosmos Service Client with Connection String")
-            client = CosmosClient.from_connection_string(conn_str=settings.COSMOS_CONNECTION_STRING)
+            self.client = CosmosClient.from_connection_string(conn_str=settings.COSMOS_CONNECTION_STRING)
         elif settings.COSMOS_ENDPOINT:
             # Use managed identity if no connection string
             self.logger.info("Initializing Cosmos Service Client with Azure Credentials")
             credential = DefaultAzureCredential()
-            client = CosmosClient(url=settings.COSMOS_ENDPOINT, credential=credential)
+            self.client = CosmosClient(url=settings.COSMOS_ENDPOINT, credential=credential)
         else:
             raise ValueError("Database configuration missing. Set either COSMOS_CONNECTION_STRING or COSMOS_ENDPOINT")
 
-        if not client:
+        if not self.client:
             raise ConnectionError("Failed to connect to CosmosClient")
         
-        db_client = client.get_database_client(settings.COSMOS_DATABASE_NAME)
+        db_client = self.client.get_database_client(settings.COSMOS_DATABASE_NAME)
         self.users_container_client = db_client.get_container_client("users")
-
+        
+    async def close(self):
+        self.logger.info("Closing Cosmos client session")
+        await self.client.close()
+    
     def get_container(self, container_type: str):
         if container_type == "users":
             return self.users_container_client
