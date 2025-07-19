@@ -1,112 +1,96 @@
-from fastapi import APIRouter, File, UploadFile, HTTPException, status, Query, Depends
+from fastapi import APIRouter, File, UploadFile, HTTPException, status, Depends
 from fastapi.responses import JSONResponse
-from fastapi.security import OAuth2PasswordBearer
-from fastapi.security.http import HTTPBearer, HTTPAuthorizationCredentials 
 from pydantic import BaseModel, EmailStr
 from typing import List, Dict, Any, Optional
-from datetime import datetime, timedelta, timezone
-
-from passlib.context import CryptContext
-from jose import JWTError, jwt
+import uuid
+from pydantic import BaseModel, Field
+from uuid import UUID
+from datetime import timedelta
 
 from app.dependencies import cosmos_service, blob_service
+from app import auth
 
 router = APIRouter(
     prefix="/test",
     tags=["Testing"]
 )
 
-# Initialize CryptContext for password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
-# JWT Configuration 
-# You would store this securely in environment variables in a real application!
-SECRET_KEY = "my-super-secret-key-12345"
-ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30 # Token valid for 30 minutes
-# END JWT Configuration 
 
-# --- MODIFIED: Use HTTPBearer instead of OAuth2PasswordBearer ---
-# oauth2_scheme = OAuth2PasswordBearer(tokenUrl="test/login") # REMOVE OR COMMENT OUT THIS LINE
-security_scheme = HTTPBearer() # <<< NEW: Define HTTPBearer
-# --- END MODIFIED ---
-
-# Helper function to create JWT token ---
-def create_access_token(data: dict, expires_delta: timedelta | None = None):
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
-    else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=15) # Default 15 minutes
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt
-
-# --- MODIFIED: get_current_user_id to use HTTPAuthorizationCredentials ---
-async def get_current_user_id(credentials: HTTPAuthorizationCredentials = Depends(security_scheme)):
-    # The actual token string is in credentials.credentials
-    token = credentials.credentials
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("sub")
-        if user_id is None:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
-    
-    return user_id
-# --- END MODIFIED ---
-
-class TestUser(BaseModel):
-    id: str
-    userid: str # Partition Key
+class UserCreate(BaseModel):
     username: str
-    email: str
-    password: str 
+    email: EmailStr
+    password: str
+
+class User(BaseModel):
+    id: str = Field(default_factory=lambda: str(uuid.uuid4())) # Partition Key
+    username: str
+    email: EmailStr
+    password: str
 
 # Pydantic model for Login credentials
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
-
 @router.post("/users", status_code=201)
-async def create_test_user(user: TestUser):
+async def create_test_user(user: UserCreate):
+    print(f"Attempting to create user: '{user.username}', email: '{user.email}'")
+
     # Before creating a user, let's ensure the email doesn't already exist to prevent issues
+    print(f"Checking for existing email: '{user.email}'")
     existing_users_by_email = await cosmos_service.get_items_by_query(
         query=f"SELECT * FROM c WHERE c.email = '{user.email}'",
         container_type="users"
     )
+    print(f"Result of email query: {existing_users_by_email}")
     if existing_users_by_email:
+        print("Email already registered, raising 409.")
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
     
-    # Also ensure ID is unique
+    # Also ensure username is unique
+    print(f"Checking for existing ID: '{user.username}'")
     try:
-        await cosmos_service.get_item(item_id=user.id, partition_key=user.userid, container_type="users")
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User ID already exists")
+        item_from_db = await cosmos_service.get_items_by_query(
+            query=f"SELECT * FROM c WHERE c.username = '{user.username}'",
+            container_type="users"
+        )
+        print(f"Result of get_item: {item_from_db}")
+        
+        if len(item_from_db) == 0:
+            print("Username not found (get_item returned None), proceeding with creation.")
+        else: # Only raise 409 if an item WAS actually found
+            print("Username already exists, raising 409 (from try block).")
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Username already exists")
     except HTTPException as e:
+        print(f"Exception caught in get_item check: Status Code={e.status_code}, Detail={e.detail}")
         if e.status_code != 404: # If it's not a 404 (not found), then it's some other error, re-raise
+            print("Re-raising non-404 exception.")
             raise
+        else:
+            print("Username not found (404 caught), proceeding with creation.")
+    except Exception as e:
+        print(f"Unexpected exception in get_item check: {e}")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error during ID check: {e}")
 
-    hashed_password = pwd_context.hash(user.password)
-    item_to_save = user.model_dump()
-    item_to_save["password"] = hashed_password
+    hashed_password = auth.get_password_hash(user.password)
+    new_user = User(
+        username=user.username,
+        email=user.email,
+        password=hashed_password
+    )
+    item_to_save = new_user.model_dump()
+    
+    print(f"Adding new user to Cosmos DB: {item_to_save['id']}")
     await cosmos_service.add_item(item=item_to_save, container_type="users")
-    return {"status": "success", "message": f"User {user.id} created"}
+    print(f"User '{user.username}' created successfully.")
+    return {"status": "success", "message": f"User '{user.username}' created"}
 
 @router.get("/users/{document_id}")
-async def get_test_user(
-    document_id: str,
-    partition_key: str = Query(..., description="The value of the 'userid' field, which is the partition key")
-):
+async def get_test_user(document_id: str):
     item = await cosmos_service.get_item(
         item_id=document_id,
-        partition_key=partition_key,
+        partition_key=document_id,
         container_type="users"
     )
     if not item:
@@ -115,17 +99,14 @@ async def get_test_user(
     return item
 
 @router.delete("/users/{document_id}" , status_code=200)
-async def delete_test_user(
-    document_id: str,
-    partition_key: str = Query(..., description="The value of the 'userid' field, which is the partition key of the document to delete")
-):
+async def delete_test_user(document_id: str):
     try:
         await cosmos_service.delete_item(
             item_id=document_id,
-            partition_key=partition_key,
+            partition_key=document_id,
             container_type="users"
         )
-        return {"status": "success", "message": f"User '{document_id}' deleted"}
+        return {"status": "success", "message": f"User {document_id} deleted"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete user: {e}")
 
@@ -187,7 +168,7 @@ async def login_user(user_login: UserLogin):
     
     user_found = users[0]
 
-    if not pwd_context.verify(user_login.password, user_found["password"]):
+    if not auth.verify_password(user_login.password, user_found["password"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password",
@@ -196,7 +177,7 @@ async def login_user(user_login: UserLogin):
     
     # Login successful! Now, generate the JWT token.
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
+    access_token = auth.create_access_token(
         data={"sub": user_found["id"]}, # 'sub' is standard for subject (user ID)
         expires_delta=access_token_expires
     )
@@ -205,7 +186,7 @@ async def login_user(user_login: UserLogin):
 
 # Protected Endpoint Example 
 @router.get("/users/me", response_model=Dict[str, Any]) # Adjust response_model if you fetch full user
-async def read_users_me(current_user_id: str = Depends(get_current_user_id)):
+async def read_users_me(current_user_id: str = Depends(auth.get_current_user_id)):
     """
     Retrieves information about the current authenticated user.
     This endpoint requires a valid JWT access token.
@@ -225,4 +206,3 @@ async def read_users_me(current_user_id: str = Depends(get_current_user_id)):
     
     user_data.pop("password", None) # Don't send hashed password back
     return user_data
-# --- END NEW: Protected Endpoint ---
