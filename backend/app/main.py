@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from azure.monitor.opentelemetry import configure_azure_monitor
 from opentelemetry import trace, _logs
 
-from app.routers import room_router, test_router
+from app.routers import accounts_router, room_router, test_router
 from app.dependencies import get_cosmos_service, get_blob_service
 from app.services.cosmos_service import CosmosService
 from app.services.blob_service import BlobService
@@ -37,7 +37,7 @@ app = FastAPI(lifespan=lifespan)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Mount the API router first
+app.include_router(accounts_router.router)
 app.include_router(room_router.router)
 app.include_router(test_router.router)
 
