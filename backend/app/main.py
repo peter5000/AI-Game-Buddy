@@ -6,7 +6,7 @@ from azure.monitor.opentelemetry import configure_azure_monitor
 from opentelemetry import trace, _logs
 
 from app.routers import accounts_router, room_router, test_router
-from app.dependencies import get_cosmos_service, get_blob_service
+from app.dependencies import cosmos_service, blob_service
 from app.services.cosmos_service import CosmosService
 from app.services.blob_service import BlobService
 from app.config import settings
@@ -17,7 +17,7 @@ if settings.APPLICATION_INSIGHTS_CONNECTION_STRING:
 
 # Shutdown
 @asynccontextmanager
-async def lifespan(app: FastAPI, cosmos_service: CosmosService = Depends(get_cosmos_service), blob_service: BlobService = Depends(get_blob_service)):
+async def lifespan(app: FastAPI):
     yield
     # Azure Clients
     if blob_service:

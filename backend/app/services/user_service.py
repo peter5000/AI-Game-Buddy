@@ -23,9 +23,15 @@ class UserService:
 
         # Before creating a user, let's ensure the email doesn't already exist to prevent issues
         self.logger.info(f"Checking for existing email: '{user.email}'")
+        query = "SELECT * FROM c WHERE c.email = @email"
+        parameters = [
+            {"name": "@email", "value": user.email}
+        ]
+
         existing_users_by_email = await self.cosmos_service.get_items_by_query(
-            query=f"SELECT * FROM c WHERE c.email = '{user.email}'",
-            container_type="users"
+            query=query,
+            container_type="users",
+            parameters=parameters
         )
         self.logger.info(f"Result of email query: {existing_users_by_email}")
         if existing_users_by_email:
@@ -62,9 +68,14 @@ class UserService:
             raise ValueError("Missing username")
         
         try:
+            query = "SELECT * FROM c WHERE c.username = @username"
+            parameters = [
+                {"name": "@username", "value": username}
+            ]
             user = await self.cosmos_service.get_items_by_query(
-                query=f"SELECT * FROM c WHERE c.username = '{username}'",
-                container_type="users"
+                query=query,
+                container_type="users",
+                parameters=parameters
             )
         except HTTPException as e:
             self.logger.error(f"Exception caught in get_item check: Status Code={e.status_code}, Detail={e.detail}")

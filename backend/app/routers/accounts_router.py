@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, status, Depends
-from typing import Dict, Any
+from fastapi.security import OAuth2PasswordRequestForm
+from typing import Dict, Any, Annotated
 from datetime import timedelta
 
 from app.services.cosmos_service import CosmosService
@@ -20,31 +21,24 @@ async def create_user(user: UserCreate, user_service: UserService = Depends(get_
     await user_service.create_user(user=user)
     return {"status": "success", "message": f"User '{user.username}' created"}
 
-@router.post("/login")
-async def login_user(user_login: UserLogin, cosmos_service: CosmosService = Depends(get_cosmos_service)):
-    query_str = f"SELECT * FROM c WHERE c.email = '{user_login.email}'"
-    users = await cosmos_service.get_items_by_query(query=query_str, container_type="users")
+@router.post("/token")
+async def login_user(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], cosmos_service: CosmosService = Depends(get_cosmos_service)):
+    user = await auth.authenticate_user(
+        identifier=form_data.username,
+        password=form_data.password,
+        cosmos_service=cosmos_service
+    )
 
-    if not users:
+    if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
+            detail="Incorrect username/email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    user_found = users[0]
-
-    if not auth.verify_password(user_login.password, user_found["password"]):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    # Login successful! Now, generate the JWT token.
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = auth.create_access_token(
-        data={"sub": user_found["id"]}, # 'sub' is standard for subject (user ID)
+        data={"sub": user["id"]},
         expires_delta=access_token_expires
     )
     
@@ -57,10 +51,9 @@ async def read_users_me(current_user_id: str = Depends(auth.get_current_user_id)
     This endpoint requires a valid JWT access token.
     """
 
-    # Example: Fetching full user data (assuming userid is also the partition key)
     user_data = await cosmos_service.get_item(
         item_id=current_user_id,
-        partition_key=current_user_id, # Assuming partition key is same as user ID
+        partition_key=current_user_id,
         container_type="users"
     )
     

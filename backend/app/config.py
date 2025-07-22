@@ -12,5 +12,6 @@ class Settings:
     BLOB_ENDPOINT = os.getenv("BLOB_ENDPOINT")
     APPLICATION_INSIGHTS_CONNECTION_STRING = os.getenv("APPLICATION_INSIGHTS_CONNECTION_STRING")
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+    ALGORITHM = os.getenv("ALGORITHM")
 
 settings = Settings()

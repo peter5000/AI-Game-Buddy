@@ -69,14 +69,14 @@ class CosmosService:
             raise
 
     # Getting items using a SQL Query
-    async def get_items_by_query(self, query: str, container_type: str) -> List[Dict[str, Any]]:
+    async def get_items_by_query(self, query: str, container_type: str, parameters: Optional[List[dict[str, Any]]] = None) -> List[Dict[str, Any]]:
         if not query:
             raise ValueError("Query string cannot be empty")
         
         container = self.get_container(container_type)
         self.logger.info(f"Querying items in container '{container.id}': {query}")
         try:
-            items = [item async for item in container.query_items(query=query)]
+            items = [item async for item in container.query_items(query=query, parameters=parameters)]
             self.logger.info(f"Query returned {len(items)} items")
             return items
         except Exception as e:
