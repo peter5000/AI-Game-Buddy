@@ -1,13 +1,15 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 import logging
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
-from app.routers import room_router, test_router
-from app.dependencies import cosmos_service, blob_service
-
-from app.config import settings
 from azure.monitor.opentelemetry import configure_azure_monitor
 from opentelemetry import trace, _logs
+
+from app.routers import room_router, test_router
+from app.dependencies import get_cosmos_service, get_blob_service
+from app.services.cosmos_service import CosmosService
+from app.services.blob_service import BlobService
+from app.config import settings
 
 # Need Azure Application Insights API key
 if settings.APPLICATION_INSIGHTS_CONNECTION_STRING:
@@ -15,7 +17,7 @@ if settings.APPLICATION_INSIGHTS_CONNECTION_STRING:
 
 # Shutdown
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI, cosmos_service: CosmosService = Depends(get_cosmos_service), blob_service: BlobService = Depends(get_blob_service)):
     yield
     # Azure Clients
     if blob_service:
