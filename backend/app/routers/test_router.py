@@ -35,7 +35,6 @@ async def delete_user(document_id: str, cosmos_service: CosmosService = Depends(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete user: {e}")
 
-
 @router.post("/query", response_model=List[Dict[str, Any]])
 async def query_items(query: str, cosmos_service: CosmosService = Depends(get_cosmos_service)):
     items = await cosmos_service.get_items_by_query(

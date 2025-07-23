@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends
+from app.config import settings
 import logging
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
@@ -7,12 +8,8 @@ from opentelemetry import trace, _logs
 
 from app.routers import accounts_router, room_router, test_router
 from app.dependencies import cosmos_service, blob_service
-from app.services.cosmos_service import CosmosService
-from app.services.blob_service import BlobService
-from app.config import settings
 
-# Need Azure Application Insights API key
-if settings.APPLICATION_INSIGHTS_CONNECTION_STRING:
+if settings.APPLICATIONINSIGHTS_CONNECTION_STRING:
     configure_azure_monitor()
 
 # Shutdown
