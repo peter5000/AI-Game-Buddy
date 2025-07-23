@@ -1,6 +1,6 @@
 {
-    "acrName": "myaigamingfriendregistry",
-    "acrUrl": "myaigamingfriendregistry.azurecr.io",
-    "resourceGroup": "my-ai-gaming-friend",
-    "containerAppName": "myaigamingfriendcontainerjj"
+    "acrName": "aigamefriendregistry",
+    "acrUrl": "aigamefriendregistry.azurecr.io",
+    "resourceGroup": "ai-game-friend",
+    "containerAppName": "ai-game-friend-container"
 }
