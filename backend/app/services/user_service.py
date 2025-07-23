@@ -23,7 +23,7 @@ class UserService:
         self.logger.info(f"Attempting to create user: '{user.username}', email: '{user.email}'")
 
         # Check if username is valid
-        pattern = r"^[a-zA-Z][a-zA-Z0-9_]{2,19}$"
+        pattern = r"^[a-zA-Z0-9_-]{3,20}$"
         if not bool(re.match(pattern, user.username)):
             self.logger.warning(f"Username '{user.username}' has invalid characters")
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid username")

@@ -16,12 +16,12 @@ router = APIRouter(
 )
 
 @router.post("/register", status_code=201)
-async def create_user(user: UserCreate, user_service: UserService = Depends(get_user_service)):
+async def create_account(user: UserCreate, user_service: UserService = Depends(get_user_service)):
     await user_service.create_user(user=user)
     return {"status": "success", "message": f"User '{user.username}' created"}
 
 @router.post("/login")
-async def login_user(response: Response, user_login: UserLogin, cosmos_service: CosmosService = Depends(get_cosmos_service)):
+async def login_account(response: Response, user_login: UserLogin, cosmos_service: CosmosService = Depends(get_cosmos_service)):
     user = await auth.authenticate_user(
         identifier=user_login.identifier,
         password=user_login.password,
@@ -79,7 +79,7 @@ async def refresh_access_token(response: Response, refresh_token: Annotated[Opti
     try:
         # Validate the refresh token
         payload = jwt.decode(
-            refresh_token, settings.REFRESH_SECRET_KEY, algorithms=[settings.ALGORITHM]
+            refresh_token, settings.REFRESH_TOKEN_SECRET, algorithms=[settings.ALGORITHM]
         )
         user_id: str = payload.get("sub")
         if user_id is None:
@@ -102,9 +102,8 @@ async def refresh_access_token(response: Response, refresh_token: Annotated[Opti
         return {"status": "success", "message": "Access token refreshed"}
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
-        
     
-@router.get("/users/me", response_model=Dict[str, Any]) # Adjust response_model if you fetch full user
+@router.get("/user/me", response_model=Dict[str, Any]) # Adjust response_model if you fetch full user
 async def read_users_me(current_user_id: str = Depends(auth.get_current_user_id), cosmos_service: CosmosService = Depends(get_cosmos_service)):
     """
     Retrieves information about the current authenticated user.

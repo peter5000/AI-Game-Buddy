@@ -6,6 +6,7 @@ from jose import JWTError, jwt
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Optional
 import logging
+from pydantic import SecretStr
 
 from app.config import settings
 from app.services.cosmos_service import CosmosService
@@ -18,11 +19,11 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # security_scheme = OAuth2PasswordBearer(tokenUrl="accounts/token")
 # security_scheme = HTTPBearer()
 
-def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+def verify_password(password: SecretStr, hashed_password: str) -> bool:
+    return pwd_context.verify(password.get_secret_value(), hashed_password)
 
-def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+def get_password_hash(password: SecretStr) -> str:
+    return pwd_context.hash(password.get_secret_value())
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
     to_encode = data.copy()
@@ -61,7 +62,7 @@ async def authenticate_user(identifier: str, password: str, cosmos_service: Cosm
         logger.warning(f"User password is incorrect")
         return None
     
-    logger.info(f"User '{user.username}' authenticated")
+    logger.info(f"User '{user['username']}' authenticated")
     return user
 
 async def get_current_user_id(access_token: Annotated[Optional[str], Cookie()] = None):
