@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, status, Depends, Response, Cookie
 from typing import Dict, Any, Annotated, Optional
 from datetime import timedelta
+from jose import JWTError, jwt
 
 from app.services.cosmos_service import CosmosService
 from app.services.user_service import UserService
@@ -65,8 +66,7 @@ async def login_user(response: Response, user_login: UserLogin, cosmos_service: 
         samesite="lax",
         max_age=int(refresh_token_expires.total_seconds())
     )
-    
-    return {"status": "success"}
+    return {"status": "success", "message": "User logged in"}
 
 # Call refresh endpoint if jwt/cookie is expired
 @router.post("/refresh")
@@ -76,7 +76,32 @@ async def refresh_access_token(response: Response, refresh_token: Annotated[Opti
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Missing refresh token",
         )
+    try:
+        # Validate the refresh token
+        payload = jwt.decode(
+            refresh_token, settings.REFRESH_SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid refresh token")
         
+        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = auth.create_access_token(
+            data={"sub": user_id},
+            expires_delta=access_token_expires
+        )
+
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=True,
+            samesite="lax",
+            max_age=int(access_token_expires.total_seconds())
+        )
+        return {"status": "success", "message": "Access token refreshed"}
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
         
     
 @router.get("/users/me", response_model=Dict[str, Any]) # Adjust response_model if you fetch full user

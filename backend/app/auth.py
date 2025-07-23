@@ -5,9 +5,12 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Optional
+import logging
 
 from app.config import settings
 from app.services.cosmos_service import CosmosService
+
+logger = logging.getLogger("auth")
 
 # Initialize CryptContext for password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -41,7 +44,6 @@ def create_refresh_token(data: dict, expires_delta: timedelta | None = None):
     encoded_jwt = jwt.encode(to_encode, settings.REFRESH_TOKEN_SECRET, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
-
 async def authenticate_user(identifier: str, password: str, cosmos_service: CosmosService) -> dict | None:
     query = "SELECT * FROM c WHERE c.email = @identifier or c.username = @identifier"
     parameters = [{"name": "@identifier", "value": identifier}]
@@ -50,17 +52,21 @@ async def authenticate_user(identifier: str, password: str, cosmos_service: Cosm
     )
 
     if not users:
+        logger.warning(f"User username or email not found")
         return None
     
     user = users[0]
     
     if not verify_password(password, user["password"]):
+        logger.warning(f"User password is incorrect")
         return None
     
+    logger.info(f"User '{user.username}' authenticated")
     return user
 
 async def get_current_user_id(access_token: Annotated[Optional[str], Cookie()] = None):
     if access_token is None:
+        logger.error("JWT access token not found")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated: Missing session cookie",
@@ -74,8 +80,10 @@ async def get_current_user_id(access_token: Annotated[Optional[str], Cookie()] =
        payload = jwt.decode(access_token, settings.ACCESS_TOKEN_SECRET, algorithms=[settings.ALGORITHM])
        user_id: str = payload.get("sub")
        if user_id is None:
+           logger.error("User ID not found in JWT")
            raise credentials_exception
     except JWTError:
-       raise credentials_exception
+        logger.error("Invalid or expired JWT")
+        raise credentials_exception
     
     return user_id
