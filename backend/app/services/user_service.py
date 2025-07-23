@@ -1,5 +1,6 @@
 import logging
 from fastapi import HTTPException, status, Depends
+import re
 
 from app.schemas import UserCreate, User
 from app.auth import get_password_hash
@@ -21,6 +22,12 @@ class UserService:
     async def create_user(self, user: UserCreate):
         self.logger.info(f"Attempting to create user: '{user.username}', email: '{user.email}'")
 
+        # Check if username is valid
+        pattern = r"^[a-zA-Z][a-zA-Z0-9_]{2,19}$"
+        if not bool(re.match(pattern, user.username)):
+            self.logger.warning(f"Username '{user.username}' has invalid characters")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid username")
+        
         # Before creating a user, let's ensure the email doesn't already exist to prevent issues
         self.logger.info(f"Checking for existing email: '{user.email}'")
         query = "SELECT * FROM c WHERE c.email = @email"
@@ -58,9 +65,10 @@ class UserService:
         await self.cosmos_service.add_item(item=item_to_save, container_type="users")
         self.logger.info(f"User '{user.username}' created successfully.")
     
-    async def delete_user(self):
-        return
-    
+    async def delete_user(self, userid: str):
+        self.logger.info(f"Deleting user '{userid}' from Cosmos DB")
+        await self.cosmos_service.delete_item(item_id=userid, partition_key=userid, container_type="users")
+        self.logger.info(f"User '{userid}' deleted successfully.")
     
     async def get_user_by_username(self, username: str) -> User:
         self.logger.info(f"Attempting to get user: '{username}'")

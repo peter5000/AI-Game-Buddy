@@ -11,7 +11,13 @@ class Settings:
     BLOB_CONNECTION_STRING = os.getenv("BLOB_CONNECTION_STRING")
     BLOB_ENDPOINT = os.getenv("BLOB_ENDPOINT")
     APPLICATION_INSIGHTS_CONNECTION_STRING = os.getenv("APPLICATION_INSIGHTS_CONNECTION_STRING")
-    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY")
+    ACCESS_TOKEN_SECRET = os.getenv("ACCESS_TOKEN_SECRET")
+    REFRESH_TOKEN_SECRET = os.getenv("REFRESH_TOKEN_SECRET")
     ALGORITHM = os.getenv("ALGORITHM")
+    
+    # const variables
+    ACCESS_TOKEN_EXPIRE_MINUTES = 30 # Token valid for 30 minutes
+    REFRESH_TOKEN_EXPIRE_DAYS = 14 # Token valid for 14 days
+
 
 settings = Settings()

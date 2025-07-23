@@ -1,6 +1,5 @@
-from fastapi import APIRouter, HTTPException, status, Depends
-from fastapi.security import OAuth2PasswordRequestForm
-from typing import Dict, Any, Annotated
+from fastapi import APIRouter, HTTPException, status, Depends, Response, Cookie
+from typing import Dict, Any, Annotated, Optional
 from datetime import timedelta
 
 from app.services.cosmos_service import CosmosService
@@ -8,24 +7,23 @@ from app.services.user_service import UserService
 from app.dependencies import get_cosmos_service, get_user_service
 from app import auth
 from app.schemas import UserCreate, UserLogin
+from app.config import settings
 
 router = APIRouter(
     prefix="/accounts",
     tags=["Accounts"]
 )
 
-ACCESS_TOKEN_EXPIRE_MINUTES = 30 # Token valid for 30 minutes
-
 @router.post("/register", status_code=201)
 async def create_user(user: UserCreate, user_service: UserService = Depends(get_user_service)):
     await user_service.create_user(user=user)
     return {"status": "success", "message": f"User '{user.username}' created"}
 
-@router.post("/token")
-async def login_user(form_data: Annotated[OAuth2PasswordRequestForm, Depends()], cosmos_service: CosmosService = Depends(get_cosmos_service)):
+@router.post("/login")
+async def login_user(response: Response, user_login: UserLogin, cosmos_service: CosmosService = Depends(get_cosmos_service)):
     user = await auth.authenticate_user(
-        identifier=form_data.username,
-        password=form_data.password,
+        identifier=user_login.identifier,
+        password=user_login.password,
         cosmos_service=cosmos_service
     )
 
@@ -36,14 +34,51 @@ async def login_user(form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    # Access token for storing jwt
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = auth.create_access_token(
         data={"sub": user["id"]},
         expires_delta=access_token_expires
     )
     
-    return {"access_token": access_token, "token_type": "bearer"}
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        max_age=int(access_token_expires.total_seconds())
+    )
+    
+    # Refresh token for refreshing access token
+    refresh_token_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    refresh_token = auth.create_refresh_token(
+        data={"sub": user["id"]},
+        expires_delta=refresh_token_expires
+    )
+    
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        max_age=int(refresh_token_expires.total_seconds())
+    )
+    
+    return {"status": "success"}
 
+# Call refresh endpoint if jwt/cookie is expired
+@router.post("/refresh")
+async def refresh_access_token(response: Response, refresh_token: Annotated[Optional[str], Cookie()] = None):
+    if refresh_token is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing refresh token",
+        )
+        
+        
+    
 @router.get("/users/me", response_model=Dict[str, Any]) # Adjust response_model if you fetch full user
 async def read_users_me(current_user_id: str = Depends(auth.get_current_user_id), cosmos_service: CosmosService = Depends(get_cosmos_service)):
     """

@@ -13,5 +13,5 @@ class User(BaseModel):
     password: str
 
 class UserLogin(BaseModel):
-    email: EmailStr
+    identifier: str
     password: str
