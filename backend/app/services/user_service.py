@@ -5,15 +5,6 @@ import re
 from app.schemas import UserCreate, User
 from app.auth import get_password_hash
 
-'''
-Function List
-- Create user
-- Get user by username
-- Update user info
-- Delete user
-- Check if user exists
-'''
-
 class UserService:
     def __init__(self, cosmos_service):
         self.logger = logging.getLogger("CosmosService")
@@ -65,10 +56,10 @@ class UserService:
         await self.cosmos_service.add_item(item=item_to_save, container_type="users")
         self.logger.info(f"User '{user.username}' created successfully.")
     
-    async def delete_user(self, userid: str):
-        self.logger.info(f"Deleting user '{userid}' from Cosmos DB")
-        await self.cosmos_service.delete_item(item_id=userid, partition_key=userid, container_type="users")
-        self.logger.info(f"User '{userid}' deleted successfully.")
+    async def delete_user(self, user_id: str):
+        self.logger.info(f"Deleting user '{user_id}' from Cosmos DB")
+        await self.cosmos_service.delete_item(item_id=user_id, partition_key=user_id, container_type="users")
+        self.logger.info(f"User '{user_id}' deleted successfully.")
     
     async def get_user_by_username(self, username: str) -> User:
         self.logger.info(f"Attempting to get user: '{username}'")
@@ -114,3 +105,4 @@ class UserService:
             return False
         return True
     
+    # TODO: Change username/email/password functions

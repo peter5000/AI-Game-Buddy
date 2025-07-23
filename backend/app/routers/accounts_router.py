@@ -103,6 +103,13 @@ async def refresh_access_token(response: Response, refresh_token: Annotated[Opti
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
     
+@router.delte("/delete")
+async def delete_account(user_id: str = Depends(auth.get_current_user_id), cosmos_service: CosmosService = Depends(get_cosmos_service)):
+    if not user_id:
+        raise HTTPException(status_code=404, detail="User not found")
+    await cosmos_service.delete_item(item_id=user_id, partition_key=user_id, container_type="users")
+    return {"status": "success", "message": "Account deleted"}
+
 @router.get("/user/me", response_model=Dict[str, Any]) # Adjust response_model if you fetch full user
 async def read_users_me(current_user_id: str = Depends(auth.get_current_user_id), cosmos_service: CosmosService = Depends(get_cosmos_service)):
     """
@@ -117,7 +124,7 @@ async def read_users_me(current_user_id: str = Depends(auth.get_current_user_id)
     )
     
     if not user_data:
-        raise HTTPException(status_code=404, detail="User not found in DB (token valid but user data missing)")
+        raise HTTPException(status_code=404, detail="User not found")
     
     user_data.pop("password", None) # Don't send hashed password back
     return user_data
