@@ -103,7 +103,7 @@ async def refresh_access_token(response: Response, refresh_token: Annotated[Opti
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
     
-@router.delte("/delete")
+@router.delete("/delete")
 async def delete_account(user_id: str = Depends(auth.get_current_user_id), cosmos_service: CosmosService = Depends(get_cosmos_service)):
     if not user_id:
         raise HTTPException(status_code=404, detail="User not found")
