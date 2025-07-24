@@ -14,7 +14,10 @@ class Settings:
     ACCESS_TOKEN_SECRET = os.getenv("ACCESS_TOKEN_SECRET")
     REFRESH_TOKEN_SECRET = os.getenv("REFRESH_TOKEN_SECRET")
     ALGORITHM = os.getenv("ALGORITHM")
-    
+
+    OPENAI_ENDPOINT=os.getenv("OPENAI_ENDPOINT")
+    OPENAI_API_KEY=os.getenv("OPENAI_API_KEY")
+
     # const variables
     ACCESS_TOKEN_EXPIRE_MINUTES = 30 # Token valid for 30 minutes
     REFRESH_TOKEN_EXPIRE_DAYS = 14 # Token valid for 14 days

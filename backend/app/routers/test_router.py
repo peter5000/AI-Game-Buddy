@@ -6,10 +6,18 @@ from app.services.cosmos_service import CosmosService
 from app.services.blob_service import BlobService
 from app.dependencies import get_cosmos_service, get_blob_service
 
+# temp PETER
+from app.services.ai_service import test
+
 router = APIRouter(
     prefix="/test",
     tags=["Testing"]
 )
+
+# temp PETER
+@router.post("/ai/{prompt}")
+def ask_ai(prompt: str):
+    test(prompt)
 
 @router.get("/users/{document_id}")
 async def get_user(document_id: str, cosmos_service: CosmosService = Depends(get_cosmos_service)):
@@ -61,7 +69,7 @@ async def upload_blob(container_name: str, file: UploadFile = File(...), filenam
         )
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
-        
+
 @router.post("/delete")
 async def delete_blob(container_name: str, filename: str, blob_service: BlobService = Depends(get_blob_service)):
     try:
