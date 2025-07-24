@@ -15,6 +15,7 @@ class Settings:
     REFRESH_TOKEN_SECRET = os.getenv("REFRESH_TOKEN_SECRET")
     ALGORITHM = os.getenv("ALGORITHM")
 
+    # temp PETER
     OPENAI_ENDPOINT=os.getenv("OPENAI_ENDPOINT")
     OPENAI_API_KEY=os.getenv("OPENAI_API_KEY")
 

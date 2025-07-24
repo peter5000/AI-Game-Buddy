@@ -17,7 +17,7 @@ router = APIRouter(
 # temp PETER
 @router.post("/ai/{prompt}")
 def ask_ai(prompt: str):
-    test(prompt)
+    return test(prompt)
 
 @router.get("/users/{document_id}")
 async def get_user(document_id: str, cosmos_service: CosmosService = Depends(get_cosmos_service)):

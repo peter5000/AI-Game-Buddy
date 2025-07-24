@@ -37,3 +37,5 @@ def test(prompt="I am going to Paris, what should I see?"):
     )
 
     logger.info(response)
+
+    return response
