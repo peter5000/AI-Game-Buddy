@@ -1,5 +1,5 @@
 import logging
-from fastapi import HTTPException, status, Depends
+from fastapi import HTTPException, status
 import re
 
 from app.schemas import UserCreate, User
@@ -7,7 +7,7 @@ from app.auth import get_password_hash
 
 class UserService:
     def __init__(self, cosmos_service):
-        self.logger = logging.getLogger("CosmosService")
+        self.logger = logging.getLogger(__name__)
         self.cosmos_service = cosmos_service
         
     async def create_user(self, user: UserCreate):
