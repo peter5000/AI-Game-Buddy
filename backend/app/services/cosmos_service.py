@@ -9,7 +9,7 @@ from app.config import settings
 
 class CosmosService:
     def __init__(self):
-        self.logger = logging.getLogger("CosmosService")
+        self.logger = logging.getLogger(__name__)
         self.client: Optional[CosmosClient] = None
 
         if settings.COSMOS_CONNECTION_STRING:

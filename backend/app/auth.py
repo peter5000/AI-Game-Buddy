@@ -11,7 +11,7 @@ from pydantic import SecretStr
 from app.config import settings
 from app.services.cosmos_service import CosmosService
 
-logger = logging.getLogger("auth")
+logger = logging.getLogger(__name__)
 
 # Initialize CryptContext for password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

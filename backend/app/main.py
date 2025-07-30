@@ -3,6 +3,7 @@ from app.config import settings
 import logging
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from azure.monitor.opentelemetry import configure_azure_monitor
 from opentelemetry import trace, _logs
 
@@ -33,6 +34,8 @@ app = FastAPI(lifespan=lifespan)
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+FastAPIInstrumentor.instrument_app(app)
 
 app.include_router(accounts_router.router)
 app.include_router(room_router.router)
