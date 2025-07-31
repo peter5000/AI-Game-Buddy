@@ -1,12 +1,9 @@
-from backend.app.services.games.uttt.constants import X_STATE_VALUE, O_STATE_VALUE
+from app.services.games.uttt.constants import X_STATE_VALUE, O_STATE_VALUE
+from pydantic import BaseModel
 
-
-class Action:
-
-    def __init__(self, symbol: int, index: int):
-        self.symbol = symbol  # X_STATE_VALUE or O_STATE_VALUE
-        self.index = index  # int from 0 to 80
-
+class Action(BaseModel):
+    symbol: int
+    index: int
     def is_symbol_X(self) -> bool:
         return self.symbol == X_STATE_VALUE
 

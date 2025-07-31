@@ -2,8 +2,8 @@ from functools import lru_cache
 
 import numpy as np
 
-from backend.app.services.games.uttt.constants import X_STATE_VALUE, O_STATE_VALUE
-from backend.app.services.games.uttt.ultimate_tic_tac_toe import UltimateTicTacToe
+from app.services.games.uttt.constants import X_STATE_VALUE, O_STATE_VALUE
+from app.services.games.uttt.ultimate_tic_tac_toe import UltimateTicTacToe
 
 
 @lru_cache(maxsize=128)
