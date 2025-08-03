@@ -1,6 +1,6 @@
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 from fastapi.responses import JSONResponse
-from typing import List, Dict, Any, Optional
+from typing import Any, Optional
 
 from app.services.cosmos_service import CosmosService
 from app.services.blob_service import BlobService
@@ -43,7 +43,7 @@ async def delete_user(document_id: str, cosmos_service: CosmosService = Depends(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to delete user: {e}")
 
-@router.post("/query", response_model=List[Dict[str, Any]])
+@router.post("/query", response_model=list[dict[str, Any]])
 async def query_items(query: str, cosmos_service: CosmosService = Depends(get_cosmos_service)):
     items = await cosmos_service.get_items_by_query(
         query=query,
