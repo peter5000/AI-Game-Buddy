@@ -1,5 +1,5 @@
 import logging
-from typing import List, Dict, Any, Optional
+from typing import Any, Optional
 
 from azure.cosmos.aio import CosmosClient
 from azure.cosmos.exceptions import CosmosResourceNotFoundError
@@ -40,7 +40,7 @@ class CosmosService:
             raise ValueError(f"Container type '{container_type}' does not exist")
         
     # Database access functions
-    async def add_item(self, item: Dict[str, Any], container_type: str):
+    async def add_item(self, item: dict[str, Any], container_type: str):
         if not item:
             raise ValueError("Invalid Item")
         
@@ -69,7 +69,7 @@ class CosmosService:
             raise
 
     # Getting items using a SQL Query
-    async def get_items_by_query(self, query: str, container_type: str, parameters: Optional[List[dict[str, Any]]] = None) -> List[Dict[str, Any]]:
+    async def get_items_by_query(self, query: str, container_type: str, parameters: Optional[list[dict[str, Any]]] = None) -> list[dict[str, Any]]:
         if not query:
             raise ValueError("Query string cannot be empty")
         
@@ -83,7 +83,7 @@ class CosmosService:
             self.logger.error(f"Failed to execute query {query}: {e}")
             raise
 
-    async def update_item(self, item: Dict[str, Any], container_type: str):
+    async def update_item(self, item: dict[str, Any], container_type: str):
         if not item:
             raise ValueError("Invalid Item")
         

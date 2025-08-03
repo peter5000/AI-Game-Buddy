@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, status, Depends, Response, Cookie
-from typing import Dict, Any, Annotated, Optional
+from typing import Any, Annotated, Optional
 from datetime import timedelta
 from jose import JWTError, jwt
 
@@ -110,7 +110,7 @@ async def delete_account(user_id: str = Depends(auth.get_current_user_id), cosmo
     await cosmos_service.delete_item(item_id=user_id, partition_key=user_id, container_type="users")
     return {"status": "success", "message": "Account deleted"}
 
-@router.get("/user/me", response_model=Dict[str, Any]) # Adjust response_model if you fetch full user
+@router.get("/user/me", response_model=dict[str, Any]) # Adjust response_model if you fetch full user
 async def read_users_me(current_user_id: str = Depends(auth.get_current_user_id), cosmos_service: CosmosService = Depends(get_cosmos_service)):
     """
     Retrieves information about the current authenticated user.
