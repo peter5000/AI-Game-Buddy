@@ -7,7 +7,13 @@ from app.config import settings
 class RedisService:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
-        self.r = aioredis.from_url(settings.REDIS_CONNECTION_URL, decode_responses=True)
+        if settings.REDIS_CONNECTION_URL:
+            self.r = aioredis.from_url(settings.REDIS_CONNECTION_URL, decode_responses=True)
+        else:
+            raise ValueError("Redis Configuration missing. Set the REDIS_CONNECTION_URL")
+        
+        if not self.r:
+            raise ConnectionError("Failed to connect to Redis Client")
 
     # Game State
     async def write_game_state(self, room_id: str, game_state: dict) -> bool:

@@ -1,10 +1,13 @@
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from typing import Any, Optional
+import uuid
 
+from app import auth
 from app.services.cosmos_service import CosmosService
 from app.services.blob_service import BlobService
-from app.dependencies import get_cosmos_service, get_blob_service
+from app.services.redis_service import RedisService
+from app.dependencies import get_cosmos_service, get_blob_service, get_redis_service
 
 router = APIRouter(
     prefix="/test",
@@ -76,3 +79,31 @@ async def delete_blob(container_name: str, filename: str, blob_service: BlobServ
         )
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
+
+@router.post("/rooms", status_code=201)
+async def create_room(user_id: str = Depends(auth.get_current_user_id), redis_service: RedisService = Depends(get_redis_service)):
+    room_id = str(uuid.uuid4())
+    success = await redis_service.add_user_to_room(room_id, user_id)
+
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to create room in Redis.")
+    
+    return {"message": "Room created successfully", "room_id": room_id}
+
+@router.get("/rooms/{room_id}")
+async def get_room_state(room_id: str, redis_service: RedisService = Depends(get_redis_service)):
+    state = await redis_service.get_users_in_room(room_id)
+    
+    if not state:
+        raise HTTPException(status_code=404, detail="Room not found.")
+    
+    return state
+
+@router.delete("/rooms/{room_id}")
+async def delete_room(room_id: str, redis_service: RedisService = Depends(get_redis_service)):
+    success = await redis_service.delete_room(room_id)
+    
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to delete room from Redis.")
+    
+    return {"message": f"Room {room_id} deleted successfully."}
