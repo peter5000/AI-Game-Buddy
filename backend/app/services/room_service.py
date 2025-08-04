@@ -20,7 +20,7 @@ class RoomService:
         self.game_service = game_service
         self.roomid = str(uuid.uuid4())
         
-    async def connect_user(userid: str):
+    async def connect_user(user_id: str):
         return
     
     async def send_action(payload):
