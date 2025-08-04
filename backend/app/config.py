@@ -14,6 +14,7 @@ class Settings:
     ACCESS_TOKEN_SECRET = os.getenv("ACCESS_TOKEN_SECRET")
     REFRESH_TOKEN_SECRET = os.getenv("REFRESH_TOKEN_SECRET")
     ALGORITHM = os.getenv("ALGORITHM")
+    REDIS_CONNECTION_URL = os.getenv("REDIS_CONNECTION_URL")
     
     # const variables
     ACCESS_TOKEN_EXPIRE_MINUTES = 30 # Token valid for 30 minutes
