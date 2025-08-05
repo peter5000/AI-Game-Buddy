@@ -1,3 +1,6 @@
+import logging
+from fastapi import FastAPI, WebSocket
+
 '''
 Function List
 - Manages websocket endpoints
@@ -7,4 +10,5 @@ Function List
 
 class ConnectionService:
     def __init__(self):
-        pass
+        self.logger = logging.getLogger(__name__)
+    
