@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 from app.services.games.uttt.ultimate_tic_tac_toe import UltimateTicTacToe, UltimateTicTacToeError
 from app.services.games.uttt.ultimate_tic_tac_toe import Action
+from app.services.games.chess_game import ChessLogic, ChessAction, ChessState
 
 router = APIRouter(
     prefix="/game",
@@ -15,6 +16,7 @@ def test():
     return "hi"
 
 game_state: Optional[UltimateTicTacToe] = None
+chess_game: Optional[ChessLogic] = None
 
 class GameStateResponse(BaseModel):
     """The full state of the game, suitable for a frontend to render."""
@@ -25,6 +27,22 @@ class GameStateResponse(BaseModel):
     result: int
     is_terminated: bool
     legal_indexes: List[int]
+
+class ChessStateResponse(BaseModel):
+    """Chess game state response"""
+    board_fen: str
+    turn: str
+    phase: str
+    move_history: List[str]
+    game_result: Optional[str]
+    valid_moves: List[str]
+    is_check: bool
+    is_checkmate: bool
+    is_stalemate: bool
+
+class ChessMoveRequest(BaseModel):
+    move: str
+    player_id: str
 
 @router.post("/uttt/new-game", response_model=GameStateResponse, summary="Start a New Game")
 def new_game():
@@ -74,3 +92,57 @@ def make_move(action: Action):
         raise HTTPException(status_code=400, detail=str(e))
 
     return get_game_state()
+
+@router.post("/chess/new-game", response_model=ChessStateResponse, summary="Start a New Chess Game")
+def new_chess_game():
+    """Initialize a new chess game with two players"""
+    global chess_game
+    player_ids = ["player1", "player2"]  # Default player IDs
+    chess_game = ChessLogic(player_ids)
+    return get_chess_state_internal()
+
+@router.get("/chess/state", response_model=ChessStateResponse, summary="Get Current Chess Game State")
+def get_chess_state():
+    """Retrieve the current state of the chess game"""
+    return get_chess_state_internal()
+
+def get_chess_state_internal():
+    """Internal function to get chess state"""
+    if chess_game is None:
+        raise HTTPException(status_code=404, detail="Chess game not started. Please start a new game.")
+    
+    state = chess_game.get_current_state
+    board_repr = chess_game.get_board_representation()
+    valid_moves = [action.payload.move for action in chess_game.get_valid_actions("player1" if state.phase == "WHITE_TURN" else "player2")]
+    
+    return ChessStateResponse(
+        board_fen=state.board_fen,
+        turn=board_repr["turn"],
+        phase=state.phase,
+        move_history=state.move_history,
+        game_result=state.game_result,
+        valid_moves=valid_moves,
+        is_check=board_repr["is_check"],
+        is_checkmate=board_repr["is_checkmate"],
+        is_stalemate=board_repr["is_stalemate"]
+    )
+
+@router.post("/chess/move", response_model=ChessStateResponse, summary="Make a Chess Move")
+def make_chess_move(move_request: ChessMoveRequest):
+    """Execute a chess move"""
+    global chess_game
+    if chess_game is None:
+        raise HTTPException(status_code=404, detail="Chess game not started. Please start a new game.")
+    
+    if chess_game.is_game_finished():
+        raise HTTPException(status_code=400, detail="Game is over. Please start a new game.")
+    
+    try:
+        action = ChessAction(
+            player_id=move_request.player_id,
+            payload={"move": move_request.move}
+        )
+        chess_game.make_action(move_request.player_id, action)
+        return get_chess_state_internal()
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
