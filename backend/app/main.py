@@ -7,8 +7,8 @@ from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from azure.monitor.opentelemetry import configure_azure_monitor
 from opentelemetry import trace, _logs
 
-from app.routers import accounts_router, room_router, test_router, game_router
-from app.dependencies import cosmos_service, blob_service
+from app.routers import accounts_router, room_router, test_router, game_router, websocket_router
+from app.dependencies import cosmos_service, blob_service, redis_service
 
 if settings.APPLICATIONINSIGHTS_CONNECTION_STRING:
     configure_azure_monitor()
@@ -22,6 +22,8 @@ async def lifespan(app: FastAPI):
         await blob_service.close()
     if cosmos_service:
         await cosmos_service.close()
+    if redis_service:
+        await redis_service.close()
     # OpenTelemetry
     tracer_provider = trace.get_tracer_provider()
     if hasattr(tracer_provider, 'shutdown'):
@@ -41,6 +43,7 @@ app.include_router(accounts_router.router)
 app.include_router(room_router.router)
 app.include_router(test_router.router)
 app.include_router(game_router.router)
+app.include_router(websocket_router.router)
 
 # Then mount the static files at the root
 # app.mount("/", StaticFiles(directory="path/to/frontend/build", html=True), name="static")

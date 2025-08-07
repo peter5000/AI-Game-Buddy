@@ -4,9 +4,10 @@ import re
 
 from app.schemas import UserCreate, User
 from app.auth import get_password_hash
+from app.services.cosmos_service import CosmosService
 
 class UserService:
-    def __init__(self, cosmos_service):
+    def __init__(self, cosmos_service: CosmosService):
         self.logger = logging.getLogger(__name__)
         self.cosmos_service = cosmos_service
         
