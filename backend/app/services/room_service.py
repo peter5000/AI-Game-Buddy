@@ -15,10 +15,8 @@ Function List
 '''
 
 class RoomService:
-    def __init__(self, game_service):
+    def __init__(self,):
         self.logger = logging.getLogger(__name__)
-        self.game_service = game_service
-        self.roomid = str(uuid.uuid4())
         
     async def connect_user(user_id: str):
         return
