@@ -97,7 +97,29 @@ class UserService:
         else:
             self.logger.warning(f"Multiple users with username '{username}' found")
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"Multiple users with username '{username}'")
+
+    async def get_username_by_userid(self, user_id: str) -> str:
+        if not user_id:
+            raise ValueError("Missing user_id")
+        try:
+            user = await self.cosmos_service.get_item(item_id=user_id, container_type="users", partition_key=user_id)
+        except HTTPException as e:
+            self.logger.error(f"Exception caught in get_item check: Status Code={e.status_code}, Detail={e.detail}")
+            if e.status_code != 404:
+                self.logger.error("Re-raising non-404 exception.")
+                raise
+            else:
+                self.logger.warning("Username not found")
+        except Exception as e:
+            self.logger.error(f"Unexpected exception in get_item check: {e}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Database error during ID check: {e}")
         
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"User_id not found in cosmos database")
+        
+        return user["username"]
+        
+    
     async def check_user_exists(self, username: str) -> bool:
         if not username:
             raise ValueError("Missing username")

@@ -41,11 +41,12 @@ class RedisService:
     def get_redis_client(self) -> aioredis.Redis:
         return self.r
     
-    async def subscribe_to_channel(self, pubsub: redis.client.PubSub, channel_name: str, message_handler: Callable) -> aioredis.Redis.pubsub:
+    async def subscribe_to_channel(self, channel_name: str, message_handler: Callable):
+        pubsub = self.r.pubsub()
         await pubsub.subscribe(channel_name)
         task = asyncio.create_task(self.listen_to_channel(pubsub, channel_name, message_handler))
         self.logger.info(f"Subscribed to Redis channel: {channel_name}")
-        return task
+        return pubsub
 
     async def publish_to_channel(self, channel_name: str, message: Union[str, dict, Any]):
         # Convert message to JSON
@@ -81,26 +82,21 @@ class RedisService:
         except Exception as e:
             self.logger.error(f"Error listening to channel {channel_name}: {e}")
 
-    # Game State
-    async def write_game_state(self, room_id: str, game_state: dict) -> bool:
+    async def write_json(self, key: str, json_object: dict) -> bool:
         try:
-            key = f"room:{room_id}:state"
-            await self.r.json().set(key, '$', game_state)
+            await self.r.json().set(key, '$', json_object)
             return True
         except redis.exceptions.RedisError as e:
-            self.logger.error(f"Redis Error writing game state for room '{room_id}': {e}")
+            self.logger.error(f"Redis Error writing json using key '{key}': {e}")
             return False
     
-    async def read_game_state(self, room_id: str) -> Optional[dict]:
+    async def read_json(self, key: str) -> Optional[dict]:
         try:
-            key = f"room:{room_id}:state"
-            game_state = await self.r.json().get(key)
-            return game_state
+            json_object = await self.r.json().get(key)
+            return json_object
         except redis.exceptions.RedisError as e:
-            self.logger.error(f"Redis Error reading game state for room '{room_id}': {e}")
-            return None
+            self.logger.error(f"Redis Error reading json using key '{key}': {e}")
     
-    # Room State
     async def add_user_to_room(self, room_id: str, user_id: str) -> bool:
         try:
             key = f"room:{room_id}:users"
@@ -131,12 +127,14 @@ class RedisService:
     # Delete all keys connected with room
     async def delete_room(self, room_id: str) -> bool:
         try:
-            keys: list[str] = []
-            async for key in self.r.scan_iter(f"room:{room_id}:*"):
+            room_key = f"room:{room_id}"
+            keys: list[str] = [room_key]
+            async for key in self.r.scan_iter(f"{room_key}:*"):
                 keys.append(key)
             
             if keys:
                 await self.r.delete(*keys)
+            
             return True
         except redis.exceptions.RedisError as e:
             self.logger.error(f"Redis Error deleting room '{room_id}': {e}")

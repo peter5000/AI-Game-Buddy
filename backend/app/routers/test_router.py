@@ -122,7 +122,7 @@ async def write_game_state(room_id: str, redis_service: RedisService = Depends(g
         "players": list(users)
     }
 
-    success = await redis_service.write_game_state(room_id, test_state)
+    success = await redis_service.write_game_state(f"room:{room_id}:state", test_state)
     if not success:
         raise HTTPException(status_code=500, detail="Failed to write JSON data to Redis")
     return {
