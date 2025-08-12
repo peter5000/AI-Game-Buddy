@@ -80,19 +80,47 @@ class RedisService:
             self.logger.info(f"Stopped listening to channel: {channel_name}")
         except Exception as e:
             self.logger.error(f"Error listening to channel {channel_name}: {e}")
+    
+    async def set_value(self, key: str, value):
+        try:
+            await self.r.set(key, value)
+        except redis.exceptions.RedisError as e:
+            self.logger.error(f"Redis Error getting using key '{key}': {e}")
+    
+    async def get_value(self, key: str) -> Any:
+        try:
+            value = await self.r.get(key)
+            return value
+        except redis.exceptions.RedisError as e:
+            self.logger.error(f"Redis Error getting using key '{key}': {e}")
 
-    async def hset(self, key: str, mapping: dict):
+    async def dict_add(self, key: str, mapping: dict):
         try:
             await self.r.hset(key, mapping=mapping)
         except redis.exceptions.RedisError as e:
-            self.logger.error(f"Redis Error writing json using key '{key}': {e}")
+            self.logger.error(f"Redis Error writing dict using key '{key}': {e}")
     
-    async def hget(self, key: str) -> Optional[dict]:
+    async def dict_get_all(self, key: str) -> Optional[dict]:
         try:
-            json_object = await self.r.hget(key)
-            return json_object
+            mapping = await self.r.hgetall(key)
+            return mapping
         except redis.exceptions.RedisError as e:
-            self.logger.error(f"Redis Error reading json using key '{key}': {e}")
+            self.logger.error(f"Redis Error reading dict using key '{key}': {e}")
+            return None
+    
+    async def set_add(self, key: str, values: set):
+        try:
+            await self.r.sadd(key, *values)
+        except redis.exceptions.RedisError as e:
+            self.logger.error(f"Redis Error adding to set using key '{key}': {e}")
+            
+    async def set_get(self, key: str) -> set:
+        try:
+            values = await self.r.smembers(key)
+            return values
+        except redis.exceptions.RedisError as e:
+            self.logger.error(f"Redis Error adding to set using key '{key}': {e}")
+            return None
     
     async def expire(self, key: str, time: int):
         try:
@@ -105,6 +133,12 @@ class RedisService:
         try:
             room_key = f"room:{room_id}"
             keys: list[str] = [room_key]
+            
+            user_list = await self.set_get(f"room:{room_id}:users")
+            
+            for user in user_list:
+                keys.append(f"user:{user}")
+                
             async for key in self.r.scan_iter(f"{room_key}:*"):
                 keys.append(key)
             

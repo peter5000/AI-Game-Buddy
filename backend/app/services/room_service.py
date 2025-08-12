@@ -4,7 +4,7 @@ from fastapi.responses import HTMLResponse
 import uuid
 import json
 import datetime
-from typing import Optional
+from typing import Optional, Any
 
 from app.services.cosmos_service import CosmosService
 from app.services.redis_service import RedisService
@@ -46,7 +46,12 @@ class RoomService:
         if not user_id:
             raise ValueError("User_id missing on room creation")
         
+        if await self.get_user_room(user_id=user_id):
+            self.logger.warning(f"User '{user_id}' currently in another room")
+            return ""
+        
         room_id = str(uuid.uuid4())
+        time = datetime.datetime.now(datetime.timezone.utc).isoformat()
         
         room = {
             "id": room_id,
@@ -55,13 +60,22 @@ class RoomService:
             "creator_id": user_id,
             "game_type": game_type,
             "status": "waiting",
-            "users": json.dumps([user_id]),
-            "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
+            "created_at": time
         }
+        users: set[str] = [user_id]
         
         # Write new room into redis
-        await self.redis_service.hset(key=f"room:{room_id}", mapping=room)
+        await self.redis_service.dict_add(key=f"room:{room_id}", mapping=room)
         await self.redis_service.expire(f"room:{room_id}", 86400)
+        
+        await self.redis_service.set_add(key=f"room:{room_id}:users", values=users)
+        await self.redis_service.expire(f"room:{room_id}:users", 86400)
+        
+        # Write user into new room
+        await self.redis_service.set_value(key=f"user:{user_id}", value=room_id)
+        
+        # Add users set into json object
+        room["users"] = users
         
         # Write new room into cosmos
         await self.cosmos_service.add_item(item=room, container_type="rooms")
@@ -74,18 +88,40 @@ class RoomService:
         if not user_id:
             raise ValueError("User_id missing on leave room")
         
-    async def get_room(self, room_id: str) -> Optional[dict]:
-        room_data = await self.redis_service.hget(key=f"room:{room_id}")
+        room = await self.get_room(room_id=room_id)
         
+        if not room:
+            self.logger.warning(f"Room '{room_id}' not found when leaving for user '{user_id}'")
+            return
+        
+        if user_id not in self.room_connections[room_id]:
+            self.logger.warning(f"User '{user_id}' not in room '{room_id}'")
+            return
+
+        room["users"]
+        
+    async def get_room(self, room_id: str) -> Optional[dict]:
+        room_data = await self.redis_service.dict_get_all(key=f"room:{room_id}")
         if room_data:
-            return room_data
+            user_data = await self.redis_service.set_get(key=f"room:{room_id}:users")
+            room_object = room_data.copy()
+            room_object["users"] = list(user_data)
+            return room_object
         
         self.logger.warning("Room not found in redis, checking database")
         
         room_data = await self.cosmos_service.get_item(item_id=room_id, partition_key=room_id, container_type="rooms")
         
-        
-        
+        if room_data:
+            room_object = room_data.copy()
+            self.logger.info(f"Restoring room '{room_id}' to redis")
+            user_data = room_data.pop('users')
+            await self.redis_service.dict_add(key=f"room:{room_id}", mapping=room_data)
+            await self.redis_service.set_add(key=f"room:{room_id}:users", values=user_data)
+            return room_object
+    
+        self.logger.error(f"Room '{room_id}' not found in redis or database")
+        return None
     
     async def delete_room(self, room_id: str):
         if not room_id:
@@ -131,3 +167,13 @@ class RoomService:
         
         if room_id and game_state:
             await self.broadcast_to_room(room_id, game_state)
+
+    async def get_user_room(self, user_id: str) -> str:
+        if not user_id:
+            raise ValueError("user_id cannot be empty")
+        
+        room_id = await self.redis_service.get_value(key=f"user:{user_id}")
+        if room_id:
+            self.logger.info(f"User '{user_id}' room found in redis: {room_id}")
+            return room_id
+        return ""
