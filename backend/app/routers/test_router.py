@@ -91,8 +91,14 @@ async def create_room(user_id: str = Depends(auth.get_user_id), room_service: Ro
     return {"message": "Room created successfully", "room_id": room_id}
 
 @router.delete("/delete_room", status_code=201)
-async def delete_room(room_id: str, room_service: RoomService = Depends(get_room_service)):
+async def delete_room(user_id: str = Depends(auth.get_user_id), room_service: RoomService = Depends(get_room_service)):
+    room_id = await room_service.get_user_room(user_id=user_id)
     await room_service.delete_room(room_id=room_id)
     
     return {"message": "Room deleted successfully", "room_id": room_id}
 
+@router.get("/get_room")
+async def get_room(user_id: str = Depends(auth.get_user_id), room_service: RoomService = Depends(get_room_service)):
+    room_id = await room_service.get_user_room(user_id=user_id)
+    room = await room_service.get_room(room_id=room_id)
+    return {"room": room}
