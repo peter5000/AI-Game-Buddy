@@ -28,7 +28,8 @@ class CosmosService:
 
         db_client = self.client.get_database_client(settings.COSMOS_DATABASE_NAME)
         self.users_container_client = db_client.get_container_client("users")
-
+        self.rooms_container_client = db_client.get_container_client("rooms")
+        
     async def close(self):
         self.logger.info("Closing Cosmos client session")
         await self.client.close()
@@ -36,6 +37,8 @@ class CosmosService:
     def get_container(self, container_type: str):
         if container_type == "users":
             return self.users_container_client
+        elif container_type == "rooms":
+            return self.rooms_container_client
         else:
             raise ValueError(f"Container type '{container_type}' does not exist")
 
@@ -52,7 +55,7 @@ class CosmosService:
             self.logger.error(f"Failed to add item '{item.get('id')}' to '{container.id}': {e}")
             raise
 
-    async def get_item(self, item_id: str, container_type: str, partition_key: str):
+    async def get_item(self, item_id: str, partition_key: str, container_type: str):
         if not item_id or not partition_key:
             raise ValueError("Item ID and partition key cannot be empty")
 

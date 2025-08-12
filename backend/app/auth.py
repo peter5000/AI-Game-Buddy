@@ -65,7 +65,7 @@ async def authenticate_user(identifier: str, password: str, cosmos_service: Cosm
     logger.info(f"User '{user['username']}' authenticated")
     return user
 
-async def get_current_user_id(access_token: Annotated[Optional[str], Cookie()] = None):
+async def get_user_id(access_token: Annotated[Optional[str], Cookie()] = None):
     if access_token is None:
         logger.error("JWT access token not found")
         raise HTTPException(
