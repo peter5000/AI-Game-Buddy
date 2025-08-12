@@ -22,21 +22,21 @@ class RedisService:
     
     async def close(self):
         self.logger.info("Closing Redis Client session")
-        # Cancel all pubsub subscriptions
-        for task in self.active_subscriptions.values():
-            task.cancel()
+        # # Cancel all pubsub subscriptions
+        # for task in self.active_subscriptions.values():
+        #     task.cancel()
         
-        # Wait for tasks to finish
-        if self.active_subscriptions:
-            await aioredis.gather(*self.active_subscriptions.values(), return_exceptions=True)
+        # # Wait for tasks to finish
+        # if self.active_subscriptions:
+        #     await aioredis.gather(*self.active_subscriptions.values(), return_exceptions=True)
         
-        # Close pubsub connection
-        if self.pubsub:
-            await self.pubsub.close()
+        # # Close pubsub connection
+        # if self.pubsub:
+        #     await self.pubsub.close()
         
         # Close Redis client
-        if self.redis_client:
-            await self.redis_client.close()
+        if self.r:
+            await self.r.close()
     
     def get_redis_client(self) -> aioredis.Redis:
         return self.r
@@ -46,7 +46,6 @@ class RedisService:
         await pubsub.subscribe(channel_name)
         task = asyncio.create_task(self.listen_to_channel(pubsub, channel_name, message_handler))
         self.logger.info(f"Subscribed to Redis channel: {channel_name}")
-        return pubsub
 
     async def publish_to_channel(self, channel_name: str, message: Union[str, dict, Any]):
         # Convert message to JSON
@@ -82,50 +81,27 @@ class RedisService:
         except Exception as e:
             self.logger.error(f"Error listening to channel {channel_name}: {e}")
 
-    async def write_json(self, key: str, json_object: dict) -> bool:
+    async def hset(self, key: str, mapping: dict):
         try:
-            await self.r.json().set(key, '$', json_object)
-            return True
+            await self.r.hset(key, mapping=mapping)
         except redis.exceptions.RedisError as e:
             self.logger.error(f"Redis Error writing json using key '{key}': {e}")
-            return False
     
-    async def read_json(self, key: str) -> Optional[dict]:
+    async def hget(self, key: str) -> Optional[dict]:
         try:
-            json_object = await self.r.json().get(key)
+            json_object = await self.r.hget(key)
             return json_object
         except redis.exceptions.RedisError as e:
             self.logger.error(f"Redis Error reading json using key '{key}': {e}")
     
-    async def add_user_to_room(self, room_id: str, user_id: str) -> bool:
+    async def expire(self, key: str, time: int):
         try:
-            key = f"room:{room_id}:users"
-            await self.r.sadd(key, user_id)
-            return True
+            await self.r.expire(key, time)
         except redis.exceptions.RedisError as e:
-            self.logger.error(f"Redis Error adding user to room '{room_id}': {e}")
-            return False
-    
-    async def get_users_in_room(self, room_id: str) -> Optional[set[str]]:
-        try:
-            key = f"room:{room_id}:users"
-            users = await self.r.smembers(key)
-            return users
-        except redis.exceptions.RedisError as e:
-            self.logger.error(f"Redis Error getting users from room '{room_id}': {e}")
-            return None
-    
-    async def remove_user_from_rom(self, room_id: str, user_id: str) -> bool:
-        try:
-            key = f"room:{room_id}:users"
-            await self.r.srem(key, user_id)
-            return True
-        except redis.exceptions.RedisError as e:
-            self.logger.error(f"Redis Error removing user '{user_id}' from room '{room_id}': {e}")
-            return False
+            self.logger.error(f"Redis Error adding expire to key '{key}': {e}")
     
     # Delete all keys connected with room
-    async def delete_room(self, room_id: str) -> bool:
+    async def delete_room(self, room_id: str):
         try:
             room_key = f"room:{room_id}"
             keys: list[str] = [room_key]
@@ -134,8 +110,6 @@ class RedisService:
             
             if keys:
                 await self.r.delete(*keys)
-            
-            return True
+                
         except redis.exceptions.RedisError as e:
             self.logger.error(f"Redis Error deleting room '{room_id}': {e}")
-            return False

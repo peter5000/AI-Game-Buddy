@@ -7,7 +7,8 @@ from app import auth
 from app.services.cosmos_service import CosmosService
 from app.services.blob_service import BlobService
 from app.services.redis_service import RedisService
-from app.dependencies import get_cosmos_service, get_blob_service, get_redis_service
+from app.services.room_service import RoomService
+from app.dependencies import get_cosmos_service, get_blob_service, get_redis_service, get_room_service
 
 router = APIRouter(
     prefix="/test",
@@ -80,68 +81,18 @@ async def delete_blob(container_name: str, filename: str, blob_service: BlobServ
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 
-@router.post("/rooms", status_code=201)
-async def create_room(user_id: str = Depends(auth.get_current_user_id), redis_service: RedisService = Depends(get_redis_service)):
-    room_id = str(uuid.uuid4())
-    success = await redis_service.add_user_to_room(room_id, user_id)
+@router.post("/create_room", status_code=201)
+async def create_room(user_id: str = Depends(auth.get_user_id), room_service: RoomService = Depends(get_room_service)):
+    room_id = await room_service.create_room(room_name="Test Room",game_type="chess", user_id=user_id)
 
-    if not success:
+    if not room_id:
         raise HTTPException(status_code=500, detail="Failed to create room in Redis")
     
     return {"message": "Room created successfully", "room_id": room_id}
 
-@router.get("/rooms/{room_id}")
-async def get_room_users(room_id: str, redis_service: RedisService = Depends(get_redis_service)):
-    users = await redis_service.get_users_in_room(room_id)
+@router.delete("/delete_room", status_code=201)
+async def delete_room(room_id: str, room_service: RoomService = Depends(get_room_service)):
+    await room_service.delete_room(room_id=room_id)
     
-    if not users:
-        raise HTTPException(status_code=404, detail="Room not found")
-    
-    return users
+    return {"message": "Room deleted successfully", "room_id": room_id}
 
-@router.delete("/rooms/{room_id}")
-async def delete_room(room_id: str, redis_service: RedisService = Depends(get_redis_service)):
-    success = await redis_service.delete_room(room_id)
-    
-    if not success:
-        raise HTTPException(status_code=500, detail="Failed to delete room from Redis")
-    
-    return {"message": f"Room '{room_id}' deleted successfully"}
-
-@router.post("/state/{room_id}")
-async def write_game_state(room_id: str, redis_service: RedisService = Depends(get_redis_service)):
-    users = await redis_service.get_users_in_room(room_id)
-    
-    if not users:
-        raise HTTPException(status_code=404, detail="Room not found")
-    
-    test_state = {
-        "roomId": room_id,
-        "status": "testing",
-        "playerCount": len(users),
-        "players": list(users)
-    }
-
-    success = await redis_service.write_game_state(f"room:{room_id}:state", test_state)
-    if not success:
-        raise HTTPException(status_code=500, detail="Failed to write JSON data to Redis")
-    return {
-        "message": "Successfully wrote and read JSON data",
-        "data_written": test_state
-    }
-    
-@router.get("/state/{room_id}")
-async def read_game_state(room_id: str, redis_service: RedisService = Depends(get_redis_service)):
-    users = await redis_service.get_users_in_room(room_id)
-    
-    if not users:
-        raise HTTPException(status_code=404, detail="Room not found")
-    
-    game_state = await redis_service.read_game_state(room_id)
-    if not game_state:
-        raise HTTPException(status_code=500, detail="Failed to read JSON data back from Redis")
-
-    return {
-        "message": "Successfully wrote and read JSON data",
-        "data_retrieved": game_state
-    }

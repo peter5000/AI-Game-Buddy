@@ -1,4 +1,3 @@
-import uuid
 from pydantic import BaseModel, Field, EmailStr, SecretStr
 
 class UserCreate(BaseModel):
@@ -9,7 +8,8 @@ class UserCreate(BaseModel):
     )
 
 class User(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4())) # Partition Key
+    id: str
+    user_id: str
     username: str
     email: EmailStr
     password: str

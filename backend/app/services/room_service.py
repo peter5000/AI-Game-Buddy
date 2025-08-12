@@ -1,15 +1,13 @@
 import logging
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import WebSocket, WebSocketDisconnect, Depends
 from fastapi.responses import HTMLResponse
 import uuid
 import json
 import datetime
 from typing import Optional
 
-from app.schemas import Room
 from app.services.cosmos_service import CosmosService
 from app.services.redis_service import RedisService
-from app.dependencies import get_user_service
 
 '''
 Function List
@@ -42,33 +40,62 @@ class RoomService:
     async def initialize(self):
         self.pubsub = self.redis_service.subscribe_to_channel("game_update", self.handle_game_update)
     
-    async def create_room(self, room_name: Optional[str], game_type: str, user_id: str) -> str:
+    async def create_room(self, room_name: str, game_type: str, user_id: str) -> str:
         if not game_type:
             raise ValueError("Game type missing on room creation")
         if not user_id:
             raise ValueError("User_id missing on room creation")
-        if not room_name:
-            username = get_user_service().get_username_by_userid(user_id=user_id)
         
         room_id = str(uuid.uuid4())
         
         room = {
+            "id": room_id,
             "room_id": room_id,
-            "name": room_name or f"{username}'s Room",
+            "name": room_name,
             "creator_id": user_id,
             "game_type": game_type,
             "status": "waiting",
-            "created_at": datetime.utcnow().isoformat()
+            "users": json.dumps([user_id]),
+            "created_at": datetime.datetime.now(datetime.timezone.utc).isoformat()
         }
         
         # Write new room into redis
-        await self.redis_service.write_json(key=f"room:{room_id}", json_object=room)
-        await self.redis_service.add_user_to_room(room_id=room_id, user_id=user_id)
+        await self.redis_service.hset(key=f"room:{room_id}", mapping=room)
+        await self.redis_service.expire(f"room:{room_id}", 86400)
         
         # Write new room into cosmos
         await self.cosmos_service.add_item(item=room, container_type="rooms")
         
         return room_id
+    
+    async def leave_room(self, room_id: str, user_id: str):
+        if not room_id:
+            raise ValueError("Room_id missing on leave room")
+        if not user_id:
+            raise ValueError("User_id missing on leave room")
+        
+    async def get_room(self, room_id: str) -> Optional[dict]:
+        room_data = await self.redis_service.hget(key=f"room:{room_id}")
+        
+        if room_data:
+            return room_data
+        
+        self.logger.warning("Room not found in redis, checking database")
+        
+        room_data = await self.cosmos_service.get_item(item_id=room_id, partition_key=room_id, container_type="rooms")
+        
+        
+        
+    
+    async def delete_room(self, room_id: str):
+        if not room_id:
+            raise ValueError("Room_id missing on room deletion")
+        
+        await self.redis_service.delete_room(room_id=room_id)
+        
+        await self.cosmos_service.delete_item(item_id=room_id, partition_key=room_id, container_type="rooms")
+        
+        self.logger.info(f"Successfully deleted room '{room_id}'")
     
     async def connect(self, websocket: WebSocket, room_id: str):
         try:

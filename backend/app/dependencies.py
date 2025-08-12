@@ -1,4 +1,3 @@
-from fastapi import Depends
 from app.services.cosmos_service import CosmosService
 from app.services.blob_service import BlobService
 from app.services.redis_service import RedisService
@@ -9,7 +8,7 @@ cosmos_service = CosmosService()
 blob_service = BlobService()
 redis_service = RedisService()
 user_service = UserService(cosmos_service=cosmos_service)
-room_service = RoomService(redis_service=redis_service)
+room_service = RoomService(cosmos_service=cosmos_service, redis_service=redis_service)
 
 def get_cosmos_service() -> CosmosService:
     return cosmos_service
