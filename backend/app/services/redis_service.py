@@ -113,6 +113,12 @@ class RedisService:
             await self.r.sadd(key, *values)
         except redis.exceptions.RedisError as e:
             self.logger.error(f"Redis Error adding to set using key '{key}': {e}")
+
+    async def set_remove(self, key: str, values: set):
+        try:
+            await self.r.srem(key, values)
+        except redis.exceptions.RedisError as e:
+            self.logger.error(f"Redis Error removing from set using key '{key}': {e}")
             
     async def set_get(self, key: str) -> set:
         try:
