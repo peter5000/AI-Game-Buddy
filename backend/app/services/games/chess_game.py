@@ -125,7 +125,7 @@ class ChessLogic(GameSystem):
                 "black_kingside": self._board.has_kingside_castling_rights(chess.BLACK),
                 "black_queenside": self._board.has_queenside_castling_rights(chess.BLACK),
             },
-            "en_passant": self._board.ep_square.name if self._board.ep_square else None,
+            "en_passant": self._board.ep_square if self._board.ep_square else None,
             "halfmove_clock": self._board.halfmove_clock,
             "fullmove_number": self._board.fullmove_number,
             "is_check": self._board.is_check(),
