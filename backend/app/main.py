@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from azure.monitor.opentelemetry import configure_azure_monitor
 from opentelemetry import trace, _logs
 
-from app.routers import accounts_router, room_router, test_router
+from app.routers import accounts_router, room_router, test_router, game_router
 from app.dependencies import cosmos_service, blob_service
 
 if settings.APPLICATIONINSIGHTS_CONNECTION_STRING:
@@ -37,6 +37,7 @@ logger = logging.getLogger(__name__)
 app.include_router(accounts_router.router)
 app.include_router(room_router.router)
 app.include_router(test_router.router)
+app.include_router(game_router.router)
 
 # Then mount the static files at the root
 # app.mount("/", StaticFiles(directory="path/to/frontend/build", html=True), name="static")

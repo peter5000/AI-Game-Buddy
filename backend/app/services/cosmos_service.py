@@ -25,25 +25,25 @@ class CosmosService:
 
         if not self.client:
             raise ConnectionError("Failed to connect to CosmosClient")
-        
+
         db_client = self.client.get_database_client(settings.COSMOS_DATABASE_NAME)
         self.users_container_client = db_client.get_container_client("users")
-        
+
     async def close(self):
         self.logger.info("Closing Cosmos client session")
         await self.client.close()
-    
+
     def get_container(self, container_type: str):
         if container_type == "users":
             return self.users_container_client
         else:
             raise ValueError(f"Container type '{container_type}' does not exist")
-        
+
     # Database access functions
     async def add_item(self, item: Dict[str, Any], container_type: str):
         if not item:
             raise ValueError("Invalid Item")
-        
+
         container = self.get_container(container_type)
         self.logger.info(f"Adding item to container '{container.id}': '{item.get('id')}'")
         try:
@@ -55,7 +55,7 @@ class CosmosService:
     async def get_item(self, item_id: str, container_type: str, partition_key: str):
         if not item_id or not partition_key:
             raise ValueError("Item ID and partition key cannot be empty")
-        
+
         container = self.get_container(container_type)
         self.logger.info(f"Geting item from container '{container.id}' with item id '{item_id}' and partition key '{partition_key}'")
         try:
@@ -72,7 +72,7 @@ class CosmosService:
     async def get_items_by_query(self, query: str, container_type: str, parameters: Optional[List[dict[str, Any]]] = None) -> List[Dict[str, Any]]:
         if not query:
             raise ValueError("Query string cannot be empty")
-        
+
         container = self.get_container(container_type)
         self.logger.info(f"Querying items in container '{container.id}': {query}")
         try:
@@ -86,7 +86,7 @@ class CosmosService:
     async def update_item(self, item: Dict[str, Any], container_type: str):
         if not item:
             raise ValueError("Invalid Item")
-        
+
         container = self.get_container(container_type)
         self.logger.info(f"Updating item to container '{container.id}': '{item.get('id')}'")
         try:
@@ -94,11 +94,11 @@ class CosmosService:
         except Exception as e:
             self.logger.error(f"Failed to update item '{item.get('id')}' to '{container.id}': {e}")
             raise
-        
+
     async def delete_item(self, item_id: str, partition_key: str, container_type: str):
         if not item_id or not partition_key:
             raise ValueError("Item ID and partition key cannot be empty")
-        
+
         container = self.get_container(container_type)
         self.logger.info(f"Deleting item from container '{container.id}': '{item_id}' with partition key '{partition_key}'")
         try:
