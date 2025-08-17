@@ -33,7 +33,6 @@ class RoomService:
         self.logger = logging.getLogger(__name__)
         self.cosmos_service = cosmos_service
         self.redis_service = redis_service
-        self.active_connections: dict[str, WebSocket] = {} # user_id, websocket
         self.room_connections: dict[str, set[str]] = {} # room_id, user_id
         self.pubsub = None
 
@@ -50,7 +49,13 @@ class RoomService:
             self.logger.warning(f"User '{user_id}' currently in another room")
             return ""
         
+        
         room_id = str(uuid.uuid4())
+        
+        if room_id not in self.room_connections:
+            self.room_connections[room_id] = set()
+        self.room_connections[room_id].add(user_id)
+        
         time = datetime.datetime.now(datetime.timezone.utc).isoformat()
         
         room = {
@@ -99,6 +104,10 @@ class RoomService:
             self.logger.warning(f"User '{user_id}' currently in another room, unable to join {room_id}")
             return
         
+        if room_id not in self.room_connections:
+            self.room_connections[room_id] = set()
+        self.room_connections[room_id].append(user_id)
+        
         user_list = self.get_user_list(room_id=room_id)
         
         if not user_list:
@@ -122,6 +131,7 @@ class RoomService:
         
         await self.cosmos_service.patch_item(item_id=user_id, partition_key=user_id, patch_operations=patch_operation, container_type="users")
     
+    
     async def leave_room(self, room_id: str, user_id: str):
         if not room_id:
             raise ValueError("Room ID missing on leave room")
@@ -137,6 +147,10 @@ class RoomService:
         if user_id not in self.room_connections[room_id]:
             self.logger.warning(f"User '{user_id}' not in room '{room_id}'")
             return
+        
+        self.room_connections[room_id].remove(user_id)
+        if not self.room_connections[room_id]:
+            del self.room_connections[room_id]
 
         await self.redis_service.set_remove(key=f"room:{room_id}:users", values=[user_id])
         
@@ -197,47 +211,17 @@ class RoomService:
         await self.cosmos_service.delete_item(item_id=room_id, partition_key=room_id, container_type="rooms")
         
         for user_id in self.room_connections[room_id]:
-            self.active_connections.pop(user_id)
-            
             patch_operation = [
                 {"op": "remove", "path": "/current_room"}
             ]
             
             await self.cosmos_service.patch_item(item_id=user_id, partition_key=user_id, patch_operations=patch_operation, container_type="users")
         
-        self.room_connections.pop(room_id)
+        del self.room_connections[room_id]
         
-        # TODO: Making a publish in redis into new channel for room deletions
+        # TODO: Make a publish in redis into new channel for room deletions
         
         self.logger.info(f"Successfully deleted room '{room_id}'")
-    
-    async def connect(self, websocket: WebSocket, room_id: str):
-        try:
-            await websocket.accept()
-            
-            if room_id not in self.active_connections:
-                self.active_connections[room_id] = []
-                
-            self.active_connections[room_id].append(websocket)
-        except WebSocketDisconnect:
-            self.logger.warning(f"Client disconnected before connection was established in room '{room_id}'")
-
-    def disconnect(self, websocket: WebSocket, room_id: str):
-        if room_id in self.active_connections:
-            if websocket in self.active_connections[room_id]:
-                self.active_connections[room_id].remove(websocket)
-                self.logger.info(f"Client disconnected from room '{room_id}'")
-            
-            if not self.active_connections[room_id]:
-                del self.active_connections[room_id]
-    
-    async def broadcast_to_room(self, room_id: str, game_state: dict):
-        if room_id not in self.room_connections:
-            self.logger.warning(f"Room '{room_id}' not found in active connections")
-            return
-        
-        for user_id in self.room_connections[room_id]:
-            await self.active_connections[user_id].send_text(json.dumps(game_state))
     
     async def handle_game_update(self, game_update: dict):
         room_id = game_update["room_id"]
@@ -254,6 +238,9 @@ class RoomService:
         if room_id:
             self.logger.info(f"User '{user_id}' room found in redis: {room_id}")
             return room_id
+        
+        # TODO: Get from cosmos if not found in redis
+        
         return ""
     
     async def get_user_list(self, room_id: str) -> Optional[set]:
