@@ -6,6 +6,8 @@ anyio==4.9.0
 asgiref==3.9.1
 async-timeout==5.0.1
 attrs==25.3.0
+azure-ai-agents==1.1.0
+azure-ai-projects==1.0.0
 azure-core==1.35.0
 azure-core-tracing-opentelemetry==1.0.0b12
 azure-cosmos==4.9.0
