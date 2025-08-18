@@ -7,7 +7,7 @@ from app.services.blob_service import BlobService
 from app.dependencies import get_cosmos_service, get_blob_service
 
 # temp PETER
-from app.services.ai_service import test
+from app.services.ai_service import test, thread_test
 
 router = APIRouter(
     prefix="/test",
@@ -18,6 +18,10 @@ router = APIRouter(
 @router.post("/ai/{prompt}")
 def ask_ai(prompt: str):
     return test(prompt)
+
+@router.post("/ai/thread/{prompt}")
+def ask_ai_thread(prompt: str):
+    return thread_test(prompt)
 
 @router.get("/users/{document_id}")
 async def get_user(document_id: str, cosmos_service: CosmosService = Depends(get_cosmos_service)):

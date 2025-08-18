@@ -1,11 +1,17 @@
 import os
-from openai import AzureOpenAI
+from openai import AzureOpenAI, project
 from app.config import settings
 import logging
 
-logger = logging.getLogger("CosmosService")
+from azure.ai.projects import AIProjectClient
+from azure.identity import DefaultAzureCredential
+from azure.ai.agents.models import ListSortOrder
 
+logger = logging.getLogger("AIService")
+
+# Functions
 def test(prompt="I am going to Paris, what should I see?"):
+    # AI Setup
     endpoint = settings.OPENAI_ENDPOINT
     model_name = "gpt-4o"
     deployment = "gpt-4o"
@@ -18,12 +24,11 @@ def test(prompt="I am going to Paris, what should I see?"):
         azure_endpoint=endpoint,
         api_key=subscription_key,
     )
-
     response = client.chat.completions.create(
         messages=[
             {
                 "role": "system",
-                "content": "You are an unhelpful assistant.",
+                "content": "You are a helpful assistant.",
             },
             {
                 "role": "user",
@@ -39,3 +44,34 @@ def test(prompt="I am going to Paris, what should I see?"):
     logger.info(response)
 
     return response
+
+# def thread_test(prompt):
+#     project = AIProjectClient(
+#     credential=DefaultAzureCredential(),
+#     endpoint=settings.PROJECT_ENDPOINT)
+#     logger.info(f"Initialized AIProjectClient with endpoint: {project}")
+
+#     logger.info(f"Agents from project {project.agents}")
+
+#     agent = project.agents.get_agent("asst_yvb2eyYu2hrDialX5YvjMbz6")
+
+#     thread = project.agents.threads.create()
+#     logger.info(f"Created thread, ID: {thread.id}")
+
+#     message = project.agents.messages.create(
+#         thread_id=thread.id,
+#         role="user",
+#         content=prompt
+#     )
+#     logger.info(f"Created message, ID: {message}")
+
+#     run = project.agents.runs.create_and_process(
+#         thread_id=thread.id,
+#         agent_id=agent.id)
+
+#     if run.status == "failed":
+#         return f"Run failed: {run.last_error}"
+#     else:
+#         messages = project.agents.messages.list(thread_id=thread.id, order=ListSortOrder.ASCENDING)
+#         logger.info(f"Retrieved messages for thread {thread.id}: {messages}")
+#         return messages

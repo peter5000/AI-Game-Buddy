@@ -18,6 +18,7 @@ class Settings:
     # temp PETER
     OPENAI_ENDPOINT=os.getenv("OPENAI_ENDPOINT")
     OPENAI_API_KEY=os.getenv("OPENAI_API_KEY")
+    PROJECT_ENDPOINT=os.getenv("PROJECT_ENDPOINT")
 
     # const variables
     ACCESS_TOKEN_EXPIRE_MINUTES = 30 # Token valid for 30 minutes
