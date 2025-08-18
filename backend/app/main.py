@@ -1,24 +1,23 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager
+try:
+    from azure.monitor.opentelemetry import configure_azure_monitor
+    from opentelemetry import trace, _logs
+    AZURE_AVAILABLE = True
+except ImportError:
+    AZURE_AVAILABLE = False
 
-from azure.monitor.opentelemetry import configure_azure_monitor
-from fastapi import FastAPI
-from opentelemetry import _logs, trace
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from app.routers import accounts_router, room_router, test_router, game_router
+try:
+    from app.dependencies import cosmos_service, blob_service
+    DEPS_AVAILABLE = True
+except ImportError:
+    cosmos_service = None
+    blob_service = None
+    DEPS_AVAILABLE = False
 
-from app.config import settings
-from app.dependencies import get_blob_service, get_cosmos_service, get_redis_service
-from app.routers import (
-    accounts_router,
-    game_router,
-    room_router,
-    test_router,
-    websocket_router,
-)
-from app.redis_listener import redis_listener
-
-if settings.APPLICATIONINSIGHTS_CONNECTION_STRING:
+if AZURE_AVAILABLE and settings.APPLICATIONINSIGHTS_CONNECTION_STRING:
     configure_azure_monitor()
 
 
@@ -46,12 +45,13 @@ async def lifespan(app: FastAPI):
     await get_redis_service().close()
 
     # OpenTelemetry
-    tracer_provider = trace.get_tracer_provider()
-    if hasattr(tracer_provider, "shutdown"):
-        tracer_provider.shutdown()
-    logger_provider = _logs.get_logger_provider()
-    if hasattr(logger_provider, "shutdown"):
-        logger_provider.shutdown()
+    if AZURE_AVAILABLE:
+        tracer_provider = trace.get_tracer_provider()
+        if hasattr(tracer_provider, 'shutdown'):
+            tracer_provider.shutdown()
+        logger_provider = _logs.get_logger_provider()
+        if hasattr(logger_provider, 'shutdown'):
+            logger_provider.shutdown()
 
 
 app = FastAPI(lifespan=lifespan)
