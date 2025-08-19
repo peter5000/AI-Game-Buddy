@@ -101,6 +101,9 @@ async def create_room(user_id: str = Depends(auth.get_user_id), room_service: Ro
 @router.delete("/delete_room", status_code=201)
 async def delete_room(user_id: str = Depends(auth.get_user_id), room_service: RoomService = Depends(get_room_service)):
     room_id = await room_service.get_user_room(user_id=user_id)
+    if not room_id:
+        raise HTTPException(status_code=404, detail="Room not found for user")
+    
     await room_service.delete_room(room_id=room_id)
     
     return {"message": "Room deleted successfully", "room_id": room_id}
@@ -108,5 +111,8 @@ async def delete_room(user_id: str = Depends(auth.get_user_id), room_service: Ro
 @router.get("/get_room")
 async def get_room(user_id: str = Depends(auth.get_user_id), room_service: RoomService = Depends(get_room_service)):
     room_id = await room_service.get_user_room(user_id=user_id)
+    if not room_id:
+        raise HTTPException(status_code=404, detail="Room not found for user")
+    
     room = await room_service.get_room(room_id=room_id)
     return {"room": room}
