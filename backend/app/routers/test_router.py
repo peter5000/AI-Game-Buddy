@@ -1,14 +1,11 @@
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from typing import Any, Optional
-import uuid
-
 from app import auth
 from app.services.cosmos_service import CosmosService
 from app.services.blob_service import BlobService
-from app.services.redis_service import RedisService
 from app.services.room_service import RoomService
-from app.dependencies import get_cosmos_service, get_blob_service, get_redis_service, get_room_service
+from app.dependencies import get_cosmos_service, get_blob_service, get_room_service
 
 router = APIRouter(
     prefix="/test",
@@ -96,7 +93,8 @@ async def delete_room(user_id: str = Depends(auth.get_user_id), room_service: Ro
     if not room_id:
         raise HTTPException(status_code=404, detail="Room not found for user")
     
-    await room_service.delete_room(room_id=room_id)
+    await room_service.delete_room_database(room_id=room_id)
+    room_service.delete_room_local(room_id=room_id)
     
     return {"message": "Room deleted successfully", "room_id": room_id}
 
@@ -108,3 +106,9 @@ async def get_room(user_id: str = Depends(auth.get_user_id), room_service: RoomS
     
     room = await room_service.get_room(room_id=room_id)
     return {"room": room}
+
+@router.post("/set_game_state")
+async def set_game_state(game_state: dict, user_id: str = Depends(auth.get_user_id), room_service: RoomService = Depends(get_room_service)):
+    room_id = await room_service.get_user_room(user_id=user_id)
+    if not room_id:
+        raise HTTPException(status_code=404, detail="Room not found for user")

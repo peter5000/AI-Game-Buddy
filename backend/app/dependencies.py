@@ -1,3 +1,5 @@
+from functools import lru_cache
+
 from app.services.cosmos_service import CosmosService
 from app.services.blob_service import BlobService
 from app.services.redis_service import RedisService
@@ -5,27 +7,30 @@ from app.services.user_service import UserService
 from app.services.room_service import RoomService
 from app.services.connection_service import ConnectionService
 
-cosmos_service = CosmosService()
-blob_service = BlobService()
-redis_service = RedisService()
-connection_service = ConnectionService()
-user_service = UserService(cosmos_service=cosmos_service)
-room_service = RoomService(cosmos_service=cosmos_service, redis_service=redis_service)
-
+@lru_cache
 def get_cosmos_service() -> CosmosService:
-    return cosmos_service
+    return CosmosService()
 
+@lru_cache
 def get_blob_service() -> BlobService:
-    return blob_service
+    return BlobService()
 
+@lru_cache
 def get_redis_service() -> RedisService:
-    return redis_service
+    return RedisService()
 
+@lru_cache
 def get_connection_service() -> ConnectionService:
-    return connection_service
+    return ConnectionService(redis_service=get_redis_service())
 
+@lru_cache
 def get_user_service() -> UserService:
-    return user_service
+    return UserService(cosmos_service=get_cosmos_service())
 
+@lru_cache
 def get_room_service() -> RoomService:
-    return room_service
+    return RoomService(
+        cosmos_service=get_cosmos_service(),
+        redis_service=get_redis_service(),
+        connection_service=get_connection_service()
+    )
