@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from app.config import settings
 import logging
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from azure.monitor.opentelemetry import configure_azure_monitor

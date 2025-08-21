@@ -5,10 +5,11 @@ from app import auth
 from app.services.cosmos_service import CosmosService
 from app.services.blob_service import BlobService
 from app.services.room_service import RoomService
+from app.services.room_service import RoomService
 from app.dependencies import get_cosmos_service, get_blob_service, get_room_service
 
 # temp PETER
-from app.services.ai_service import test
+from app.services.ai_service import test, get_room_service
 
 router = APIRouter(
     prefix="/test",
