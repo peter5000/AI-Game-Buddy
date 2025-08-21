@@ -33,5 +33,5 @@ class Room(BaseModel):
     creator_id: str
     game_type: str
     status: str = "waiting"
-    created_at: str
+    created_at: str = datetime.datetime.now(datetime.timezone.utc).isoformat()
     users: set[str]

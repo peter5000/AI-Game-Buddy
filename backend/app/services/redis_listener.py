@@ -2,19 +2,26 @@ import asyncio
 import json
 import logging
 
-from app.services.redis_service import RedisService
 from app.services.connection_service import ConnectionService
+from app.services.redis_service import RedisService
 
 logger = logging.getLogger(__name__)
 
-async def redis_listener(redis_service: RedisService, connection_service: ConnectionService):
+
+async def redis_listener(
+    redis_service: RedisService, connection_service: ConnectionService
+):
     pubsub = redis_service.pubsub()
     await pubsub.subscribe(connection_service.pubsub_channel)
-    logger.info(f"Redis listener has subscribed to channel {connection_service.pubsub_channel}")
-    
+    logger.info(
+        f"Redis listener has subscribed to channel {connection_service.pubsub_channel}"
+    )
+
     while True:
         try:
-            message = await pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
+            message = await pubsub.get_message(
+                ignore_subscribe_messages=True, timeout=1.0
+            )
             if message:
                 envelope = json.loads(message["data"])
                 payload_to_deliver = envelope.get("payload")

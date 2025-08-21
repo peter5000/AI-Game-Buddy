@@ -4,7 +4,6 @@ This module defines the RoomService, which is responsible for managing
 the business logic and state of game rooms.
 """
 
-import datetime
 import logging
 import uuid
 from typing import Any, Optional
@@ -14,30 +13,12 @@ from app.services.connection_service import ConnectionService
 from app.services.cosmos_service import CosmosService
 from app.services.redis_service import RedisService
 
-"""
-Function List
-- Create new room
-- List all available rooms
-- Get room by room name/id
-- Join a room
-- Leave a room
-- Delete a room
-- Check if room exists
-- Update room state
-- Depends on game service to get game state of the room
-- Depends on chat service to chat between user and ai agent
-- Handles list of users in room to connect with
-- Network connection between users with websockets
-- Gets game state from game service then sends to users in the room
-- Receive move from users
-- Sends move to game service
-"""
-
 
 class RoomService:
     """Manages the business logic and real-time state of game rooms.
 
     Attributes:
+        logger (logging.Logger): Logger instance for service operations.
         cosmos_service (CosmosService): Service for persistent database storage.
         redis_service (RedisService): Service for caching and fast in-memory operations.
         connection_service (ConnectionService): Service for broadcasting WebSocket messages.
@@ -92,21 +73,18 @@ class RoomService:
             self.room_connections[room_id] = set()
         self.room_connections[room_id].add(user_id)
 
-        time = datetime.datetime.now(datetime.timezone.utc).isoformat()
-
         room = Room(
             id=room_id,
             room_id=room_id,
             name=room_name,
             creator_id=user_id,
             game_type=game_type,
-            created_at=time,
-            users={user_id}
+            users={user_id},
         )
-    
+
         cosmos_room = room.model_dump(mode="json")
         redis_room = room.model_dump(exclude={"users"})
-        
+
         # Write new room into redis
         await self.redis_service.dict_add(key=f"room:{room_id}", mapping=redis_room)
         await self.redis_service.expire(f"room:{room_id}", 86400)
