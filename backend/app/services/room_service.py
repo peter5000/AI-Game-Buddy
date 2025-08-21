@@ -1,14 +1,20 @@
-import logging
-from fastapi.responses import HTMLResponse
-import uuid
-import json
-import datetime
-from typing import Optional, Any
+"""app/services/room_service.py
 
+This module defines the RoomService, which is responsible for managing
+the business logic and state of game rooms.
+"""
+
+import datetime
+import logging
+import uuid
+from typing import Any, Optional
+
+from app.schemas import Room
+from app.services.connection_service import ConnectionService
 from app.services.cosmos_service import CosmosService
 from app.services.redis_service import RedisService
 
-'''
+"""
 Function List
 - Create new room
 - List all available rooms
@@ -25,295 +31,509 @@ Function List
 - Gets game state from game service then sends to users in the room
 - Receive move from users
 - Sends move to game service
-'''
+"""
+
 
 class RoomService:
-    def __init__(self, cosmos_service: CosmosService, redis_service: RedisService):
+    """Manages the business logic and real-time state of game rooms.
+
+    Attributes:
+        cosmos_service (CosmosService): Service for persistent database storage.
+        redis_service (RedisService): Service for caching and fast in-memory operations.
+        connection_service (ConnectionService): Service for broadcasting WebSocket messages.
+        room_connections (dict[str, set[str]]): An in-memory mapping of room IDs to a set of currently connected user IDs.
+    """
+
+    def __init__(
+        self,
+        cosmos_service: CosmosService,
+        redis_service: RedisService,
+        connection_service: ConnectionService,
+    ):
+        """Initializes the room service with it's dependencies.
+
+        Args:
+            cosmos_service (CosmosService): The service for interacting with Cosmos DB.
+            redis_service (RedisService): The service for interacting with Redis.
+            connection_manager (ConnectionManager): The service for managing websocket connections and broadcasting events.
+        """
         self.logger = logging.getLogger(__name__)
         self.cosmos_service = cosmos_service
         self.redis_service = redis_service
-        self.room_connections: dict[str, set[str]] = {} # room_id, user_id
-        self.pubsub = None
+        self.connection_service = connection_service
+        self.room_connections: dict[str, set[str]] = {}  # room_id -> user_id
 
-    async def initialize(self):
-        self.pubsub = self.redis_service.subscribe_to_channel("game_update", self.handle_game_update)
-    
     async def create_room(self, room_name: str, game_type: str, user_id: str) -> str:
+        """Creates a room and stores inside redis and cosmos.
+
+        Args:
+            room_name (str): The name of the room.
+            game_type (str): The type of game room is hosting.
+            user_id (str): The user creating the room.
+
+        Raises:
+            ValueError: If the user ID or game type is missing.
+
+        Returns:
+            str: The room ID of the room.
+        """
         if not game_type:
             raise ValueError("Game type missing on room creation")
         if not user_id:
             raise ValueError("User ID missing on room creation")
-        
+
         if await self.get_user_room(user_id=user_id):
             self.logger.warning(f"User '{user_id}' currently in another room")
             return ""
-        
-        
+
         room_id = str(uuid.uuid4())
-        
+
         if room_id not in self.room_connections:
             self.room_connections[room_id] = set()
         self.room_connections[room_id].add(user_id)
-        
+
         time = datetime.datetime.now(datetime.timezone.utc).isoformat()
-        
-        room = {
-            "id": room_id,
-            "room_id": room_id,
-            "name": room_name,
-            "creator_id": user_id,
-            "game_type": game_type,
-            "status": "waiting",
-            "created_at": time
-        }
-        users: set[str] = [user_id]
+
+        room = Room(
+            id=room_id,
+            room_id=room_id,
+            name=room_name,
+            creator_id=user_id,
+            game_type=game_type,
+            created_at=time,
+            users={user_id}
+        )
+    
+        cosmos_room = room.model_dump(mode="json")
+        redis_room = room.model_dump(exclude={"users"})
         
         # Write new room into redis
-        await self.redis_service.dict_add(key=f"room:{room_id}", mapping=room)
+        await self.redis_service.dict_add(key=f"room:{room_id}", mapping=redis_room)
         await self.redis_service.expire(f"room:{room_id}", 86400)
-        
-        await self.redis_service.set_add(key=f"room:{room_id}:users", values=users)
+
+        await self.redis_service.set_add(key=f"room:{room_id}:users", values=room.users)
         await self.redis_service.expire(f"room:{room_id}:users", 86400)
-        
+
         # Write user into new room
-        await self.redis_service.set_value(key=f"user:{user_id}", value=room_id)
-        
-        # Add users set into json object
-        room["users"] = users
-        
+        await self.redis_service.set_value(key=f"user:{user_id}:room", value=room_id)
+
+        # # Add users set into json object
+        # room["users"] = users
+
         # Write new room into cosmos
-        await self.cosmos_service.add_item(item=room, container_type="rooms")
-        
+        await self.cosmos_service.add_item(item=cosmos_room, container_type="rooms")
+
         # Add current room to user information
-        patch_operation = [
-            {"op": "add", "path": "/current_room", "value": room_id}
-        ]
-        
-        await self.cosmos_service.patch_item(item_id=user_id, partition_key=user_id, patch_operations=patch_operation, container_type="users")
-        
+        patch_operation = [{"op": "add", "path": "/room", "value": room_id}]
+
+        await self.cosmos_service.patch_item(
+            item_id=user_id,
+            partition_key=user_id,
+            patch_operations=patch_operation,
+            container_type="users",
+        )
+
         return room_id
-    
+
     async def join_room(self, room_id: str, user_id: str):
+        """Joins a room.
+
+        Args:
+            room_id (str): The room ID of the room to join.
+            user_id (str): The user ID of the user joining.
+
+        Raises:
+            ValueError: If the room ID, user ID or user list of room is missing.
+        """
         if not room_id:
             raise ValueError("Room ID missing on join room")
         if not user_id:
             raise ValueError("User ID missing on join room")
-        
+
         if self.get_user_room(user_id=user_id):
-            self.logger.warning(f"User '{user_id}' currently in another room, unable to join {room_id}")
+            self.logger.warning(
+                f"User '{user_id}' currently in another room, unable to join {room_id}"
+            )
             return
-        
+
         if room_id not in self.room_connections:
             self.room_connections[room_id] = set()
-        self.room_connections[room_id].append(user_id)
-        
-        user_list = self.get_user_list(room_id=room_id)
-        
-        if not user_list:
+        self.room_connections[room_id].add(user_id)
+
+        user_list = await self.get_user_list(room_id=room_id)
+
+        if user_list is None:
             self.logger.error("User list not found in redis and cosmos")
             raise ValueError("User list missing in redis and cosmos")
 
         await self.redis_service.set_add(key=f"room:{room_id}:users", values=[user_id])
-        await self.redis_service.set_value(key=f"user:{user_id}", value=room_id)
-        
+        await self.redis_service.set_value(key=f"user:{user_id}:room", value=room_id)
+
         # Add user to room list
-        patch_operation = [
-            {"op": "add", "path": "/users", "value": user_id}
-        ]
-        
-        await self.cosmos_service.patch_item(item_id=room_id, partition_key=room_id, patch_operations=patch_operation, container_type="rooms")
-        
+        patch_operation = [{"op": "add", "path": "/users", "value": user_id}]
+
+        await self.cosmos_service.patch_item(
+            item_id=room_id,
+            partition_key=room_id,
+            patch_operations=patch_operation,
+            container_type="rooms",
+        )
+
         # Add current room to user information
-        patch_operation = [
-            {"op": "add", "path": "/current_room", "value": room_id}
-        ]
-        
-        await self.cosmos_service.patch_item(item_id=user_id, partition_key=user_id, patch_operations=patch_operation, container_type="users")
-    
-    
+        patch_operation = [{"op": "add", "path": "/room", "value": room_id}]
+
+        await self.cosmos_service.patch_item(
+            item_id=user_id,
+            partition_key=user_id,
+            patch_operations=patch_operation,
+            container_type="users",
+        )
+
     async def leave_room(self, room_id: str, user_id: str):
+        """Leaves a room.
+
+        Args:
+            room_id (str): The room ID of the room to leave.
+            user_id (str): The user ID of the user leaving the room.
+
+        Raises:
+            ValueError: If the room ID or user ID is missing.
+        """
         if not room_id:
             raise ValueError("Room ID missing on leave room")
         if not user_id:
             raise ValueError("User ID missing on leave room")
-        
+
         room = await self.get_room(room_id=room_id)
-        
-        if not room:
-            self.logger.warning(f"Room '{room_id}' not found when leaving for user '{user_id}'")
+
+        if room is None:
+            self.logger.warning(
+                f"Room '{room_id}' not found when leaving for user '{user_id}'"
+            )
             return
-        
+
         if user_id not in self.room_connections[room_id]:
             self.logger.warning(f"User '{user_id}' not in room '{room_id}'")
             return
-        
+
         self.room_connections[room_id].remove(user_id)
         if not self.room_connections[room_id]:
             del self.room_connections[room_id]
 
-        await self.redis_service.set_remove(key=f"room:{room_id}:users", values=[user_id])
-        
+        await self.redis_service.set_remove(
+            key=f"room:{room_id}:users", values=[user_id]
+        )
+
         try:
-            item = await self.cosmos_service.get_item(item=room_id, partition_key=room_id)
-            user_list = item.get('users', [])
-            
+            item = await self.cosmos_service.get_item(
+                item=room_id, partition_key=room_id
+            )
+            user_list = item.get("users", [])
+
             if user_list:
                 index_to_remove = user_list.index(user_id)
-                
+
                 patch_operation = [
                     {"op": "remove", "path": f"/users/{index_to_remove}"}
                 ]
-                
-                await self.cosmos_service.patch_item(item_id=room_id, partition_key=room_id, patch_operations=patch_operation, container_type="rooms")
-            
+
+                await self.cosmos_service.patch_item(
+                    item_id=room_id,
+                    partition_key=room_id,
+                    patch_operations=patch_operation,
+                    container_type="rooms",
+                )
+
             self.logger.warning(f"User list not found in cosmos for room '{room_id}'")
         except ValueError:
-            self.logger.warning(f"Tag '{room_id}' not found in the list, no changes made.")
+            self.logger.warning(
+                f"Tag '{room_id}' not found in the list, no changes made."
+            )
         except Exception as e:
             self.logger.error(f"An error occurred: {e}")
-        
-        patch_operation = [
-            {"op": "remove", "path": "/current_room"}
-        ]
-        
-        await self.cosmos_service.patch_item(item_id=user_id, partition_key=user_id, patch_operations=patch_operation, container_type="users")
-        
+
+        patch_operation = [{"op": "remove", "path": "/room"}]
+
+        await self.cosmos_service.patch_item(
+            item_id=user_id,
+            partition_key=user_id,
+            patch_operations=patch_operation,
+            container_type="users",
+        )
+
     async def get_room(self, room_id: str) -> Optional[dict]:
+        """Gets room data from database.
+
+        Args:
+            room_id (str): The room ID of the room to get.
+
+        Returns:
+            Optional[dict]: The room data of the room.
+        """
         room_data = await self.redis_service.dict_get_all(key=f"room:{room_id}")
-        if room_data:
+        if room_data is not None:
             user_data = await self.redis_service.set_get(key=f"room:{room_id}:users")
             room_object = room_data.copy()
             room_object["users"] = list(user_data)
             return room_object
-        
+
         self.logger.warning("Room not found in redis, checking database")
-        
-        room_data = await self.cosmos_service.get_item(item_id=room_id, partition_key=room_id, container_type="rooms")
-        
-        if room_data:
+
+        room_data = await self.cosmos_service.get_item(
+            item_id=room_id, partition_key=room_id, container_type="rooms"
+        )
+
+        if room_data is not None:
             room_object = room_data.copy()
             self.logger.info(f"Restoring room '{room_id}' to redis")
-            user_data = room_data.pop('users')
+            user_data = room_data.pop("users")
             await self.redis_service.dict_add(key=f"room:{room_id}", mapping=room_data)
-            await self.redis_service.set_add(key=f"room:{room_id}:users", values=user_data)
+            await self.redis_service.set_add(
+                key=f"room:{room_id}:users", values=user_data
+            )
             return room_object
-    
+
         self.logger.error(f"Room '{room_id}' not found in redis or database")
         return None
-    
-    async def delete_room(self, room_id: str):
+
+    async def delete_room_database(self, room_id: str):
+        """Deletes all room information from the redis and cosmos database.
+
+        Args:
+            room_id (str): The room ID of the room to delete.
+
+        Raises:
+            ValueError: If the room ID is missing.
+        """
         if not room_id:
             raise ValueError("Room ID missing on room deletion")
-        
-        await self.redis_service.delete_room(room_id=room_id)
-        
-        await self.cosmos_service.delete_item(item_id=room_id, partition_key=room_id, container_type="rooms")
-        
-        for user_id in self.room_connections[room_id]:
-            patch_operation = [
-                {"op": "remove", "path": "/current_room"}
-            ]
-            
-            await self.cosmos_service.patch_item(item_id=user_id, partition_key=user_id, patch_operations=patch_operation, container_type="users")
-        
-        del self.room_connections[room_id]
-        
-        # TODO: Make a publish in redis into new channel for room deletions
-        
-        self.logger.info(f"Successfully deleted room '{room_id}'")
-    
+
+        room_key = f"room:{room_id}"
+
+        keys_to_delete: list[str] = [room_key]
+        user_list = await self.get_user_list(room_id=room_id)
+
+        # Getting all keys for user room in redis
+        for user_id in user_list:
+            keys_to_delete.append(f"user:{user_id}:room")
+
+        # Get all room keys in redis
+        keys_to_delete += await self.redis_service.scan_keys(key=room_key)
+
+        # Deleting all keys in redis
+        await self.redis_service.delete_keys(keys=keys_to_delete)
+
+        # Deleting room in cosmos
+        await self.cosmos_service.delete_item(
+            item_id=room_id, partition_key=room_id, container_type="rooms"
+        )
+
+        # Deleting room from user information in cosmos
+        for user_id in user_list:
+            patch_operation = [{"op": "remove", "path": "/room"}]
+
+            await self.cosmos_service.patch_item(
+                item_id=user_id,
+                partition_key=user_id,
+                patch_operations=patch_operation,
+                container_type="users",
+            )
+
+        # TODO: Make a publish in redis into room_update channel for room deletions locally
+
+        self.logger.info(f"Successfully deleted room '{room_id}' in database")
+
+    def delete_room_local(self, room_id: str):
+        """Deletes room from room collection in local server
+
+        Args:
+            room_id (str): The room ID of the room to delete.
+        """
+        if room_id in self.room_connections:
+            del self.room_connections[room_id]
+
     async def set_game_state(self, room_id: str, game_state: dict):
+        """Sets the game state in redis and cosmos database.
+
+        Args:
+            room_id (str): The room ID of the room to set the game state of.
+            game_state (dict): The game state to set.
+
+        Raises:
+            ValueError: If the room ID is missing.
+        """
         if not room_id:
             raise ValueError("Room ID missing on setting game state")
-        
-        await self.redis_service.dict_add(key=f"room:{room_id}:state", mapping=game_state)
+
+        await self.redis_service.dict_add(
+            key=f"room:{room_id}:state", mapping=game_state
+        )
         await self.redis_service.expire(f"room:{room_id}:state", 86400)
-        
-        patch_operation = [
-            {"op": "add", "path": "/game_state", "value": game_state}
-        ]
-        
-        await self.cosmos_service.patch_item(item_id=room_id, partition_key=room_id, patch_operations=patch_operation, container_type="rooms")
-        
-    
+
+        patch_operation = [{"op": "add", "path": "/game_state", "value": game_state}]
+
+        await self.cosmos_service.patch_item(
+            item_id=room_id,
+            partition_key=room_id,
+            patch_operations=patch_operation,
+            container_type="rooms",
+        )
+
     async def get_game_state(self, room_id: str) -> Optional[dict]:
+        """Gets the game state from redis or cosmos database.
+
+        Args:
+            room_id (str): The room ID of the room to get the game state of.
+
+        Raises:
+            ValueError: If the room ID is missing.
+
+        Returns:
+            Optional[dict]: The game state of the room.
+        """
         if not room_id:
             raise ValueError("Room ID missing on getting game state")
 
         game_state = await self.redis_service.dict_get_all(key=f"room:{room_id}:state")
-        if game_state:
+        if game_state is not None:
             return game_state
-        
+
         self.logger.warning("Game state not found in redis, checking cosmos")
-        room_data = await self.cosmos_service.get_item(item_id=room_id, partition_key=room_id, container_type="rooms")
-        
-        if room_data:
+        room_data = await self.cosmos_service.get_item(
+            item_id=room_id, partition_key=room_id, container_type="rooms"
+        )
+
+        if room_data is not None:
             game_state = room_data.get("game_state")
-            
-            if game_state:
+
+            if game_state is not None:
                 self.logger.info("Game state found in cosmos, adding into redis")
-                await self.redis_service.dict_add(key=f"room:{room_id}:state", mapping=game_state)
+                await self.redis_service.dict_add(
+                    key=f"room:{room_id}:state", mapping=game_state
+                )
                 return game_state
-        
-        self.logger.warning(f"Game state not found in both redis and cosmos for room '{room_id}'")
+
+        self.logger.warning(
+            f"Game state not found in both redis and cosmos for room '{room_id}'"
+        )
         return None
-    
-    # TODO    
-    async def handle_game_update(self, game_update: dict):
-        room_id = game_update["room_id"]
-        game_state = game_update["game_state"]
-        
-        if room_id and game_state:
-            await self.broadcast_to_room(room_id, game_state)
-        
+
+    async def send_game_state(self, room_id: str, game_state: Optional[dict]):
+        """Sends the game state to all local user connections.
+
+        Args:
+            room_id (str): The room ID of the room to send the game state to.
+            game_state (Optional[dict]): The game state to send to the users in the room.
+
+        Raises:
+            ValueError: If the room ID or game state is missing.
+        """
+        if not room_id:
+            raise ValueError("Room ID missing on sending game state")
+
+        room_list = self.room_connections[room_id]
+        if room_list is None:
+            self.logger.warning(f"Room '{room_id}' not found in room connections")
+            return
+
+        if game_state is None:
+            game_state = await self.get_game_state(room_id=room_id)
+            if game_state is None:
+                raise ValueError(
+                    f"Game state missing and not not found in database for room '{room_id}'"
+                )
+
+        self.logger.info(f"Sending game state to room '{room_id}'")
+        await self.connection_service.broadcast(message=game_state, room_list=room_list)
 
     async def get_user_room(self, user_id: str) -> Optional[str]:
+        """Gets the room ID of the room that the user is in.
+
+        Args:
+            user_id (str): The user ID of the user to get the room of.
+
+        Raises:
+            ValueError: If the user ID is missing.
+
+        Returns:
+            Optional[str]: The room ID of the user.
+        """
         if not user_id:
             raise ValueError("User ID cannot be empty")
-        
-        room_id = await self.redis_service.get_value(key=f"user:{user_id}")
+
+        room_id = await self.redis_service.get_value(key=f"user:{user_id}:room")
         if room_id:
             self.logger.info(f"User '{user_id}' room found in redis: {room_id}")
             return room_id
-        
+
         self.logger.warning("User room not found in redis, checking cosmos")
-        user_data = await self.cosmos_service.get_item(item_id=user_id, partition_key=user_id, container_type="users")
-        
+        user_data = await self.cosmos_service.get_item(
+            item_id=user_id, partition_key=user_id, container_type="users"
+        )
+
         if user_data:
-            room_id = user_data.get("current_room")
-            
+            room_id = user_data.get("room")
+
             if room_id:
                 self.logger.info("User room found in cosmos, adding into redis")
-                await self.redis_service.set_value(key=f"user:{room_id}:state", value=room_id)
+                await self.redis_service.set_value(
+                    key=f"user:{room_id}:state", value=room_id
+                )
                 return room_id
-        
-        self.logger.warning(f"User room not found in both redis and cosmos for user '{user_id}'")
+
+        self.logger.warning(
+            f"User room not found in both redis and cosmos for user '{user_id}'"
+        )
         return None
-    
+
     async def get_user_list(self, room_id: str) -> Optional[set]:
+        """Gets the list of users in the room.
+
+        Args:
+            room_id (str): The room ID of the room to get the list of users of.
+
+        Raises:
+            ValueError: If the room ID is missing.
+
+        Returns:
+            Optional[set]: The list of users in the room.
+        """
         if not room_id:
             raise ValueError("Room ID missing on getting user list")
-        
+
         user_list = await self.redis_service.set_get(key=f"room:{room_id}:users")
-        
-        if user_list:
+
+        if user_list is not None:
             return user_list
-        
+
         self.logger.warning("User list not found in redis, checking cosmos")
-        room_data = await self.cosmos_service.get_item(item_id=room_id, partition_key=room_id, container_type="rooms")
-        
-        if room_data:
+        room_data = await self.cosmos_service.get_item(
+            item_id=room_id, partition_key=room_id, container_type="rooms"
+        )
+
+        if room_data is not None:
             user_list = room_data.get("users")
-        
-            if user_list:        
+
+            if user_list is not None:
                 self.logger.info("User list found in cosmos, adding into redis")
-                await self.redis_service.set_add(key=f"room:{room_id}:users", values=user_list)
+                await self.redis_service.set_add(
+                    key=f"room:{room_id}:users", values=user_list
+                )
                 return user_list
-        
-        self.logger.warning(f"User list not found in both redis and cosmos for room '{room_id}'")
+
+        self.logger.warning(
+            f"User list not found in both redis and cosmos for room '{room_id}'"
+        )
         return None
-    
+
     async def get_all_rooms(self) -> list[dict[str, Any]]:
+        """Gets all the rooms from the cosmos database.
+
+        Returns:
+            list[dict[str, Any]]: The list of all the rooms.
+        """
         query = "SELECT * FROM c"
-        room_list = await self.cosmos_service.get_items_by_query(query=query, container_type="rooms")
+        room_list = await self.cosmos_service.get_items_by_query(
+            query=query, container_type="rooms"
+        )
         return room_list

@@ -1,96 +1,57 @@
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends, Cookie, HTTPException, status
+from fastapi import APIRouter, WebSocket
 from starlette.endpoints import WebSocketEndpoint
-from typing import Annotated, Optional
-import json
+from pydantic import ValidationError
 import logging
-import asyncio
 
-from app.services.room_service import RoomService
 from app.services.connection_service import ConnectionService
 from app.dependencies import get_room_service, get_connection_service
 
 from app import auth
 
-router = APIRouter()
+router = APIRouter(tags=["Websocket"])
 logger = logging.getLogger(__name__)
 
-@router.websocket_route("/ws/{room_id}")
-class RoomEndpoint(WebSocketEndpoint):
+@router.websocket_route("/ws")
+class ConnectionEndpoint(WebSocketEndpoint):
     encoding = "json"
     
     async def on_connect(self, websocket: WebSocket):
         await websocket.accept()
         
         try:
-            self.room_id = websocket.path_params['room_id']
-            self.room_service: RoomService = get_room_service()
             self.connection_service: ConnectionService = get_connection_service()
-            
-            # TODO: Add chat service
-            
             self.user_id = await auth.get_user_id()
+            self.room_service = get_room_service()
+            # self.game_service = get_game_service()
+            # self.chat_service = get_chat_service()
             
-            room_list = await self.room_service.get_user_list(room_id=self.room_id)
-            if not room_list:
-                await websocket.close(code=1008, reason="Room not found")
-                return
-            
-            if self.user_id not in room_list:
-                logger.warning(f"User '{self.user_id}' not found in room '{self.room_id}' when connecting through websocket endpoint")
-                await websocket.close(code=1008, reason=f"User not in room '{self.room_id}'")
-                return
-            
-            await self.connection_service.connect(websocket=websocket, room_id=self.room_id, user_id=self.user_id)
-            logger.info(f"User '{self.user_id}' connected to room '{self.room_id}'")
-            
-            
-            
-        except WebSocketDisconnect:
-             logger.warning(f"Auth failed for websocket connection to room '{self.room_id}'")
+            await self.connection_service.connect(websocket=websocket, user_id=self.user_id)
+            logger.info(f"User '{self.user_id}' connected to websocket endpoint")
         except Exception as e:
-            logger.error(f"Failed to connect to room '{self.room_id}': {e}")
-            await websocket.close(code=1011, reason="Internal server error during connection")
+            logger.error(f"WebSocket connection failed: {e}")
     
-    async def on_receive(self, websocket, data):
-        return await super().on_receive(websocket, data)
-    
-    async def on_disconnect(self, websocket, close_code):
-        return await super().on_disconnect(websocket, close_code)
-
-        
-
-# Call endpoint in frontend to create a websocket connection
-@router.websocket("/ws/{room_id}")
-async def websocket_endpoint(websocket: WebSocket, room_id: str, user_id: str = Depends(auth.get_user_id), room_service: RoomService = Depends(get_room_service)):
-    try:
-        room_list = room_service.get_user_list(room_id=room_id)
-        if not room_list:
-            await websocket.close(code=1008, reason="Room not found")
-            return
-        
-        if user_id not in room_list:
-            logger.warning(f"User '{user_id}' not found in room '{room_id}' when connecting through websocket endpoint")
-            await websocket.close(code=1008, reason=f"User not in room '{room_id}'")
-            return
-        
-    except Exception as e:
-        logger.error(f"Room validation error: {e}")
-        await websocket.close(code=1008, reason="Room validation failed")
-        return
-    
-    try:
-        await room_service.connect(websocket, room_id, user_id)
-        
-        # Message processing loop
+    async def on_receive(self, websocket: WebSocket, data: dict):
         try:
-            while True:
-                try:
-                    payload = await asyncio.wait_for(websocket.receive_text)
-                    
-                except Exception as e:
-                    return
+            message_type = data.get("type")
+            payload = data.get("payload", {})
+            
+            if message_type == "game_action":
+                room_id = data.get("room_id")
+                if room_id:
+                    game_state = await self.room_service.get_game_state(room_id=room_id)
+                    await self.game_service.process_action(game_state=game_state, action=payload)
+            # elif message_type == "chat_message":
+            #     room_id = data.get("room_id")
+                # send_message, { types, room_id, message },
+                # Redis Pub/Sub -> channel chat messages -> publish chat message into room -> all servers broadcast into room to each user -> chat updates in frontend 
+        except ValidationError as e:
+            logger.error(f"Invalid message format from '{self.user_id}': {e}")
+            await websocket.send_json({"error": "Invalid message format", "details": e.errors()})
         except Exception as e:
-            return
-    except Exception as e:
-        return
-
+            logger.error(f"Error processing message from '{self.user_id}': {e}")
+            await websocket.send_json({"error": "Failed to process message."})
+    
+    async def on_disconnect(self, websocket: WebSocket, close_code: int):
+        if hasattr(self, "user_id"):
+            self.connection_service.disconnect(user_id=self.user_id)
+            logger.info(f"User '{self.user_id}' disconnected from websocket endpoint: {close_code}")
