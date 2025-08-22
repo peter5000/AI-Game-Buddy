@@ -8,7 +8,7 @@ import logging
 import uuid
 from typing import Any, Optional
 
-from app.schemas import Room
+from app.schemas import BroadcastPayload, Room
 from app.services.connection_service import ConnectionService
 from app.services.cosmos_service import CosmosService
 from app.services.redis_service import RedisService
@@ -422,7 +422,9 @@ class RoomService:
                 )
 
         self.logger.info(f"Sending game state to room '{room_id}'")
-        await self.connection_service.broadcast(message=game_state, room_list=room_list)
+
+        payload = BroadcastPayload(user_list=room_list, message=game_state)
+        await self.connection_service.broadcast(payload=payload)
 
     async def get_user_room(self, user_id: str) -> Optional[str]:
         """Gets the room ID of the room that the user is in.

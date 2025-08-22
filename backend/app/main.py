@@ -1,19 +1,22 @@
-from fastapi import FastAPI
-from app.config import settings
+import asyncio
 import logging
 from contextlib import asynccontextmanager
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
-from azure.monitor.opentelemetry import configure_azure_monitor
-from opentelemetry import trace, _logs
 
+from azure.monitor.opentelemetry import configure_azure_monitor
+from fastapi import FastAPI
+from opentelemetry import _logs, trace
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+
+from app.config import settings
+from app.dependencies import get_blob_service, get_cosmos_service, get_redis_service
 from app.routers import (
     accounts_router,
+    game_router,
     room_router,
     test_router,
-    game_router,
     websocket_router,
 )
-from app.dependencies import get_cosmos_service, get_blob_service, get_redis_service
+from app.services.redis_listener import redis_listener
 
 if settings.APPLICATIONINSIGHTS_CONNECTION_STRING:
     configure_azure_monitor()
@@ -22,14 +25,25 @@ if settings.APPLICATIONINSIGHTS_CONNECTION_STRING:
 # Shutdown
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """
+    Handles application startup and shutdown events.
+    """
+    # Start the Redis subscribe method as a background task
+    subscribe_task = asyncio.create_task(redis_listener())
+    
     yield
-    # Azure Clients
-    if get_blob_service():
-        await get_blob_service().close()
-    if get_cosmos_service():
-        await get_cosmos_service().close()
-    if get_redis_service():
-        await get_redis_service().close()
+    
+    subscribe_task.cancel()
+    try:
+        await subscribe_task
+    except asyncio.CancelledError:
+        pass
+    
+    # Database/Storage Clients
+    await get_blob_service().close()
+    await get_cosmos_service().close()
+    await get_redis_service().close()
+        
     # OpenTelemetry
     tracer_provider = trace.get_tracer_provider()
     if hasattr(tracer_provider, "shutdown"):

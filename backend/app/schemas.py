@@ -1,4 +1,5 @@
 import datetime
+from typing import Any
 
 from pydantic import BaseModel, EmailStr, Field, SecretStr
 
@@ -35,3 +36,18 @@ class Room(BaseModel):
     status: str = "waiting"
     created_at: str = datetime.datetime.now(datetime.timezone.utc).isoformat()
     users: set[str]
+
+
+class BroadcastPayload(BaseModel):
+    user_list: set[str]
+    message: dict[str, Any]
+
+
+class PubSubMessage(BaseModel):
+    channel: str
+    payload: BroadcastPayload
+
+
+class GameUpdate(BaseModel):
+    room_id: str
+    game_state: dict

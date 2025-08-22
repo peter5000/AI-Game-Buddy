@@ -1,8 +1,9 @@
-import json
 import logging
 
 from fastapi import WebSocket
+from pydantic import validate_call
 
+from app.schemas import BroadcastPayload, PubSubMessage
 from app.services.redis_service import RedisService
 
 
@@ -29,19 +30,19 @@ class ConnectionService:
     async def publish_event(
         self, channel: str, user_list: set[str], message_data: dict
     ):
-        message = {
-            "channel": channel,
-            "payload": {"user_list": user_list, "message": message_data},
-        }
+        payload = BroadcastPayload(user_list=user_list, message=message_data)
+        message = PubSubMessage(channel=channel, payload=payload)
+        message_dict = message.model_dump(message)
 
         await self.redis_service.publish_message(
-            channel=self.pubsub_channel, message=json.dumps(message)
+            channel=self.pubsub_channel, message=message_dict
         )
         self.logger.info(f"Published message to channel {channel}: {message_data}")
 
-    async def broadcast(self, payload: dict):
-        message = payload.get("message")
-        user_list = payload.get("user_list", [])
+    @validate_call # validate payload
+    async def broadcast(self, payload: BroadcastPayload):
+        message = payload.message
+        user_list = payload.user_list
 
         for user_id in user_list:
             await self.send_message(message=message, user_id=user_id)

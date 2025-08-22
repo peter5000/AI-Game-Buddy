@@ -14,6 +14,7 @@ from starlette.endpoints import WebSocketEndpoint
 
 from app import auth
 from app.dependencies import get_connection_service, get_room_service
+from app.schemas import GameUpdate
 from app.services.connection_service import ConnectionService
 
 router = APIRouter(tags=["Websocket"])
@@ -109,9 +110,28 @@ class ConnectionEndpoint(WebSocketEndpoint):
             if message_type == "game_action":
                 room_id = data.get("room_id")
                 if room_id:
+                    # Get current game state in database
                     game_state = await self.room_service.get_game_state(room_id=room_id)
-                    await self.game_service.process_action(
+                    
+                    # Make action given from user to current game state
+                    new_game_state = await self.game_service.make_action(
                         game_state=game_state, action=payload
+                    )
+                    
+                    # Set new game state after action is processed
+                    await self.room_service.set_game_state(
+                        room_id=room_id, game_state=new_game_state
+                    )
+                    
+                    user_list = await self.room_service.get_user_list(room_id=room_id)
+                    game_update = GameUpdate(
+                        room_id=room_id,
+                        game_state=new_game_state,
+                    )
+                    self.connection_service.publish_event(
+                        channel="game_update",
+                        user_list=user_list,
+                        message_data=game_update,
                     )
             # elif message_type == "chat_message":
             #     room_id = data.get("room_id")

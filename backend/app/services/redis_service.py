@@ -9,7 +9,7 @@ All operations are asynchronous and include proper error handling and logging.
 import asyncio
 import json
 import logging
-from typing import Any, Callable, Optional
+from typing import Any, Optional
 
 import redis.asyncio as aioredis
 from redis.exceptions import ConnectionError, RedisError
@@ -62,7 +62,7 @@ class RedisService:
         if self.r:
             await self.r.close()
 
-    async def subscribe(self, channel_name: str, callback: Callable):
+    async def subscribe(self, channel_name: str):
         """Subscribe to a Redis channel and handle incoming messages.
 
         Args:
@@ -79,19 +79,6 @@ class RedisService:
         try:
             await self.pubsub_client.subscribe(channel_name)
             self.logger.info(f"Subscribed to Redis channel '{channel_name}'")
-
-            while True:
-                message = await self.pubsub_client.get_message(
-                    ignore_subscribe_messages=True, timeout=1.0
-                )
-                if message:
-                    try:
-                        data = json.loads(message["data"])
-                        await callback(data)
-                    except json.JSONDecodeError:
-                        self.logger.warning(
-                            f"Received non-JSON message on channel '{channel_name}': {message['data']}"
-                        )
         except asyncio.CancelledError:
             self.logger.info(f"Subscription to '{channel_name}' is being cancelled.")
         except RedisError as e:
