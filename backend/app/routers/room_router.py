@@ -1,8 +1,8 @@
 from fastapi import APIRouter
-from app.services import room_service
+from app.services.room_service import RoomService
 
 router = APIRouter(
-    prefix="/rooms",
+    prefix="/room",
     tags=["Rooms"]
 )
 

@@ -16,7 +16,7 @@ from app.routers import (
     test_router,
     websocket_router,
 )
-from app.services.redis_listener import redis_listener
+from app.redis_listener import redis_listener
 
 if settings.APPLICATIONINSIGHTS_CONNECTION_STRING:
     configure_azure_monitor()
@@ -28,22 +28,23 @@ async def lifespan(app: FastAPI):
     """
     Handles application startup and shutdown events.
     """
+    # Start up
     # Start the Redis subscribe method as a background task
     subscribe_task = asyncio.create_task(redis_listener())
-    
+
     yield
-    
+    # Shutdown
     subscribe_task.cancel()
     try:
         await subscribe_task
     except asyncio.CancelledError:
         pass
-    
+
     # Database/Storage Clients
     await get_blob_service().close()
     await get_cosmos_service().close()
     await get_redis_service().close()
-        
+
     # OpenTelemetry
     tracer_provider = trace.get_tracer_provider()
     if hasattr(tracer_provider, "shutdown"):
