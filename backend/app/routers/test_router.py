@@ -19,6 +19,21 @@ router = APIRouter(
 def ask_ai(prompt: str):
     return test(prompt)
 
+# @router.get("/games")
+# async def get_games(cosmos_service: CosmosService = Depends(get_cosmos_service)):
+#     items = await cosmos_service.get_items_by_query(
+#         query="SELECT * FROM c WHERE c.type = 'game'",
+#         container_type="games"
+#     )
+#     if not items:
+#         raise HTTPException(status_code=404, detail="No games found")
+#     return items
+
+# @router.post("/games", status_code=201)
+# async def create_game(game_data: Dict[str, Any], cosmos_service: CosmosService = Depends(get_cosmos_service)):
+#     await cosmos_service.add_item(item=game_data, container_type="games")
+#     return {"status": "success", "message": "Game created successfully"}
+
 @router.get("/users/{document_id}")
 async def get_user(document_id: str, cosmos_service: CosmosService = Depends(get_cosmos_service)):
     item = await cosmos_service.get_item(

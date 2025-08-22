@@ -58,28 +58,22 @@ class GameSystem(ABC):
         """Returns the starting state for a new game."""
         pass
 
-    @property
     @abstractmethod
-    def get_current_state(self) -> GameState:
-        """Returns a current state of the game"""
-        pass
-
-    @abstractmethod
-    def make_action(self, action: Action) -> GameState:
+    def make_action(self, state: GameState, action: Action) -> GameState:
         """Processes a player's action and returns the new game state."""
         pass
 
     @abstractmethod
-    def get_valid_actions(self, player_id: str) -> List[Action]:
+    def get_valid_actions(self, state: GameState, player_id: str) -> List[Action]:
         """Returns all valid actions for a given player"""
         pass
 
     @abstractmethod
-    def is_action_valid(self, player_id: str, action: Action) -> bool:
+    def is_action_valid(self, state: GameState, player_id: str, action: Action) -> bool:
         """Returns whether the move is valid"""
         pass
 
     @abstractmethod
-    def is_game_finished(self) -> bool:
+    def is_game_finished(self, state: GameState) -> bool:
         """Returns whether the game is finished"""
         pass

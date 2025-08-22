@@ -16,10 +16,7 @@ class TicTacToeAction(Action):
     payload: TicTacToeMovePayload
 
 # --- TicTacToe Specific GameSystem ---
-class TicTacToeLogic(GameSystem):
-    def __init__(self, player_ids: List[str]):
-        self._current_state = self.initialize_game(player_ids)
-
+class TicTacToeSystem(GameSystem):
     def initialize_game(self, player_ids: List[str]) -> TicTacToeState:
         if len(player_ids) != 2:
             raise ValueError("TicTacToe requires exactly 2 players.")
@@ -28,43 +25,33 @@ class TicTacToeLogic(GameSystem):
             meta={"winner": None, "curr_player_index": 0}
         )
 
-    @property
-    def get_current_state(self) -> TicTacToeState:
-        """Returns a current state of the game"""
-        return self._current_state
-
-    @property
-    def board(self) -> TicTacToeState:
-        """Returns a current state of the game"""
-        return self._current_state.board
-
-    def make_action(self, action: TicTacToeAction) -> TicTacToeState:
+    def make_action(self, state: TicTacToeState, action: TicTacToeAction) -> TicTacToeState:
         # Validate the move
-        if self.is_game_finished():
+        if self.is_game_finished(state):
             raise ValueError("Game is already finished")
 
-        self.is_action_valid(action.player_id, action)
+        self.is_action_valid(state, action.player_id, action)
 
         row, col = action.payload.row, action.payload.col
 
         # Apply the move
-        marker = "X" if self._current_state.meta["curr_player_index"] == 1 else "O"
-        self._current_state.board[row][col] = marker
+        marker = "X" if state.meta["curr_player_index"] == 1 else "O"
+        state.board[row][col] = marker
 
         # Check for a winner
         if self.is_win(row, col):
-            self._current_state.meta["winner"] = action.player_id
+            state.meta["winner"] = action.player_id
 
         # Update whose turn it is
-        self._current_state.meta["curr_player_index"] = 1 - self._current_state.meta["curr_player_index"] # Toggles between 0 and 1
+        state.meta["curr_player_index"] = 1 - state.meta["curr_player_index"] # Toggles between 0 and 1
 
-        return self._current_state
+        return state
 
-    def get_valid_actions(self, player_id: str) -> List[TicTacToeAction]:
+    def get_valid_actions(self, state: TicTacToeState, player_id: str) -> List[TicTacToeAction]:
         actions = []
         for row in range(3):
             for col in range(3):
-                if self._current_state.board[row][col] is None:
+                if state.board[row][col] is None:
                     actions.append(
                         TicTacToeAction(
                             player_id=player_id,
@@ -73,26 +60,26 @@ class TicTacToeLogic(GameSystem):
                     )
         return actions
 
-    def is_action_valid(self, player_id: str, action: TicTacToeAction):
+    def is_action_valid(self, state: TicTacToeState, player_id: str, action: TicTacToeAction):
         # Invalid Player
-        if player_id not in self._current_state.player_ids:
+        if player_id not in state.player_ids:
             raise ValueError("Invalid player ID.")
 
         # Not player's turn
-        if self._current_state.player_ids.index(player_id) != self._current_state.meta["curr_player_index"]:
+        if state.player_ids.index(player_id) != state.meta["curr_player_index"]:
             raise ValueError("It's not your turn.")
 
         row, col = action.payload.row, action.payload.col
-        if self._current_state.board[row][col] is not None:
+        if state.board[row][col] is not None:
             raise ValueError("Cell is already occupied.")
 
-    def is_game_finished(self) -> bool:
+    def is_game_finished(self, state: TicTacToeState) -> bool:
         """Returns whether the game is finished"""
-        return self._current_state.meta["winner"] != None
+        return state.meta["winner"] != None
 
-    def is_win(self, row: int, col: int) -> bool:
+    def is_win(self, row: int, col: int, state: TicTacToeState) -> bool:
         """Check if the current player has won with last move"""
-        board = self._current_state.board
+        board = state.board
         marker = board[row][col]
 
         # Check current row for a win

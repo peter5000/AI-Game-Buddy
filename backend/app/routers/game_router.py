@@ -1,7 +1,7 @@
 from typing import List, Optional
 from fastapi import HTTPException, APIRouter
 from pydantic import BaseModel
-from app.services.games.ttt import TicTacToeLogic, TicTacToeAction, TicTacToeState, TicTacToeMovePayload
+from app.services.games.ttt import TicTacToeSystem, TicTacToeAction, TicTacToeState, TicTacToeMovePayload
 
 from app.services.games.uttt.ultimate_tic_tac_toe import UltimateTicTacToe, UltimateTicTacToeError
 from app.services.games.uttt.ultimate_tic_tac_toe import Action
@@ -12,7 +12,7 @@ router = APIRouter(
     tags=["Game"]
 )
 
-ttt_state: Optional[TicTacToeLogic] = None
+ttt_state: Optional[TicTacToeSystem] = None
 
 game_state: Optional[UltimateTicTacToe] = None
 chess_game: Optional[ChessLogic] = None
@@ -46,27 +46,27 @@ class ChessMoveRequest(BaseModel):
 @router.post("/ttt/new-game", response_model=TicTacToeState, summary="Start a New TicTacToe Game")
 def new_game(player_ids: List[str]):
     global ttt_state
-    ttt_state = TicTacToeLogic(player_ids)
-    return ttt_state.get_current_state
+    ttt_state = TicTacToeSystem()
+    return ttt_state.initialize_game(player_ids)
 
-@router.get("/ttt/game-state", response_model=TicTacToeState, summary="Get Current TicTacToe Game State")
-def get_game_state():
-    global ttt_state
-    if ttt_state is None:
-        raise HTTPException(status_code=404, detail="Game not started. Please start a new game via POST /ttt/new-game.")
-    return ttt_state.get_current_state
+# @router.get("/ttt/game-state", response_model=TicTacToeState, summary="Get Current TicTacToe Game State")
+# def get_game_state():
+#     global ttt_state
+#     if ttt_state is None:
+#         raise HTTPException(status_code=404, detail="Game not started. Please start a new game via POST /ttt/new-game.")
+#     return ttt_state.get_current_state
 
-@router.post("/ttt/move", response_model=TicTacToeState, summary="Make a TicTacToe Move")
-def make_move(player_id: str, row: int, col: int):
-    global ttt_state
-    if ttt_state is None:
-        raise HTTPException(status_code=404, detail="Game not started. Please start a new game via POST /ttt/new-game.")
+# @router.post("/ttt/move", response_model=TicTacToeState, summary="Make a TicTacToe Move")
+# def make_move(player_id: str, row: int, col: int):
+#     global ttt_state
+#     if ttt_state is None:
+#         raise HTTPException(status_code=404, detail="Game not started. Please start a new game via POST /ttt/new-game.")
 
-    try:
-        current_state = ttt_state.get_current_state
-        return ttt_state.make_action(TicTacToeAction(player_id=player_id, payload=TicTacToeMovePayload(row=row, col=col)))
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+#     try:
+#         current_state = ttt_state.get_current_state
+#         return ttt_state.make_action(TicTacToeAction(player_id=player_id, payload=TicTacToeMovePayload(row=row, col=col)))
+#     except Exception as e:
+#         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/uttt/new-game", response_model=GameStateResponse, summary="Start a New Game")
 def new_game():
