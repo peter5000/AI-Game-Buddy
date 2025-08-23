@@ -34,8 +34,9 @@ class Room(BaseModel):
     creator_id: str
     game_type: str
     status: str = "waiting"
-    created_at: str = datetime.datetime.now(datetime.timezone.utc).isoformat()
+    created_at: datetime.datetime = datetime.datetime.now(datetime.timezone.utc)
     users: set[str]
+    game_state: dict = {}
 
 
 class BroadcastPayload(BaseModel):

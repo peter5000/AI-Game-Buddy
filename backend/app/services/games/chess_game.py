@@ -1,134 +1,169 @@
-from .game_interface import GameSystem, GameState, Action
-from pydantic import BaseModel, Field
-from typing import List, Literal, Optional, Dict, Any
+from typing import Any, Dict, List, Literal, Optional
+
 import chess
 import chess.pgn
+from pydantic import BaseModel, Field, validate_call
+
+from .game_interface import Action, GameState, GameSystem
+
 
 class ChessState(GameState):
-    board_fen: str = Field(default="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+    board_fen: str = Field(
+        default="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    )
     game_result: Optional[str] = None
     move_history: List[str] = Field(default_factory=list)
 
+
 class ChessMovePayload(BaseModel):
     move: str = Field(..., description="Move in UCI format (e.g., 'e2e4', 'e1g1')")
+
 
 class ChessAction(Action):
     type: Literal["MAKE_MOVE"] = "MAKE_MOVE"
     payload: ChessMovePayload
 
+
 class ChessLogic(GameSystem):
-    def __init__(self, player_ids: List[str]):
-        self._current_state = self.initialize_game(player_ids)
-        self._board = chess.Board()
+    def __init__(self):
+        pass
 
     def initialize_game(self, player_ids: List[str]) -> ChessState:
-        if len(player_ids) != 2:
-            raise ValueError("Chess requires exactly 2 players.")
-        
+        if len(player_ids) < 2:
+            raise ValueError("Chess requires 2 players.")
+
         return ChessState(
-            player_ids=player_ids,
+            player_ids=player_ids[:2], # get first 2 players in list
             turn=1,
             phase="WHITE_TURN",
             meta={
                 "current_player_index": 0,
                 "white_player": player_ids[0],
                 "black_player": player_ids[1],
-                "result": None
-            }
+                "result": None,
+            },
         )
 
-    @property
-    def get_current_state(self) -> ChessState:
-        return self._current_state
+    def _create_board_from_state(self, state: ChessState) -> chess.Board:
+        """Creates a chess board from current state"""
+        return chess.Board(fen=state.board_fen)
 
-    def make_action(self, player_id: str, action: ChessAction) -> ChessState:
-        if not self.is_action_valid(player_id, action):
+    @validate_call  # validate that ChessState and ChessAction
+    def make_action(
+        self, current_state: ChessState, player_id: str, action: ChessAction
+    ) -> ChessState:
+        board = self._create_board_from_state(state=current_state)
+
+        if not self.is_action_valid(
+            current_state=current_state, player_id=player_id, action=action
+        ):
             raise ValueError("Invalid move")
 
         move = chess.Move.from_uci(action.payload.move)
-        self._board.push(move)
+        board.push(move)
 
-        new_move_history = self._current_state.move_history + [action.payload.move]
-        
-        current_player_index = self._current_state.meta["current_player_index"]
+        new_move_history = current_state.move_history + [action.payload.move]
+
+        current_player_index = current_state.meta["current_player_index"]
         next_player_index = 1 - current_player_index
-        next_phase = "BLACK_TURN" if self._current_state.phase == "WHITE_TURN" else "WHITE_TURN"
-        
+        next_phase = (
+            "BLACK_TURN" if current_state.phase == "WHITE_TURN" else "WHITE_TURN"
+        )
+
         game_result = None
-        if self._board.is_checkmate():
-            winner = "white" if self._board.turn == chess.BLACK else "black"
+        if board.is_checkmate():
+            winner = "white" if board.turn == chess.BLACK else "black"
             game_result = f"{winner}_wins"
-        elif self._board.is_stalemate() or self._board.is_insufficient_material() or self._board.is_seventyfive_moves() or self._board.is_fivefold_repetition():
+        elif (
+            board.is_stalemate()
+            or board.is_insufficient_material()
+            or board.is_seventyfive_moves()
+            or board.is_fivefold_repetition()
+        ):
             game_result = "draw"
 
         meta = {
-            **self._current_state.meta,
+            **current_state.meta,
             "current_player_index": next_player_index,
-            "result": game_result
+            "result": game_result,
         }
 
-        self._current_state = ChessState(
-            player_ids=self._current_state.player_ids,
-            turn=self._current_state.turn + 1,
+        new_state = ChessState(
+            player_ids=current_state.player_ids,
+            turn=current_state.turn + 1,
             phase=next_phase if not game_result else "GAME_OVER",
             meta=meta,
-            board_fen=self._board.fen(),
+            board_fen=board.fen(),
             game_result=game_result,
-            move_history=new_move_history
+            move_history=new_move_history,
         )
 
-        return self._current_state
+        return new_state
 
-    def get_valid_actions(self, player_id: str) -> List[ChessAction]:
-        if self.is_game_finished():
+    @validate_call  # validate ChessState
+    def get_valid_actions(
+        self, current_state: ChessState, player_id: str
+    ) -> List[ChessAction]:
+        board = self._create_board_from_state(state=current_state)
+
+        if self.is_game_finished(current_state=current_state, board=board):
             return []
-        
-        current_player_index = self._current_state.meta["current_player_index"]
-        if self._current_state.player_ids[current_player_index] != player_id:
+
+        current_player_index = current_state.meta["current_player_index"]
+        if current_state.player_ids[current_player_index] != player_id:
             return []
 
         valid_moves = []
-        for move in self._board.legal_moves:
-            valid_moves.append(ChessAction(
-                player_id=player_id,
-                payload=ChessMovePayload(move=move.uci())
-            ))
-        
+        for move in board.legal_moves:
+            valid_moves.append(
+                ChessAction(
+                    player_id=player_id, payload=ChessMovePayload(move=move.uci())
+                )
+            )
+
         return valid_moves
 
-    def is_action_valid(self, player_id: str, action: ChessAction) -> bool:
-        if self.is_game_finished():
+    def is_action_valid(
+        self,
+        current_state: ChessState,
+        player_id: str,
+        action: ChessAction,
+    ) -> bool:
+        if self.is_game_finished(current_state=current_state):
             return False
-        
-        current_player_index = self._current_state.meta["current_player_index"]
-        if self._current_state.player_ids[current_player_index] != player_id:
+
+        current_player_index = current_state.meta["current_player_index"]
+        if current_state.player_ids[current_player_index] != player_id:
             return False
 
         try:
+            board = self._create_board_from_state(state=current_state)
             move = chess.Move.from_uci(action.payload.move)
-            return move in self._board.legal_moves
-        except:
+            return move in board.legal_moves
+        except Exception:
             return False
 
-    def is_game_finished(self) -> bool:
-        return self._current_state.meta.get("result") is not None or self._board.is_game_over()
+    def is_game_finished(self, current_state: ChessState) -> bool:
+        board = self._create_board_from_state(state=current_state)
+        return current_state.meta.get("result") is not None or board.is_game_over()
 
-    def get_board_representation(self) -> Dict[str, Any]:
+    def get_board_representation(self, current_state: ChessState) -> Dict[str, Any]:
         """Returns a dictionary representation of the current board state"""
+        board = self._create_board_from_state(state=current_state)
         return {
-            "fen": self._board.fen(),
-            "ascii": str(self._board),
-            "turn": "white" if self._board.turn else "black",
+            "fen": board.fen(),
+            "ascii": str(board),
+            "turn": "white" if board.turn else "black",
             "castling_rights": {
-                "white_kingside": self._board.has_kingside_castling_rights(chess.WHITE),
-                "white_queenside": self._board.has_queenside_castling_rights(chess.WHITE),
-                "black_kingside": self._board.has_kingside_castling_rights(chess.BLACK),
-                "black_queenside": self._board.has_queenside_castling_rights(chess.BLACK),
+                "white_kingside": board.has_kingside_castling_rights(chess.WHITE),
+                "white_queenside": board.has_queenside_castling_rights(chess.WHITE),
+                "black_kingside": board.has_kingside_castling_rights(chess.BLACK),
+                "black_queenside": board.has_queenside_castling_rights(chess.BLACK),
             },
-            "en_passant": self._board.ep_square if self._board.ep_square else None,
-            "halfmove_clock": self._board.halfmove_clock,
-            "fullmove_number": self._board.fullmove_number,
-            "is_check": self._board.is_check(),
-            "is_checkmate": self._board.is_checkmate(),
-            "is_stalemate": self._board.is_stalemate(),
+            "en_passant": board.ep_square if board.ep_square else None,
+            "halfmove_clock": board.halfmove_clock,
+            "fullmove_number": board.fullmove_number,
+            "is_check": board.is_check(),
+            "is_checkmate": board.is_checkmate(),
+            "is_stalemate": board.is_stalemate(),
         }

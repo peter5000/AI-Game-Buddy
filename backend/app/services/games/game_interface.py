@@ -22,12 +22,6 @@ class GameSystem(ABC):
         """Returns the starting state for a new game."""
         pass
 
-    @property
-    @abstractmethod
-    def get_current_state(self) -> GameState:
-        """Returns a current state of the game"""
-        pass
-
     @abstractmethod
     def make_action(self, player_id: str, action: Action) -> GameState:
         """Processes a player's action and returns the new game state."""

@@ -7,6 +7,9 @@ from app.services.user_service import UserService
 from app.services.room_service import RoomService
 from app.services.connection_service import ConnectionService
 
+# TEMP IMPORT FOR TESTING
+from app.services.games.chess_game import ChessLogic
+
 @lru_cache
 def get_cosmos_service() -> CosmosService:
     return CosmosService()
@@ -34,3 +37,8 @@ def get_room_service() -> RoomService:
         redis_service=get_redis_service(),
         connection_service=get_connection_service()
     )
+
+# TEMP, REPLACE WITH ACTUAL GAME SERVICE
+@lru_cache
+def get_game_service() -> ChessLogic:
+    return ChessLogic()

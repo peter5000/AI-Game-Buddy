@@ -211,8 +211,10 @@ class RedisService:
         Raises:
             RedisError: If there's an error removing values from the Redis set.
         """
+        if not values:
+            return
         try:
-            await self.r.srem(key, values)
+            await self.r.srem(key, *values)
         except RedisError as e:
             self.logger.error(f"Redis Error removing from set using key '{key}': {e}")
             raise
