@@ -213,7 +213,7 @@ class RoomService:
         await self.redis_service.set_remove(
             key=f"room:{room_id}:users", values=[user_id]
         )
-        
+
         await self.redis_service.delete_keys(keys=[f"user:{user_id}:room"])
 
         try:
@@ -583,3 +583,43 @@ class RoomService:
             query=query, container_type="rooms"
         )
         return room_list
+
+    def check_user_in_room_local(self, user_id: str, room_id: str) -> bool:
+        """Check if user is in a room locally.
+
+        Args:
+            room_id (str): The room ID of the room to check.
+            user_id (str): The user ID of the user to check.
+
+        Raises:
+            ValueError: If the room ID or user ID is missing.
+        """
+        if not room_id:
+            raise ValueError("Room ID missing on checking room")
+        if not user_id:
+            raise ValueError("User ID missing on checking room")
+
+        if (
+            room_id in self.room_connections
+            and user_id in self.room_connections[room_id]
+        ):
+            return True
+        return False
+
+    async def check_user_in_room_database(self, user_id: str, room_id: str) -> bool:
+        """Check if user is in a room in database.
+
+        Args:
+            room_id (str): The room ID of the room to check.
+            user_id (str): The user ID of the user to check.
+
+        Raises:
+            ValueError: If the room ID or user ID is missing.
+        """
+        if not room_id:
+            raise ValueError("Room ID missing on checking room")
+        if not user_id:
+            raise ValueError("User ID missing on checking room")
+
+        room = await self.redis_service.get_value(key=f"user:{user_id}:room")
+        return room == room_id

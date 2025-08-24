@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 async def create_room(
     room_name: str,
     game_type: str,
-    user_id: str = Depends(auth.get_user_id),
+    user_id: str = Depends(auth.get_user_id_http),
     room_service: RoomService = Depends(get_room_service),
 ):
     try:
@@ -37,7 +37,7 @@ async def create_room(
 @router.post("/join")
 async def join_room(
     room_id: str,
-    user_id: str = Depends(auth.get_user_id),
+    user_id: str = Depends(auth.get_user_id_http),
     room_service: RoomService = Depends(get_room_service),
 ):
     try:
@@ -53,7 +53,7 @@ async def join_room(
 
 @router.post("/leave")
 async def leave_room(
-    user_id: str = Depends(auth.get_user_id),
+    user_id: str = Depends(auth.get_user_id_http),
     room_service: RoomService = Depends(get_room_service),
 ):
     try:
@@ -75,7 +75,7 @@ async def leave_room(
 
 @router.delete("/delete")
 async def delete_room(
-    user_id: str = Depends(auth.get_user_id),
+    user_id: str = Depends(auth.get_user_id_http),
     room_service: RoomService = Depends(get_room_service),
 ):
     try:
@@ -97,7 +97,7 @@ async def delete_room(
 
 @router.get("/get")
 async def get_room(
-    user_id: str = Depends(auth.get_user_id),
+    user_id: str = Depends(auth.get_user_id_http),
     room_service: RoomService = Depends(get_room_service),
 ):
     try:
@@ -118,7 +118,7 @@ async def get_room(
 
 @router.post("/start_game")
 async def create_game(
-    user_id: str = Depends(auth.get_user_id),
+    user_id: str = Depends(auth.get_user_id_http),
     room_service: RoomService = Depends(get_room_service),
     game_service: ChessLogic = Depends(get_game_service),
 ):
@@ -146,7 +146,7 @@ async def create_game(
 
 @router.post("/end_game")
 async def end_game(
-    user_id: str = Depends(auth.get_user_id),
+    user_id: str = Depends(auth.get_user_id_http),
     room_service: RoomService = Depends(get_room_service),
 ):
     try:
@@ -167,7 +167,7 @@ async def end_game(
 
 @router.post("/get_game_state")
 async def get_game_state(
-    user_id: str = Depends(auth.get_user_id),
+    user_id: str = Depends(auth.get_user_id_http),
     room_service: RoomService = Depends(get_room_service),
 ):
     try:

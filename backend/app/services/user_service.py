@@ -2,7 +2,6 @@ import logging
 import uuid
 import re
 from fastapi import HTTPException, status
-from pydantic import ValidationError
 
 from app.schemas import UserCreate, User
 from app.auth import get_password_hash
@@ -20,13 +19,13 @@ class UserService:
         pattern = r"^[a-zA-Z0-9_-]{3,20}$"
         if not bool(re.match(pattern, user.username)):
             self.logger.warning(f"Username '{user.username}' has invalid characters")
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid username")
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid username '{user.username}'")
         
         # Before creating a user, let's ensure the email doesn't already exist to prevent issues
         self.logger.info(f"Checking for existing email: '{user.email}'")
-        query = "SELECT * FROM c WHERE c.email = @email"
+        query = "SELECT * FROM c WHERE c.email_lower = @email"
         parameters = [
-            {"name": "@email", "value": user.email}
+            {"name": "@email", "value": user.email.lower()}
         ]
 
         existing_users_by_email = await self.cosmos_service.get_items_by_query(
@@ -41,7 +40,7 @@ class UserService:
         
         # Also ensure username is unique
         self.logger.info(f"Checking for existing ID: '{user.username}'")
-        if (await self.check_user_exists(username=user.username) == False):
+        if not await self.check_user_exists(username=user.username):
             self.logger.info("Username not found (get_item returned None), proceeding with creation.")
         else: # Only raise 409 if an item WAS actually found
             self.logger.warning("Username already exists, raising 409 (from try block).")
@@ -53,7 +52,9 @@ class UserService:
             id=new_user_id,
             user_id=new_user_id,
             username=user.username,
+            username_lower=user.username.lower(),
             email=user.email,
+            email_lower=user.email.lower(),
             password=hashed_password
         )
         item_to_save = new_user.model_dump()
@@ -73,9 +74,9 @@ class UserService:
             raise ValueError("Missing username")
         
         try:
-            query = "SELECT * FROM c WHERE c.username = @username"
+            query = "SELECT * FROM c WHERE c.username_lower = @username"
             parameters = [
-                {"name": "@username", "value": username}
+                {"name": "@username", "value": username.lower()}
             ]
             user = await self.cosmos_service.get_items_by_query(
                 query=query,
@@ -107,7 +108,7 @@ class UserService:
         if not username:
             raise ValueError("Missing username")
         user = await self.get_user_by_username(username)
-        if user == None:
+        if user is None:
             return False
         return True
     

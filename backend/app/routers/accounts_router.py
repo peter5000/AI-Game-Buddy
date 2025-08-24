@@ -104,14 +104,14 @@ async def refresh_access_token(response: Response, refresh_token: Annotated[Opti
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
     
 @router.delete("/delete")
-async def delete_account(user_id: str = Depends(auth.get_user_id), cosmos_service: CosmosService = Depends(get_cosmos_service)):
+async def delete_account(user_id: str = Depends(auth.get_user_id_http), cosmos_service: CosmosService = Depends(get_cosmos_service)):
     if not user_id:
         raise HTTPException(status_code=404, detail="User not found")
     await cosmos_service.delete_item(item_id=user_id, partition_key=user_id, container_type="users")
     return {"status": "success", "message": "Account deleted"}
 
 @router.get("/user/me", response_model=dict[str, Any]) # Adjust response_model if you fetch full user
-async def read_users_me(user_id: str = Depends(auth.get_user_id), cosmos_service: CosmosService = Depends(get_cosmos_service)):
+async def read_users_me(user_id: str = Depends(auth.get_user_id_http), cosmos_service: CosmosService = Depends(get_cosmos_service)):
     """
     Retrieves information about the current authenticated user.
     This endpoint requires a valid JWT access token.
@@ -130,6 +130,6 @@ async def read_users_me(user_id: str = Depends(auth.get_user_id), cosmos_service
     return user_data
 
 @router.get("/get_user")
-async def get_username(user_id: str = Depends(auth.get_user_id), user_service: UserService = Depends(get_user_service)):
+async def get_username(user_id: str = Depends(auth.get_user_id_http), user_service: UserService = Depends(get_user_service)):
     username = await user_service.get_username_by_userid(user_id=user_id)
     return username

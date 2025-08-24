@@ -39,7 +39,7 @@ class ConnectionService:
         )
         self.logger.info(f"Published message to channel {channel}: {message_data}")
 
-    @validate_call # validate payload
+    @validate_call  # validate payload
     async def broadcast(self, payload: BroadcastPayload):
         message = payload.message
         user_list = payload.user_list

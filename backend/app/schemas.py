@@ -16,7 +16,9 @@ class User(BaseModel):
     id: str
     user_id: str
     username: str
+    username_lower: str
     email: EmailStr
+    email_lower: str
     password: str
 
 

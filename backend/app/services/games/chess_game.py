@@ -5,6 +5,7 @@ import chess.pgn
 from pydantic import BaseModel, Field, validate_call
 
 from .game_interface import Action, GameState, GameSystem
+import random
 
 
 class ChessState(GameState):
@@ -32,15 +33,16 @@ class ChessLogic(GameSystem):
         if len(player_ids) < 2:
             raise ValueError("Chess requires 2 players.")
 
+        selected_players = random.sample(player_ids, 2)
         return ChessState(
-            player_ids=player_ids[:2], # get first 2 players in list
+            player_ids=selected_players,
             turn=1,
             phase="WHITE_TURN",
             meta={
-                "current_player_index": 0,
-                "white_player": player_ids[0],
-                "black_player": player_ids[1],
-                "result": None,
+            "current_player_index": 0,
+            "white_player": selected_players[0],
+            "black_player": selected_players[1],
+            "result": None,
             },
         )
 

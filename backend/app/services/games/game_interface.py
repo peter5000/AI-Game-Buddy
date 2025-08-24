@@ -11,7 +11,6 @@ class GameState(BaseModel):
 
 # --- Generic Action ---
 class Action(BaseModel):
-    player_id: str            # Player identification
     type: str                 # Type
     payload: Dict[str, Any]
 

@@ -201,24 +201,6 @@ class RedisService:
             self.logger.error(f"Redis Error adding to set using key '{key}': {e}")
             raise
 
-    async def set_remove(self, key: str, values: set):
-        """Remove multiple values from a Redis set.
-
-        Args:
-            key (str): The Redis key for the set.
-            values (set): Set of values to remove from the Redis set.
-
-        Raises:
-            RedisError: If there's an error removing values from the Redis set.
-        """
-        if not values:
-            return
-        try:
-            await self.r.srem(key, *values)
-        except RedisError as e:
-            self.logger.error(f"Redis Error removing from set using key '{key}': {e}")
-            raise
-
     async def set_get(self, key: str) -> set:
         """Retrieve all members of a Redis set.
 
@@ -237,6 +219,31 @@ class RedisService:
             return values
         except RedisError as e:
             self.logger.error(f"Redis Error adding to set using key '{key}': {e}")
+            raise
+        
+    async def set_is_member(self, key: str, value: Any) -> bool:
+        try:
+            return self.r.sismember(key, value)
+        except RedisError as e:
+            self.logger.error(f"Redis Error adding to set using key '{key}': {e}")
+            raise
+        
+    async def set_remove(self, key: str, values: set):
+        """Remove multiple values from a Redis set.
+
+        Args:
+            key (str): The Redis key for the set.
+            values (set): Set of values to remove from the Redis set.
+
+        Raises:
+            RedisError: If there's an error removing values from the Redis set.
+        """
+        if not values:
+            return
+        try:
+            await self.r.srem(key, *values)
+        except RedisError as e:
+            self.logger.error(f"Redis Error removing from set using key '{key}': {e}")
             raise
 
     async def expire(self, key: str, time: int):
