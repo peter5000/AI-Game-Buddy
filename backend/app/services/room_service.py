@@ -212,8 +212,8 @@ class RoomService:
                     patch_operations=patch_operation,
                     container_type="rooms",
                 )
-
-            self.logger.warning(f"User list not found in cosmos for room '{room_id}'")
+            else:
+                self.logger.warning(f"User list not found in cosmos for room '{room_id}'")
         except ValueError:
             self.logger.warning(
                 f"Tag '{room_id}' not found in the list, no changes made."
