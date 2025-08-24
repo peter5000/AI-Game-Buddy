@@ -164,7 +164,7 @@ async def end_game(
     return {"message": "Game state deleted successfully", "room_id": room_id}
 
 
-@router.post("/get_game_state")
+@router.get("/get_game_state")
 async def get_game_state(
     user_id: str = Depends(auth.get_user_id_http),
     room_service: RoomService = Depends(get_room_service),

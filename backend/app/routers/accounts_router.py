@@ -140,6 +140,8 @@ async def delete_account(
         raise HTTPException(status_code=404, detail="User not found")
     await user_service.delete_user(user_id=user_id)
 
+    # TODO: Check if user is in any rooms before deleting, don't want any stale data
+
     response.delete_cookie(
         key="access_token", httponly=True, secure=True, samesite="lax"
     )
