@@ -6,7 +6,6 @@ pub/sub messaging, and caching operations.
 All operations are asynchronous and include proper error handling and logging.
 """
 
-import asyncio
 import json
 import logging
 from typing import Any, Optional
@@ -44,8 +43,6 @@ class RedisService:
                     settings.REDIS_CONNECTION_URL, decode_responses=True
                 )
                 self.logger.info("Initializing Redis Client")
-                self.pubsub_client = self.r.pubsub()
-                self.logger.info("Initializing Redis Pub/Sub Client")
             except ConnectionError as e:
                 self.logger.error(f"Failed to connect to Redis: {e}")
                 raise
@@ -57,37 +54,8 @@ class RedisService:
     async def close(self):
         """Close Redis connections and clean up resources."""
         self.logger.info("Closing Redis Client session")
-        if self.pubsub_client:
-            await self.pubsub_client.close()
         if self.r:
             await self.r.close()
-
-    async def subscribe(self, channel_name: str):
-        """Subscribe to a Redis channel and handle incoming messages.
-
-        Args:
-            channel_name (str): Name of the Redis channel to subscribe to.
-            callback (Callable): Async function to call when messages are received. Should accept one parameter (the parsed JSON data).
-
-        Raises:
-            RedisError: If there's an error with the Redis connection during subscription.
-
-        Note:
-            This method will block until cancelled. Non-JSON messages are logged as warnings
-            and ignored. The pub/sub client is automatically closed when the method exits.
-        """
-        try:
-            await self.pubsub_client.subscribe(channel_name)
-            self.logger.info(f"Subscribed to Redis channel '{channel_name}'")
-        except asyncio.CancelledError:
-            self.logger.info(f"Subscription to '{channel_name}' is being cancelled.")
-        except RedisError as e:
-            self.logger.error(
-                f"Redis connection error in subscription to '{channel_name}': {e}"
-            )
-        finally:
-            if self.pubsub_client:
-                await self.pubsub_client.close()
 
     async def publish_message(self, channel_name: str, message: dict):
         """Publish a message to a Redis channel.
@@ -220,14 +188,14 @@ class RedisService:
         except RedisError as e:
             self.logger.error(f"Redis Error adding to set using key '{key}': {e}")
             raise
-        
+
     async def set_is_member(self, key: str, value: Any) -> bool:
         try:
             return self.r.sismember(key, value)
         except RedisError as e:
             self.logger.error(f"Redis Error adding to set using key '{key}': {e}")
             raise
-        
+
     async def set_remove(self, key: str, values: set):
         """Remove multiple values from a Redis set.
 

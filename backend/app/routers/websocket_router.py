@@ -82,13 +82,18 @@ class ConnectionEndpoint(WebSocketEndpoint):
 
             self.is_authenticated = True
             logger.info(f"User '{self.user_id}' connected to websocket endpoint")
+
+            # Send connection acceptance message
+            await websocket.send_json(
+                {"message": "Successfully connected to websocket endpoint"}
+            )
         except Exception as e:
             logger.error(f"WebSocket connection failed: {e}")
             # Send error message to client before closing
             try:
                 await websocket.send_json(
                     {
-                        "error": "Authentication failed",
+                        "error": str(e),
                         "message": "Unable to establish connection",
                     }
                 )
@@ -152,14 +157,8 @@ class ConnectionEndpoint(WebSocketEndpoint):
             if message_type == "game_action":
                 room_id = payload.get("room_id")
                 # Verify room exists and user is in room
-                if (
-                    room_id
-                    and self.room_service.check_user_in_room_local(
-                        user_id=self.user_id, room_id=room_id
-                    )
-                    or await self.room_service.check_user_in_room_database(
-                        user_id=self.user_id, room_id=room_id
-                    )
+                if room_id and await self.room_service.check_user_in_room(
+                    user_id=self.user_id, room_id=room_id
                 ):
                     # Get current game state in database
                     game_state = await self.room_service.get_game_state(room_id=room_id)
@@ -190,6 +189,10 @@ class ConnectionEndpoint(WebSocketEndpoint):
             #     room_id = data.get("room_id")
             # send_message, { types, room_id, message },
             # Redis Pub/Sub -> channel chat messages -> publish chat message into room -> all servers broadcast into room to each user -> chat updates in frontend
+        except ValueError as e:
+            error_payload = {"type": "Error", "payload": {"message": str(e)}}
+
+            await websocket.send_json(error_payload)
         except ValidationError as e:
             logger.error(f"Invalid message format from '{self.user_id}': {e}")
             error_details = json.loads(e.json())
@@ -198,7 +201,9 @@ class ConnectionEndpoint(WebSocketEndpoint):
             )
         except Exception as e:
             logger.error(f"Error processing message from '{self.user_id}': {e}")
-            await websocket.send_json({"error": "Failed to process message."})
+            await websocket.send_json(
+                {"error": "Failed to process message.", "details": e}
+            )
 
     async def on_disconnect(self, websocket: WebSocket, close_code: int):
         """Handle WebSocket connection termination.

@@ -23,7 +23,6 @@ class RoomService:
         cosmos_service (CosmosService): Service for persistent database storage.
         redis_service (RedisService): Service for caching and fast in-memory operations.
         connection_service (ConnectionService): Service for broadcasting WebSocket messages.
-        room_connections (dict[str, set[str]]): An in-memory mapping of room IDs to a set of currently connected user IDs.
     """
 
     def __init__(
@@ -43,7 +42,6 @@ class RoomService:
         self.cosmos_service = cosmos_service
         self.redis_service = redis_service
         self.connection_service = connection_service
-        self.room_connections: dict[str, set[str]] = {}  # room_id -> user_id
 
     async def create_room(self, room_name: str, game_type: str, user_id: str) -> Room:
         """Creates a room and stores inside redis and cosmos.
@@ -69,10 +67,6 @@ class RoomService:
             return ""
 
         room_id = str(uuid.uuid4())
-
-        if room_id not in self.room_connections:
-            self.room_connections[room_id] = set()
-        self.room_connections[room_id].add(user_id)
 
         room = Room(
             id=room_id,
@@ -135,10 +129,6 @@ class RoomService:
             )
             return
 
-        if room_id not in self.room_connections:
-            self.room_connections[room_id] = set()
-        self.room_connections[room_id].add(user_id)
-
         user_list = await self.get_user_list(room_id=room_id)
 
         if user_list is None:
@@ -188,7 +178,7 @@ class RoomService:
         # Only user in room, delete room
         if len(room.users) == 1:
             self.logger.info(f"No more users in room '{room_id}', deleting room")
-            await self.delete_room_database(room_id=room_id)
+            await self.delete_room(room_id=room_id)
             return
 
         if room is None:
@@ -196,19 +186,6 @@ class RoomService:
                 f"Room '{room_id}' not found when leaving for user '{user_id}'"
             )
             return
-
-        if (
-            room_id in self.room_connections
-            and user_id in self.room_connections[room_id]
-        ):
-            self.logger.info(
-                f"Removing user '{user_id}' from room connections in room '{room_id}'"
-            )
-            self.room_connections[room_id].remove(user_id)
-            if not self.room_connections[room_id]:
-                del self.room_connections[room_id]
-        else:
-            self.logger.warning(f"User '{user_id}' not in room '{room_id}'")
 
         await self.redis_service.set_remove(
             key=f"room:{room_id}:users", values=[user_id]
@@ -315,7 +292,7 @@ class RoomService:
         self.logger.warning(f"Room '{room_id}' not found in any data source.")
         return None
 
-    async def delete_room_database(self, room_id: str):
+    async def delete_room(self, room_id: str):
         """Deletes all room information from the redis and cosmos database.
 
         Args:
@@ -361,15 +338,6 @@ class RoomService:
         # TODO: Make a publish in redis into room_update channel for room deletions locally
 
         self.logger.info(f"Successfully deleted room '{room_id}' in database")
-
-    def delete_room_local(self, room_id: str):
-        """Deletes room from room collection in local server
-
-        Args:
-            room_id (str): The room ID of the room to delete.
-        """
-        if room_id in self.room_connections:
-            del self.room_connections[room_id]
 
     async def set_game_state(self, room_id: str, game_state: dict):
         """Sets the game state in redis and cosmos database.
@@ -475,7 +443,7 @@ class RoomService:
         if not room_id:
             raise ValueError("Room ID missing on sending game state")
 
-        room_list = self.room_connections[room_id]
+        room_list = await self.get_user_list(room_id=room_id)
         if room_list is None:
             self.logger.warning(f"Room '{room_id}' not found in room connections")
             return
@@ -487,9 +455,13 @@ class RoomService:
                     f"Game state missing and not not found in database for room '{room_id}'"
                 )
 
+        # Get list of users connected through websocket endpoint on the server
+        user_list = self.connection_service.get_active_users_from_list(
+            user_list=room_list
+        )
         self.logger.info(f"Sending game state to room '{room_id}'")
 
-        payload = BroadcastPayload(user_list=room_list, message=game_state)
+        payload = BroadcastPayload(user_list=user_list, message=game_state)
         await self.connection_service.broadcast(payload=payload)
 
     async def get_user_room(self, user_id: str) -> Optional[str]:
@@ -584,30 +556,8 @@ class RoomService:
         )
         return room_list
 
-    def check_user_in_room_local(self, user_id: str, room_id: str) -> bool:
-        """Check if user is in a room locally.
-
-        Args:
-            room_id (str): The room ID of the room to check.
-            user_id (str): The user ID of the user to check.
-
-        Raises:
-            ValueError: If the room ID or user ID is missing.
-        """
-        if not room_id:
-            raise ValueError("Room ID missing on checking room")
-        if not user_id:
-            raise ValueError("User ID missing on checking room")
-
-        if (
-            room_id in self.room_connections
-            and user_id in self.room_connections[room_id]
-        ):
-            return True
-        return False
-
-    async def check_user_in_room_database(self, user_id: str, room_id: str) -> bool:
-        """Check if user is in a room in database.
+    async def check_user_in_room(self, user_id: str, room_id: str) -> bool:
+        """Check if user is in a room.
 
         Args:
             room_id (str): The room ID of the room to check.

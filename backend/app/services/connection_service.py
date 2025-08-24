@@ -32,10 +32,9 @@ class ConnectionService:
     ):
         payload = BroadcastPayload(user_list=user_list, message=message_data)
         message = PubSubMessage(channel=channel, payload=payload)
-        message_dict = message.model_dump(message)
-
+        message_dict = message.model_dump(mode="json")
         await self.redis_service.publish_message(
-            channel=self.pubsub_channel, message=message_dict
+            channel_name=self.pubsub_channel, message=message_dict
         )
         self.logger.info(f"Published message to channel {channel}: {message_data}")
 
@@ -53,7 +52,9 @@ class ConnectionService:
         else:
             self.logger.info(f"User '{user_id}' not found in active connections")
 
-    def get_active_users(self, room_id: str) -> list[str]:
-        if room_id in self.active_connections:
-            return list(self.active_connections[room_id].keys())
-        return []
+    def get_active_users_from_list(self, user_list: list[str]) -> list[str]:
+        active_list = []
+        for user in user_list:
+            if user in self.active_connections:
+                active_list.append(user)
+        return active_list

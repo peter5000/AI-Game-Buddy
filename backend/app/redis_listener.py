@@ -12,8 +12,8 @@ async def redis_listener():
     room_service = get_room_service()
     redis_service = get_redis_service()
     
-    pubsub = redis_service.pubsub_client
-    await redis_service.subscribe(connection_service.pubsub_channel)
+    pubsub = redis_service.r.pubsub()
+    await pubsub.subscribe(connection_service.pubsub_channel)
     logger.info(
         f"Redis listener has subscribed to channel {connection_service.pubsub_channel}"
     )
@@ -29,13 +29,7 @@ async def redis_listener():
                 payload = BroadcastPayload.model_validate(envelope.payload)
 
                 # Custom handlers for different types of events
-                if channel == "room_delete":
-                    # Room deletion event
-                    room_id = payload.message.get("room_id")
-                    if room_id is not None:
-                        # Only delete room locally, room already deleted in database
-                        room_service.delete_room_local(room_id=room_id)
-                elif channel == "game_update":
+                if channel == "game_update":
                     # Game update: new game state to send
                     room_id = payload.message.get("room_id")
                     game_state = payload.message.get("game_state")

@@ -84,8 +84,7 @@ async def delete_room(
             logger.error(f"Room not found for user '{user_id}'")
             return {"message": "User not in a room"}
 
-        await room_service.delete_room_database(room_id=room_id)
-        room_service.delete_room_local(room_id=room_id)
+        await room_service.delete_room(room_id=room_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
     except Exception as e:
