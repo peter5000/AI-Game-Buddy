@@ -200,7 +200,7 @@ class ConnectionEndpoint(WebSocketEndpoint):
                 {"error": "Invalid message format", "details": error_details}
             )
         except Exception as e:
-            logger.error(f"Error processing message from '{self.user_id}': {e}")
+            logger.exception(f"Error processing message from '{self.user_id}': {e}")
             await websocket.send_json(
                 {"error": "Failed to process message.", "details": e}
             )
