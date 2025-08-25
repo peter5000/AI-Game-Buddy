@@ -189,6 +189,8 @@ class RedisService:
             self.logger.error(f"Redis Error adding to set using key '{key}': {e}")
             raise
 
+    async def set_is_member(self, key: str, value: Any) -> bool:
+        try:
             return await self.r.sismember(key, value)
         except RedisError as e:
             self.logger.error(f"Redis Error adding to set using key '{key}': {e}")
