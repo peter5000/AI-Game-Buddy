@@ -19,7 +19,7 @@ async def create_room(
     room_service: RoomService = Depends(get_room_service),
 ):
     try:
-        room_id = await room_service.create_room(
+        room = await room_service.create_room(
             room_name=room_name, game_type=game_type, user_id=user_id
         )
     except ValueError as e:
@@ -28,10 +28,10 @@ async def create_room(
         logger.error(f"An unexpected error occurred in create_room: {e}")
         raise HTTPException(status_code=500, detail="An internal error occurred.")
 
-    if not room_id:
+    if not room:
         raise HTTPException(status_code=500, detail="Failed to create room")
 
-    return {"message": "Room created successfully", "room_id": room_id}
+    return {"message": "Room created successfully", "room": room}
 
 
 @router.post("/join")
