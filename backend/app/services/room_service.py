@@ -495,7 +495,7 @@ class RoomService:
             if room_id:
                 self.logger.info("User room found in cosmos, adding into redis")
                 await self.redis_service.set_value(
-                    key=f"user:{room_id}:room", value=room_id
+                    key=f"user:{user_id}:room", value=room_id
                 )
                 return room_id
 
