@@ -400,8 +400,8 @@ class RoomService:
 
             if game_state is not None:
                 self.logger.info("Game state found in cosmos, adding into redis")
-                await self.redis_service.dict_add(
-                    key=f"room:{room_id}:state", mapping=game_state
+                await self.redis_service.set_value(
+                    key=f"room:{room_id}:state", value=json.dumps(game_state)
                 )
                 return game_state
 
