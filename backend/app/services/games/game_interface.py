@@ -11,7 +11,6 @@ class GameState(BaseModel):
 
 # --- Generic Action ---
 class Action(BaseModel):
-    player_id: str            # Player identification
     type: str                 # Type
     payload: Dict[str, Any]
 
@@ -20,12 +19,6 @@ class GameSystem(ABC):
     @abstractmethod
     def initialize_game(self, player_ids: List[str]) -> GameState:
         """Returns the starting state for a new game."""
-        pass
-
-    @property
-    @abstractmethod
-    def get_current_state(self) -> GameState:
-        """Returns a current state of the game"""
         pass
 
     @abstractmethod

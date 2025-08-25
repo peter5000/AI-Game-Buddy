@@ -1,5 +1,5 @@
 import logging
-from typing import List, Dict, Any, Optional
+from typing import Any
 
 from azure.storage.blob.aio import BlobServiceClient
 from azure.core.exceptions import HttpResponseError, ResourceNotFoundError
@@ -9,7 +9,7 @@ from app.config import settings
 
 class BlobService:
     def __init__(self):
-        self.logger = logging.getLogger("BlobService")
+        self.logger = logging.getLogger(__name__)
         self.client: BlobServiceClient
         if settings.BLOB_CONNECTION_STRING:
             self.logger.info("Initializing Blob Service Client with Connection String")
