@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Annotated
 # --- Generic GameState ---
 class GameState(BaseModel):
     player_ids: List[str]     # Player identifications
+    finished: bool = False       # Whether the game is finished
     meta: Dict[str, Any]      # Any Game Specific Data
 
 # --- Generic Action ---

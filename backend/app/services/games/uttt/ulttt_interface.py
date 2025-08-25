@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field
 SmallBoard = List[List[str | None]] # Represents a single 3x3 board
 
 class UltimateTicTacToeState(GameState):
+    # The entire board
     large_board: List[List[SmallBoard]] = Field(
         default_factory=lambda: [
             [[[None, None, None] for _ in range(3)] for _ in range(3)] for _ in range(3)

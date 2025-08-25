@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List
 import logging
 from ..game_interface import GameSystem
 logger = logging.getLogger("game_router")
@@ -9,6 +9,7 @@ from .ulttt_interface import (
     SmallBoard,
 )
 
+# TODO: add validate_call and comment
 class UltimateTicTacToeSystem(GameSystem):
     """
     Implements the game logic for Ultimate Tic-Tac-Toe.
@@ -52,6 +53,7 @@ class UltimateTicTacToeSystem(GameSystem):
         else:
             state.active_board = (p.row, p.col)
 
+        # TODO: Check whether this line is necessary
         # Check for a game-wide draw (no more valid moves).
         if self.is_game_finished(state):
              return state
@@ -116,7 +118,7 @@ class UltimateTicTacToeSystem(GameSystem):
             raise ValueError("This cell is already occupied.")
 
     # --- Game State Checks ---
-
+    # TODO: Removed is_game_finished and check whether it is bugged out
     def is_game_finished(self, state: UltimateTicTacToeState) -> bool:
         return state.meta["winner"] is not None
 
