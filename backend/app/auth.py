@@ -1,4 +1,4 @@
-"""app/auth.py
+"""auth.py
 
 This module provides user authentication, password hashing, JWT token management, and user identification for both HTTP
 and WebSocket connections.

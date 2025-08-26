@@ -1,4 +1,4 @@
-"""app/services/redis_service.py
+"""services/redis_service.py
 
 This module provides an asynchronous Redis service for managing real-time game data,
 pub/sub messaging, and caching operations.
@@ -11,9 +11,12 @@ import logging
 from typing import Any, Optional
 
 import redis.asyncio as aioredis
+from fastapi import HTTPException
 from redis.exceptions import ConnectionError, RedisError
 
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class RedisService:
@@ -36,25 +39,24 @@ class RedisService:
             ValueError: If REDIS_CONNECTION_URL is not configured in settings.
             ConnectionError: If unable to establish connection to Redis server.
         """
-        self.logger = logging.getLogger(__name__)
+        self.r = None
         if settings.REDIS_CONNECTION_URL:
             try:
                 self.r = aioredis.from_url(
                     settings.REDIS_CONNECTION_URL, decode_responses=True
                 )
-                self.logger.info("Initializing Redis Client")
+                logger.info("Initializing Redis Client")
             except ConnectionError as e:
-                self.logger.error(f"Failed to connect to Redis: {e}")
-                raise
+                logger.error(f"Failed to connect to Redis: {e}")
+                self.r = None
         else:
-            raise ValueError(
-                "Redis Configuration missing. Set the REDIS_CONNECTION_URL"
-            )
+            logger.error("Redis Configuration missing. Set the REDIS_CONNECTION_URL")
+            self.r = None
 
     async def close(self):
         """Close Redis connections and clean up resources."""
-        self.logger.info("Closing Redis Client session")
         if self.r:
+            logger.info("Closing Redis Client session")
             await self.r.close()
 
     async def publish_message(self, channel_name: str, message: dict):
@@ -67,13 +69,13 @@ class RedisService:
         Raises:
             RedisError: If there's an error publishing the message to Redis.
         """
+        self._check_client()
+
         try:
             message_str = json.dumps(message)
             await self.r.publish(channel=channel_name, message=message_str)
         except RedisError as e:
-            self.logger.error(
-                f"Redis Error publishing to channel '{channel_name}': {e}"
-            )
+            logger.error(f"Redis Error publishing to channel '{channel_name}': {e}")
 
     async def set_value(self, key: str, value):
         """Store a key-value pair in Redis.
@@ -88,10 +90,12 @@ class RedisService:
         Raises:
             RedisError: If there's an error storing the value in Redis.
         """
+        self._check_client()
+
         try:
             await self.r.set(key, value)
         except RedisError as e:
-            self.logger.error(f"Redis Error getting using key '{key}': {e}")
+            logger.error(f"Redis Error getting using key '{key}': {e}")
             raise
 
     async def get_value(self, key: str) -> Any:
@@ -108,11 +112,13 @@ class RedisService:
         Raises:
             RedisError: If there's an error retrieving the value from Redis.
         """
+        self._check_client()
+
         try:
             value = await self.r.get(key)
             return value
         except RedisError as e:
-            self.logger.error(f"Redis Error getting using key '{key}': {e}")
+            logger.error(f"Redis Error getting using key '{key}': {e}")
             raise
 
     async def dict_add(self, key: str, mapping: dict):
@@ -128,10 +134,12 @@ class RedisService:
         Raises:
             RedisError: If there's an error storing the hash in Redis.
         """
+        self._check_client()
+
         try:
             await self.r.hset(key, mapping=mapping)
         except RedisError as e:
-            self.logger.error(f"Redis Error writing dict using key '{key}': {e}")
+            logger.error(f"Redis Error writing dict using key '{key}': {e}")
             raise
 
     async def dict_get_all(self, key: str) -> Optional[dict]:
@@ -146,11 +154,13 @@ class RedisService:
         Returns:
             Optional[dict]: Dictionary containing all field-value pairs from the hash.
         """
+        self._check_client()
+
         try:
             mapping = await self.r.hgetall(key)
             return mapping
         except RedisError as e:
-            self.logger.error(f"Redis Error reading dict using key '{key}': {e}")
+            logger.error(f"Redis Error reading dict using key '{key}': {e}")
             raise
 
     async def set_add(self, key: str, values: set):
@@ -163,10 +173,12 @@ class RedisService:
         Raises:
             RedisError: If there's an error adding values to the Redis set.
         """
+        self._check_client()
+
         try:
             await self.r.sadd(key, *values)
         except RedisError as e:
-            self.logger.error(f"Redis Error adding to set using key '{key}': {e}")
+            logger.error(f"Redis Error adding to set using key '{key}': {e}")
             raise
 
     async def set_get(self, key: str) -> set:
@@ -182,18 +194,31 @@ class RedisService:
             set: Set containing all members of the Redis set.
                 Empty set if the key doesn't exist.
         """
+        self._check_client()
+
         try:
             values = await self.r.smembers(key)
             return values
         except RedisError as e:
-            self.logger.error(f"Redis Error adding to set using key '{key}': {e}")
+            logger.error(f"Redis Error adding to set using key '{key}': {e}")
             raise
 
     async def set_is_member(self, key: str, value: Any) -> bool:
+        """Checks if value is in a Redis set.
+
+        Args:
+            key (str): The Redis key for the set.
+            value (Any): The value to check is inside the set.
+
+        Returns:
+            bool: If the value is in the set or not.
+        """
+        self._check_client()
+
         try:
             return await self.r.sismember(key, value)
         except RedisError as e:
-            self.logger.error(f"Redis Error adding to set using key '{key}': {e}")
+            logger.error(f"Redis Error adding to set using key '{key}': {e}")
             raise
 
     async def set_remove(self, key: str, values: set):
@@ -206,12 +231,14 @@ class RedisService:
         Raises:
             RedisError: If there's an error removing values from the Redis set.
         """
+        self._check_client()
+
         if not values:
             return
         try:
             await self.r.srem(key, *values)
         except RedisError as e:
-            self.logger.error(f"Redis Error removing from set using key '{key}': {e}")
+            logger.error(f"Redis Error removing from set using key '{key}': {e}")
             raise
 
     async def expire(self, key: str, time: int):
@@ -224,10 +251,12 @@ class RedisService:
         Raises:
             RedisError: If there's an error setting expiration for the key.
         """
+        self._check_client()
+
         try:
             await self.r.expire(key, time)
         except RedisError as e:
-            self.logger.error(f"Redis Error adding expire to key '{key}': {e}")
+            logger.error(f"Redis Error adding expire to key '{key}': {e}")
             raise
 
     async def scan_keys(self, key: str) -> list[str]:
@@ -242,13 +271,15 @@ class RedisService:
         Returns:
             list[str]: List of all Redis keys matching the pattern.
         """
+        self._check_client()
+
         try:
             res = []
             async for k in self.r.scan_iter(f"{key}:*"):
                 res.append(k)
             return res
         except RedisError as e:
-            self.logger.error(f"Redis Error scanning keys: {e}")
+            logger.error(f"Redis Error scanning keys: {e}")
             raise
 
     async def delete_keys(self, keys: list[str]):
@@ -260,9 +291,16 @@ class RedisService:
         Raises:
             RedisError: If there's an error deleting keys from Redis.
         """
+        self._check_client()
+
         try:
             if keys:
                 await self.r.delete(*keys)
         except RedisError as e:
-            self.logger.error(f"Redis Error deleting keys: {e}")
+            logger.error(f"Redis Error deleting keys: {e}")
             raise
+
+    def _check_client(self):
+        if not self.r:
+            logger.error("Redis client is not available.")
+            raise HTTPException(status_code=503, detail="Redis service unavailable")

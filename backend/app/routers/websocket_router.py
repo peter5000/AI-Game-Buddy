@@ -1,4 +1,4 @@
-"""app/routers/websocket_router.py
+"""routers/websocket_router.py
 
 This module provides WebSocket endpoints for real-time communication.
 It handles WebSocket connections, message routing, and manages real-time game interactions between clients.
@@ -75,6 +75,12 @@ class ConnectionEndpoint(WebSocketEndpoint):
             self.room_service = get_room_service()
             self.game_service = get_game_service()
             # self.chat_service = get_chat_service()
+
+            # Handler map for mapping message type to handler function
+            self.handler_map = {
+                "game_action": self.handle_game_action,
+                "chat_message": self.handle_chat_message,
+            }
 
             await self.connection_service.connect(
                 websocket=websocket, user_id=self.user_id
@@ -154,41 +160,9 @@ class ConnectionEndpoint(WebSocketEndpoint):
             message_type = data.get("type")
             payload = data.get("payload", {})
 
-            if message_type == "game_action":
-                room_id = payload.get("room_id")
-                # Verify room exists and user is in room
-                if room_id and await self.room_service.check_user_in_room(
-                    user_id=self.user_id, room_id=room_id
-                ):
-                    # Get current game state in database
-                    game_state = await self.room_service.get_game_state(room_id=room_id)
-
-                    action = payload.get("action")
-
-                    # Make action given from user to current game state
-                    new_game_state = self.game_service.make_action(
-                        current_state=game_state, player_id=self.user_id, action=action
-                    )
-
-                    # Set new game state after action is processed
-                    await self.room_service.set_game_state(
-                        room_id=room_id, game_state=new_game_state.model_dump()
-                    )
-
-                    user_list = await self.room_service.get_user_list(room_id=room_id)
-                    game_update = GameUpdate(
-                        room_id=room_id,
-                        game_state=new_game_state.model_dump(),
-                    )
-                    await self.connection_service.publish_event(
-                        channel="game_update",
-                        user_list=user_list,
-                        message_data=game_update.model_dump(),
-                    )
-            # elif message_type == "chat_message":
-            #     room_id = data.get("room_id")
-            # send_message, { types, room_id, message },
-            # Redis Pub/Sub -> channel chat messages -> publish chat message into room -> all servers broadcast into room to each user -> chat updates in frontend
+            handler = self.handler_map.get(message_type, self.handle_unknown)
+            
+            await handler(payload)
         except ValueError as e:
             error_payload = {"type": "Error", "payload": {"message": str(e)}}
 
@@ -218,3 +192,47 @@ class ConnectionEndpoint(WebSocketEndpoint):
             logger.info(
                 f"User '{self.user_id}' disconnected from websocket endpoint: {close_code}"
             )
+
+    async def handle_game_action(self, payload: dict):
+        """Handler for game action.
+
+        Args:
+            payload (dict): Contains room_id and action for the game.
+        """
+        room_id = payload.get("room_id")
+        # Verify room exists and user is in room
+        if room_id and await self.room_service.check_user_in_room(
+            user_id=self.user_id, room_id=room_id
+        ):
+            # Get current game state in database
+            game_state = await self.room_service.get_game_state(room_id=room_id)
+
+            action = payload.get("action")
+
+            # Make action given from user to current game state
+            new_game_state = self.game_service.make_action(
+                current_state=game_state, player_id=self.user_id, action=action
+            )
+
+            # Set new game state after action is processed
+            await self.room_service.set_game_state(
+                room_id=room_id, game_state=new_game_state.model_dump()
+            )
+
+            user_list = await self.room_service.get_user_list(room_id=room_id)
+            game_update = GameUpdate(
+                room_id=room_id,
+                game_state=new_game_state.model_dump(),
+            )
+            await self.connection_service.publish_event(
+                channel="game_update",
+                user_list=user_list,
+                message_data=game_update.model_dump(),
+            )
+
+    async def handle_chat_message(self, payload: dict):
+        pass
+    
+    async def handle_unknown(self, _payload: dict):
+        """Handler for unknown message type"""
+        logger.warning("Received unknown message type.")

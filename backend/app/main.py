@@ -9,6 +9,7 @@ from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
 from app.config import settings
 from app.dependencies import get_blob_service, get_cosmos_service, get_redis_service
+from app.redis_listener import RedisListener
 from app.routers import (
     accounts_router,
     game_router,
@@ -16,7 +17,6 @@ from app.routers import (
     test_router,
     websocket_router,
 )
-from app.redis_listener import redis_listener
 
 if settings.APPLICATIONINSIGHTS_CONNECTION_STRING:
     configure_azure_monitor()
@@ -30,7 +30,8 @@ async def lifespan(app: FastAPI):
     """
     # Start up
     # Start the Redis subscribe method as a background task
-    subscribe_task = asyncio.create_task(redis_listener())
+    listener = RedisListener()
+    subscribe_task = asyncio.create_task(listener.listen())
 
     yield
     # Shutdown
