@@ -3,8 +3,8 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 
 from app import auth
-from app.dependencies import get_game_service, get_room_service
-from app.services.games.chess_game import ChessLogic
+from app.dependencies import get_game_service_factory, get_room_service
+from app.services.game_service_factory import GameServiceFactory
 from app.services.room_service import RoomService
 
 router = APIRouter(prefix="/rooms", tags=["Rooms"])
@@ -119,13 +119,23 @@ async def get_room(
 async def create_game(
     user_id: str = Depends(auth.get_user_id_http),
     room_service: RoomService = Depends(get_room_service),
-    game_service: ChessLogic = Depends(get_game_service),
+    game_service_factory: GameServiceFactory = Depends(get_game_service_factory),
 ):
     try:
         room_id = await room_service.get_user_room(user_id=user_id)
         if not room_id:
             logger.error(f"Room not found for user '{user_id}'")
             return {"message": "User not in a room"}
+
+        room = await room_service.get_room(room_id=room_id)
+
+        if room is None:
+            logger.error(f"Room '{room_id}' not found in database")
+            return {"message": "Room not found in database"}
+
+        # Get game service based on game type of room
+        game_type = room.model_dump().get("game_type")
+        game_service = game_service_factory.get_service(game_type=game_type)
 
         user_list = list(await room_service.get_user_list(room_id=room_id))
 
