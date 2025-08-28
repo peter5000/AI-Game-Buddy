@@ -21,34 +21,13 @@ class RedisListener:
     
     def __init__(self):
         """Initializes the RedisListener instance."""
-        self.connection_service = get_connection_service()
-        self.room_service = get_room_service()
-        self.redis_service = get_redis_service()
+        self._connection_service = get_connection_service()
+        self._room_service = get_room_service()
+        self._redis_service = get_redis_service()
 
-        self.handler_map = {
+        self._handler_map = {
             "game_update": self.handle_game_update,
         }
-
-    async def handle_game_update(self, payload: BroadcastPayload):
-        """Game update handler, sends new game state to room.
-
-        Args:
-            payload (BroadcastPayload): Payload of list of users to send to and message to send.
-        """
-        room_id = payload.message.get("room_id")
-        game_state = payload.message.get("game_state")
-        if room_id is not None:
-            await self.room_service.send_game_state(
-                room_id=room_id, game_state=game_state
-            )
-
-    async def handle_default(self, payload: BroadcastPayload):
-        """Default handler, sends payload to all users in user list.
-
-        Args:
-            payload (BroadcastPayload): Payload of list of users to send to and message to send.
-        """
-        await self.connection_service.broadcast(payload)
 
     async def listen(self):
         """
@@ -58,14 +37,14 @@ class RedisListener:
         Upon receiving a message, it validates and dispatches the message to the appropriate handler
         based on the channel type.
         """
-        if not self.redis_service.r:
+        if not self._redis_service.r:
             logger.error("Redis client is not available. Listener cannot start.")
             return
         
-        pubsub = self.redis_service.r.pubsub()
-        await pubsub.subscribe(self.connection_service.pubsub_channel)
+        pubsub = self._redis_service.r.pubsub()
+        await pubsub.subscribe(self._connection_service.pubsub_channel)
         logger.info(
-            f"Redis listener has subscribed to channel {self.connection_service.pubsub_channel}"
+            f"Redis listener has subscribed to channel {self._connection_service.pubsub_channel}"
         )
 
         while True:
@@ -80,7 +59,7 @@ class RedisListener:
                     payload = BroadcastPayload.model_validate(envelope.payload)
 
                     # Get handler based on channel name
-                    handler = self.handler_map.get(channel, self.handle_default)
+                    handler = self._handler_map.get(channel, self._handle_default)
 
                     # Call handler function with message payload
                     await handler(payload)
@@ -90,3 +69,24 @@ class RedisListener:
             except Exception:
                 logger.exception("Error in Redis listener.")
                 await asyncio.sleep(1)
+
+    async def handle_game_update(self, payload: BroadcastPayload):
+        """Game update handler, sends new game state to room.
+
+        Args:
+            payload (BroadcastPayload): Payload of list of users to send to and message to send.
+        """
+        room_id = payload.message.get("room_id")
+        game_state = payload.message.get("game_state")
+        if room_id is not None:
+            await self._room_service.send_game_state(
+                room_id=room_id, game_state=game_state
+            )
+
+    async def handle_default(self, payload: BroadcastPayload):
+        """Default handler, sends payload to all users in user list.
+
+        Args:
+            payload (BroadcastPayload): Payload of list of users to send to and message to send.
+        """
+        await self._connection_service.broadcast(payload)

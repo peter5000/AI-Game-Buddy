@@ -42,9 +42,9 @@ class RoomService:
             redis_service (RedisService): The service for interacting with Redis.
             connection_manager (ConnectionManager): The service for managing websocket connections and broadcasting events.
         """
-        self.cosmos_service = cosmos_service
-        self.redis_service = redis_service
-        self.connection_service = connection_service
+        self._cosmos_service = cosmos_service
+        self._redis_service = redis_service
+        self._connection_service = connection_service
 
     async def create_room(self, room_name: str, game_type: str, user_id: str) -> Room:
         """Creates a room and stores inside redis and cosmos.
@@ -88,31 +88,31 @@ class RoomService:
 
         try:
             # Write new room into redis
-            await self.redis_service.dict_add(key=f"room:{room_id}", mapping=redis_room)
-            await self.redis_service.expire(f"room:{room_id}", 86400)
+            await self._redis_service.dict_add(key=f"room:{room_id}", mapping=redis_room)
+            await self._redis_service.expire(f"room:{room_id}", 86400)
 
-            await self.redis_service.set_add(
+            await self._redis_service.set_add(
                 key=f"room:{room_id}:users", values=room.users
             )
-            await self.redis_service.expire(f"room:{room_id}:users", 86400)
+            await self._redis_service.expire(f"room:{room_id}:users", 86400)
 
-            await self.redis_service.set_value(key=f"room:{room_id}:state", value="{}")
-            await self.redis_service.expire(f"room:{room_id}:users", 86400)
+            await self._redis_service.set_value(key=f"room:{room_id}:state", value="{}")
+            await self._redis_service.expire(f"room:{room_id}:users", 86400)
 
             # Write user into new room
-            await self.redis_service.set_value(
+            await self._redis_service.set_value(
                 key=f"user:{user_id}:room", value=room_id
             )
         except HTTPException as e:
             logger.warning(f"Redis unavailable for creating room: {e}")
 
         # Write new room into cosmos
-        await self.cosmos_service.add_item(item=cosmos_room, container_type="rooms")
+        await self._cosmos_service.add_item(item=cosmos_room, container_type="rooms")
 
         # Add current room to user information
         patch_operation = [{"op": "add", "path": "/room", "value": room_id}]
 
-        await self.cosmos_service.patch_item(
+        await self._cosmos_service.patch_item(
             item_id=user_id,
             partition_key=user_id,
             patch_operations=patch_operation,
@@ -151,10 +151,10 @@ class RoomService:
             logger.error("User list not found in redis and cosmos")
             raise ValueError("User list missing in redis and cosmos")
         try:
-            await self.redis_service.set_add(
+            await self._redis_service.set_add(
                 key=f"room:{room_id}:users", values=[user_id]
             )
-            await self.redis_service.set_value(
+            await self._redis_service.set_value(
                 key=f"user:{user_id}:room", value=room_id
             )
         except HTTPException as e:
@@ -163,7 +163,7 @@ class RoomService:
         # Add user to room list
         patch_operation = [{"op": "add", "path": "/users/-", "value": user_id}]
 
-        await self.cosmos_service.patch_item(
+        await self._cosmos_service.patch_item(
             item_id=room_id,
             partition_key=room_id,
             patch_operations=patch_operation,
@@ -173,7 +173,7 @@ class RoomService:
         # Add current room to user information
         patch_operation = [{"op": "add", "path": "/room", "value": room_id}]
 
-        await self.cosmos_service.patch_item(
+        await self._cosmos_service.patch_item(
             item_id=user_id,
             partition_key=user_id,
             patch_operations=patch_operation,
@@ -212,16 +212,16 @@ class RoomService:
                 detail="Room not found",
             )
         try:
-            await self.redis_service.set_remove(
+            await self._redis_service.set_remove(
                 key=f"room:{room_id}:users", values=[user_id]
             )
 
-            await self.redis_service.delete_keys(keys=[f"user:{user_id}:room"])
+            await self._redis_service.delete_keys(keys=[f"user:{user_id}:room"])
         except HTTPException as e:
             logger.warning(f"Redis unavailable for leaving room: {e}")
 
         try:
-            item = await self.cosmos_service.get_item(
+            item = await self._cosmos_service.get_item(
                 item=room_id, partition_key=room_id
             )
             user_list = item.get("users", [])
@@ -233,7 +233,7 @@ class RoomService:
                     {"op": "remove", "path": f"/users/{index_to_remove}"}
                 ]
 
-                await self.cosmos_service.patch_item(
+                await self._cosmos_service.patch_item(
                     item_id=room_id,
                     partition_key=room_id,
                     patch_operations=patch_operation,
@@ -251,7 +251,7 @@ class RoomService:
 
         patch_operation = [{"op": "remove", "path": "/room"}]
 
-        await self.cosmos_service.patch_item(
+        await self._cosmos_service.patch_item(
             item_id=user_id,
             partition_key=user_id,
             patch_operations=patch_operation,
@@ -268,9 +268,9 @@ class RoomService:
             Optional[dict]: The room data of the room.
         """
         try:
-            room_data = await self.redis_service.dict_get_all(key=f"room:{room_id}")
-            user_set = await self.redis_service.set_get(key=f"room:{room_id}:users")
-            game_state = await self.redis_service.get_value(key=f"room:{room_id}:state")
+            room_data = await self._redis_service.dict_get_all(key=f"room:{room_id}")
+            user_set = await self._redis_service.set_get(key=f"room:{room_id}:users")
+            game_state = await self._redis_service.get_value(key=f"room:{room_id}:state")
             if room_data and user_set is not None and game_state is not None:
                 # Combine the data into a single dictionary
                 full_room_data = room_data | {
@@ -287,7 +287,7 @@ class RoomService:
 
         logger.info(f"Room '{room_id}' is incomplete in cache, checking database")
 
-        room_data_from_db = await self.cosmos_service.get_item(
+        room_data_from_db = await self._cosmos_service.get_item(
             item_id=room_id, partition_key=room_id, container_type="rooms"
         )
 
@@ -302,13 +302,13 @@ class RoomService:
                 )
                 try:
                     # Write to the separate Redis keys
-                    await self.redis_service.dict_add(
+                    await self._redis_service.dict_add(
                         key=f"room:{room_id}", mapping=room_data
                     )
-                    await self.redis_service.set_add(
+                    await self._redis_service.set_add(
                         key=f"room:{room_id}:users", values=room_object.users
                     )
-                    await self.redis_service.set_value(
+                    await self._redis_service.set_value(
                         key=f"room:{room_id}:state",
                         value=json.dumps(room_object.game_state),
                     )
@@ -345,15 +345,15 @@ class RoomService:
             keys_to_delete.append(f"user:{user_id}:room")
         try:
             # Get all room keys in redis
-            keys_to_delete += await self.redis_service.scan_keys(key=room_key)
+            keys_to_delete += await self._redis_service.scan_keys(key=room_key)
 
             # Deleting all keys in redis
-            await self.redis_service.delete_keys(keys=keys_to_delete)
+            await self._redis_service.delete_keys(keys=keys_to_delete)
         except HTTPException as e:
             logger.warning(f"Redis unavailable for deleting room: {e}")
 
         # Deleting room in cosmos
-        await self.cosmos_service.delete_item(
+        await self._cosmos_service.delete_item(
             item_id=room_id, partition_key=room_id, container_type="rooms"
         )
 
@@ -361,7 +361,7 @@ class RoomService:
         for user_id in user_list:
             patch_operation = [{"op": "remove", "path": "/room"}]
 
-            await self.cosmos_service.patch_item(
+            await self._cosmos_service.patch_item(
                 item_id=user_id,
                 partition_key=user_id,
                 patch_operations=patch_operation,
@@ -385,16 +385,16 @@ class RoomService:
         if not room_id:
             raise ValueError("Room ID missing on setting game state")
         try:
-            await self.redis_service.set_value(
+            await self._redis_service.set_value(
                 key=f"room:{room_id}:state", value=json.dumps(game_state)
             )
-            await self.redis_service.expire(f"room:{room_id}:state", 86400)
+            await self._redis_service.expire(f"room:{room_id}:state", 86400)
         except HTTPException as e:
             logger.warning(f"Redis unavailable for setting room: {e}")
 
         patch_operation = [{"op": "add", "path": "/game_state", "value": game_state}]
 
-        await self.cosmos_service.patch_item(
+        await self._cosmos_service.patch_item(
             item_id=room_id,
             partition_key=room_id,
             patch_operations=patch_operation,
@@ -416,7 +416,7 @@ class RoomService:
         if not room_id:
             raise ValueError("Room ID missing on getting game state")
         try:
-            game_state_json = await self.redis_service.get_value(
+            game_state_json = await self._redis_service.get_value(
                 key=f"room:{room_id}:state"
             )
         except HTTPException as e:
@@ -428,7 +428,7 @@ class RoomService:
             return game_state
 
         logger.warning("Game state not found in redis, checking cosmos")
-        room_data = await self.cosmos_service.get_item(
+        room_data = await self._cosmos_service.get_item(
             item_id=room_id, partition_key=room_id, container_type="rooms"
         )
 
@@ -438,7 +438,7 @@ class RoomService:
             if game_state is not None:
                 logger.info("Game state found in cosmos, adding into redis")
                 try:
-                    await self.redis_service.set_value(
+                    await self._redis_service.set_value(
                         key=f"room:{room_id}:state", value=json.dumps(game_state)
                     )
                 except HTTPException as e:
@@ -460,13 +460,13 @@ class RoomService:
         if not room_id:
             raise ValueError("Room ID missing on getting game state")
         try:
-            await self.redis_service.delete_keys(keys=[f"room:{room_id}:state"])
+            await self._redis_service.delete_keys(keys=[f"room:{room_id}:state"])
         except HTTPException as e:
             logger.warning(f"Redis unavailable for deleting game state: {e}")
             
         patch_operation = [{"op": "remove", "path": "/game_state"}]
 
-        await self.cosmos_service.patch_item(
+        await self._cosmos_service.patch_item(
             item_id=room_id,
             partition_key=room_id,
             patch_operations=patch_operation,
@@ -499,13 +499,13 @@ class RoomService:
                 )
 
         # Get list of users connected through websocket endpoint on the server
-        user_list = self.connection_service.get_active_users_from_list(
+        user_list = self._connection_service.get_active_users_from_list(
             user_list=room_list
         )
         logger.info(f"Sending game state to room '{room_id}'")
 
         payload = BroadcastPayload(user_list=user_list, message=game_state)
-        await self.connection_service.broadcast(payload=payload)
+        await self._connection_service.broadcast(payload=payload)
 
     async def get_user_room(self, user_id: str) -> Optional[str]:
         """Gets the room ID of the room that the user is in.
@@ -522,7 +522,7 @@ class RoomService:
         if not user_id:
             raise ValueError("User ID cannot be empty")
         try:
-            room_id = await self.redis_service.get_value(key=f"user:{user_id}:room")
+            room_id = await self._redis_service.get_value(key=f"user:{user_id}:room")
         except HTTPException as e:
             logger.warning(f"Redis unavailable for getting user room: {e}")
             
@@ -531,7 +531,7 @@ class RoomService:
             return room_id
 
         logger.warning("User room not found in redis, checking cosmos")
-        user_data = await self.cosmos_service.get_item(
+        user_data = await self._cosmos_service.get_item(
             item_id=user_id, partition_key=user_id, container_type="users"
         )
 
@@ -541,7 +541,7 @@ class RoomService:
             if room_id:
                 logger.info("User room found in cosmos, adding into redis")
                 try:
-                    await self.redis_service.set_value(
+                    await self._redis_service.set_value(
                         key=f"user:{user_id}:room", value=room_id
                     )                        
                 except HTTPException as e:
@@ -569,7 +569,7 @@ class RoomService:
         if not room_id:
             raise ValueError("Room ID missing on getting user list")
         try:
-            user_list = await self.redis_service.set_get(key=f"room:{room_id}:users")
+            user_list = await self._redis_service.set_get(key=f"room:{room_id}:users")
         except HTTPException as e:
             logger.warning(f"Redis unavailable for getting user list: {e}")
             
@@ -577,7 +577,7 @@ class RoomService:
             return user_list
 
         logger.warning("User list not found in redis, checking cosmos")
-        room_data = await self.cosmos_service.get_item(
+        room_data = await self._cosmos_service.get_item(
             item_id=room_id, partition_key=room_id, container_type="rooms"
         )
 
@@ -587,7 +587,7 @@ class RoomService:
             if user_list is not None:
                 logger.info("User list found in cosmos, adding into redis")
                 try:
-                    await self.redis_service.set_add(
+                    await self._redis_service.set_add(
                         key=f"room:{room_id}:users", values=user_list
                     )
                 except HTTPException as e:
@@ -607,7 +607,7 @@ class RoomService:
             list[dict[str, Any]]: The list of all the rooms.
         """
         query = "SELECT * FROM c"
-        room_list = await self.cosmos_service.get_items_by_query(
+        room_list = await self._cosmos_service.get_items_by_query(
             query=query, container_type="rooms"
         )
         return room_list
@@ -627,5 +627,5 @@ class RoomService:
         if not user_id:
             raise ValueError("User ID missing on checking room")
 
-        room = await self.redis_service.get_value(key=f"user:{user_id}:room")
+        room = await self._redis_service.get_value(key=f"user:{user_id}:room")
         return room == room_id
