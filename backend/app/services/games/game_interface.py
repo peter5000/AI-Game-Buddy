@@ -1,18 +1,24 @@
+import uuid
 from abc import ABC, abstractmethod
-from pydantic import BaseModel, ConfigDict
 from typing import Any, Dict, List
+
+from pydantic import BaseModel
+
 
 # --- Generic GameState ---
 class GameState(BaseModel):
-    player_ids: List[str]     # Player identifications
-    turn: int                 # Current Turn
-    phase: str                # Current Phase
-    meta: Dict[str, Any]      # Any Game Specific Data
+    game_id: str = str(uuid.uuid4())  # Unique identifier for each game
+    player_ids: List[str]  # Player identifications
+    turn: int  # Current Turn
+    phase: str  # Current Phase
+    meta: Dict[str, Any]  # Any Game Specific Data
+
 
 # --- Generic Action ---
 class Action(BaseModel):
-    type: str                 # Type
+    type: str  # Type
     payload: Dict[str, Any]
+
 
 # --- Generic GameSystem ---
 class GameSystem(ABC):

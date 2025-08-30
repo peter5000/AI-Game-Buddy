@@ -1,3 +1,4 @@
+import random
 from typing import Any, Dict, List, Literal, Optional
 
 import chess
@@ -5,7 +6,6 @@ import chess.pgn
 from pydantic import BaseModel, Field, validate_call
 
 from .game_interface import Action, GameState, GameSystem
-import random
 
 
 class ChessState(GameState):
@@ -39,10 +39,10 @@ class ChessLogic(GameSystem):
             turn=1,
             phase="WHITE_TURN",
             meta={
-            "current_player_index": 0,
-            "white_player": selected_players[0],
-            "black_player": selected_players[1],
-            "result": None,
+                "current_player_index": 0,
+                "white_player": selected_players[0],
+                "black_player": selected_players[1],
+                "result": None,
             },
         )
 
@@ -91,6 +91,7 @@ class ChessLogic(GameSystem):
         }
 
         new_state = ChessState(
+            game_id=current_state.game_id,
             player_ids=current_state.player_ids,
             turn=current_state.turn + 1,
             phase=next_phase if not game_result else "GAME_OVER",

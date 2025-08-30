@@ -63,6 +63,30 @@ class BlobService:
             logger.error(f"Unexpected error during blob upload: {e}")
             raise
 
+    async def get_blob(self, container_name: str, filename: str) -> bytes:
+        if not container_name:
+            raise ValueError("Container name cannot be empty")
+        if not filename:
+            raise ValueError("Filename cannot be empty")
+        try:
+            container_client = self.client.get_container_client(container_name)
+            blob_client = container_client.get_blob_client(filename)
+            stream = await blob_client.download_blob()
+            data = await stream.readall()
+            logger.info(
+                f"Blob '{filename}' retrieved from container '{container_name}'"
+            )
+            return data
+        except ResourceNotFoundError:
+            logger.error(f"Blob '{filename}' not found in container '{container_name}'")
+            raise
+        except HttpResponseError as e:
+            logger.error(f"Azure Storage request failed: {e.message}")
+            raise
+        except Exception as e:
+            logger.error(f"Unexpected error during blob retrieval: {e}")
+            raise
+
     async def delete_blob(self, container_name: str, filename: str):
         if not container_name:
             raise ValueError("Container name cannot be empty")
@@ -77,6 +101,9 @@ class BlobService:
             logger.warning(
                 f"Attempted to delete blob '{filename}', but does not exist in container {container_name}"
             )
+        except HttpResponseError as e:
+            logger.error(f"Azure Storage request failed: {e.message}")
+            raise
         except Exception as e:
             logger.error(f"Unexpected error during blob upload: {e}")
             raise
