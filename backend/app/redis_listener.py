@@ -59,7 +59,7 @@ class RedisListener:
                     payload = BroadcastPayload.model_validate(envelope.payload)
 
                     # Get handler based on channel name
-                    handler = self._handler_map.get(channel, self._handle_default)
+                    handler = self._handler_map.get(channel, self.handle_default)
 
                     # Call handler function with message payload
                     await handler(payload)
