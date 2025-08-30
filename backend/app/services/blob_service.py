@@ -105,5 +105,5 @@ class BlobService:
             logger.error(f"Azure Storage request failed: {e.message}")
             raise
         except Exception as e:
-            logger.error(f"Unexpected error during blob upload: {e}")
+            logger.error(f"Unexpected error during blob deletion: {e}")
             raise
