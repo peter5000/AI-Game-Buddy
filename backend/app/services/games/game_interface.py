@@ -2,12 +2,12 @@ import uuid
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 # --- Generic GameState ---
 class GameState(BaseModel):
-    game_id: str = str(uuid.uuid4())  # Unique identifier for each game
+    game_id: str = Field(default_factory=lambda: str(uuid.uuid4()))  # Unique identifier for each game
     player_ids: List[str]  # Player identifications
     turn: int  # Current Turn
     phase: str  # Current Phase
