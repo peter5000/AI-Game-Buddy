@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class UserService:
     def __init__(self, cosmos_service: CosmosService):
-        self.cosmos_service = cosmos_service
+        self._cosmos_service = cosmos_service
 
     async def create_user(self, user: UserCreate):
         logger.info(
@@ -34,7 +34,7 @@ class UserService:
         query = "SELECT * FROM c WHERE c.email_lower = @email"
         parameters = [{"name": "@email", "value": user.email.lower()}]
 
-        existing_users_by_email = await self.cosmos_service.get_items_by_query(
+        existing_users_by_email = await self._cosmos_service.get_items_by_query(
             query=query, container_type="users", parameters=parameters
         )
         logger.info(f"Result of email query: {existing_users_by_email}")
@@ -70,12 +70,12 @@ class UserService:
         item_to_save = new_user.model_dump()
 
         logger.info(f"Adding new user to Cosmos DB: {item_to_save['id']}")
-        await self.cosmos_service.add_item(item=item_to_save, container_type="users")
+        await self._cosmos_service.add_item(item=item_to_save, container_type="users")
         logger.info(f"User '{user.username}' created successfully.")
 
     async def delete_user(self, user_id: str):
         logger.info(f"Deleting user '{user_id}' from Cosmos DB")
-        await self.cosmos_service.delete_item(
+        await self._cosmos_service.delete_item(
             item_id=user_id, partition_key=user_id, container_type="users"
         )
         logger.info(f"User '{user_id}' deleted successfully.")
@@ -88,7 +88,7 @@ class UserService:
         try:
             query = "SELECT * FROM c WHERE c.username_lower = @username"
             parameters = [{"name": "@username", "value": username.lower()}]
-            user = await self.cosmos_service.get_items_by_query(
+            user = await self._cosmos_service.get_items_by_query(
                 query=query, container_type="users", parameters=parameters
             )
         except HTTPException as e:

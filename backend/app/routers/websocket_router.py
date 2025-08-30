@@ -14,7 +14,11 @@ from pydantic import ValidationError
 from starlette.endpoints import WebSocketEndpoint
 
 from app import auth
-from app.dependencies import get_connection_service, get_game_service, get_room_service
+from app.dependencies import (
+    get_connection_service,
+    get_game_service_factory,
+    get_room_service,
+)
 from app.schemas import GameUpdate
 from app.services.connection_service import ConnectionService
 
@@ -73,7 +77,7 @@ class ConnectionEndpoint(WebSocketEndpoint):
             # Initialize services
             self.connection_service: ConnectionService = get_connection_service()
             self.room_service = get_room_service()
-            self.game_service = get_game_service()
+            self.game_service_factory = get_game_service_factory()
             # self.chat_service = get_chat_service()
 
             # Handler map for mapping message type to handler function
@@ -123,22 +127,7 @@ class ConnectionEndpoint(WebSocketEndpoint):
             websocket (WebSocket): The WebSocket connection object.
             data (dict): The received message data containing:
                 - type (str): Message type identifier
-                - room_id (str): Room identifier for the action
                 - payload (dict): Message-specific data
-
-            Payload example:
-            {
-                "type": "game_action",
-                "payload": {
-                    "room_id": "room_id",
-                    "action": {
-                        "type": "MAKE_MOVE",
-                        "payload": {
-                            "move": "e2e4"
-                        }
-                    }
-                }
-            }
 
         Raises:
             ValidationError: If the message format is invalid. Sends error response to client.
@@ -161,11 +150,10 @@ class ConnectionEndpoint(WebSocketEndpoint):
             payload = data.get("payload", {})
 
             handler = self.handler_map.get(message_type, self.handle_unknown)
-            
+
             await handler(payload)
         except ValueError as e:
             error_payload = {"type": "Error", "payload": {"message": str(e)}}
-
             await websocket.send_json(error_payload)
         except ValidationError as e:
             logger.error(f"Invalid message format from '{self.user_id}': {e}")
@@ -198,6 +186,22 @@ class ConnectionEndpoint(WebSocketEndpoint):
 
         Args:
             payload (dict): Contains room_id and action for the game.
+
+        Payload example:
+        {
+            "type": "game_action",
+            "payload": {
+                "room_id": "room_id",
+                "game_type": "chess",
+                "action": {
+                    "type": "MAKE_MOVE",
+                    "payload": {
+                        "move": "e2e4"
+                    }
+                }
+            }
+        }
+
         """
         room_id = payload.get("room_id")
         # Verify room exists and user is in room
@@ -209,8 +213,11 @@ class ConnectionEndpoint(WebSocketEndpoint):
 
             action = payload.get("action")
 
+            game_type = payload.get("game_type")
+            game_service = self.game_service_factory.get_service(game_type=game_type)
+
             # Make action given from user to current game state
-            new_game_state = self.game_service.make_action(
+            new_game_state = game_service.make_action(
                 current_state=game_state, player_id=self.user_id, action=action
             )
 
@@ -232,7 +239,7 @@ class ConnectionEndpoint(WebSocketEndpoint):
 
     async def handle_chat_message(self, payload: dict):
         pass
-    
+
     async def handle_unknown(self, _payload: dict):
         """Handler for unknown message type"""
         logger.warning("Received unknown message type.")

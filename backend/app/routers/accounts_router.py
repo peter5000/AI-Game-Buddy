@@ -179,7 +179,8 @@ async def read_users_me(
 @router.get("/get_user")
 async def get_username(
     user_id: str = Depends(auth.get_user_id_http),
-    user_service: UserService = Depends(get_user_service),
+    cosmos_service: CosmosService = Depends(get_cosmos_service),
 ):
-    username = await user_service.get_username_by_userid(user_id=user_id)
-    return username
+    user = await cosmos_service.get_item(item_id=user_id, partition_key= user_id, container_type="users")
+    username = user.get("username")
+    return {"message": "success", "username": username}
