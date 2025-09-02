@@ -3,8 +3,8 @@ from fastapi import HTTPException, APIRouter
 from pydantic import BaseModel
 from app.services.games.ttt import TicTacToeSystem, TicTacToeAction, TicTacToeState, TicTacToeMovePayload
 
-from app.services.games.uttt.ultimate_tic_tac_toe import UltimateTicTacToe, UltimateTicTacToeError
-from app.services.games.uttt.ultimate_tic_tac_toe import Action
+from app.services.games.ulttt.ultimate_tic_tac_toe import UltimateTicTacToe, UltimateTicTacToeError
+from app.services.games.ulttt.ultimate_tic_tac_toe import Action
 from app.services.games.chess_game import ChessLogic, ChessAction, ChessState
 
 router = APIRouter(

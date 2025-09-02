@@ -7,8 +7,8 @@ from typing import Tuple
 # This might not be necessary depending on your setup, but it's robust.
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
 
-from games.uttt.ultimate_tic_tac_toe import UltimateTicTacToeSystem
-from games.uttt.ulttt_interface import UltimateTicTacToeState, UltimateTicTacToeAction, UltimateTicTacToePayload
+from games.ulttt.ultimate_tic_tac_toe import UltimateTicTacToeSystem
+from games.ulttt.ulttt_interface import UltimateTicTacToeState, UltimateTicTacToeAction, UltimateTicTacToePayload
 
 def print_board(state: UltimateTicTacToeState):
     """Renders the entire game state to the console."""
@@ -18,7 +18,7 @@ def print_board(state: UltimateTicTacToeState):
 
     # Board and Meta Board characters
     markers = { 'X': 'X', 'O': 'O', None: '.' }
-    meta_markers = { 'X': 'X', 'O': 'O', 'Draw': '#', None: ' ' }
+    meta_markers = { 'X': 'X', 'O': 'O', '-': '#', None: ' ' }
 
     # Print board row by row, including meta board status on the side
     for board_r in range(3):
@@ -70,7 +70,7 @@ def main():
     system = UltimateTicTacToeSystem()
     state = system.initialize_game(player_ids=["Player 1", "Player 2"])
 
-    while not system.is_game_finished(state):
+    while not state.finished:
         print_board(state)
 
         curr_player_index = state.meta["curr_player_index"]
@@ -90,10 +90,10 @@ def main():
             try:
                 board_r, board_c, r, c = get_player_input(player_marker)
                 action = UltimateTicTacToeAction(
-                    player_id=player_id,
+                    type="PLACE_MARKER",
                     payload=UltimateTicTacToePayload(board_row=board_r, board_col=board_c, row=r, col=c)
                 )
-                state = system.make_action(state, action)
+                state = system.make_action(state, player_id=player_id, action=action)
                 break # Move was successful, break the input loop
             except ValueError as e:
                 print(f"Invalid Move: {e}. Please try again.")
