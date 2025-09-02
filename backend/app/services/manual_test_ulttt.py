@@ -49,8 +49,10 @@ def get_player_input(player_marker: str) -> Tuple[int, int, int, int]:
     """Gets and validates move input from the command line."""
     while True:
         try:
-            prompt = f"Player '{player_marker}', enter move (BoardRow BoardCol CellRow CellCol): "
+            prompt = f"Player '{player_marker}', enter move (BoardRow BoardCol CellRow CellCol) or RESIGN to forfeit: "
             parts = input(prompt).split()
+            if len(parts) == 1 and parts[0].upper() == "RESIGN":
+                return -1, -1, -1, -1  # Special value indicating resignation
             if len(parts) != 4:
                 print("Invalid input. Please enter 4 numbers separated by spaces.")
                 continue
@@ -89,6 +91,13 @@ def main():
         while True:
             try:
                 board_r, board_c, r, c = get_player_input(player_marker)
+                if board_r == -1:  # Player chose to resign
+                    action = UltimateTicTacToeAction(
+                        type="RESIGN",
+                        payload=None  # No payload needed for resignation
+                    )
+                    state = system.make_action(state, player_id=player_id, action=action)
+                    break  # Exit the input loop after resignation
                 action = UltimateTicTacToeAction(
                     type="PLACE_MARKER",
                     payload=UltimateTicTacToePayload(board_row=board_r, board_col=board_c, row=r, col=c)

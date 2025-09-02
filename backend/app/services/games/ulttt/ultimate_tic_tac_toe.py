@@ -28,6 +28,11 @@ class UltimateTicTacToeSystem(GameSystem):
         # Validate the action before proceeding.
         self.is_action_valid(state, player_id, action)
 
+        if action.type == "RESIGN":
+            state.meta["winner"] = state.player_ids[1-state.meta["curr_player_index"]]
+            state.finished = True
+            return state
+
         p = action.payload
         marker = "X" if state.meta["curr_player_index"] == 1 else "O"
 
