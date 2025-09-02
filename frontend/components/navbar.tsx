@@ -25,7 +25,7 @@ export function Navbar() {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
-            <Gamepad2 className="h-8 w-8 text-purple-600" />
+            <Gamepad2 className="h-8 w-8 text-purple-600" suppressHydrationWarning />
             <span className="text-xl font-bold text-gray-900">AI Gaming Friend</span>
           </Link>
 
@@ -50,7 +50,7 @@ export function Navbar() {
             {isLoggedIn ? (
               <div className="flex items-center space-x-3">
                 <Button variant="ghost" size="sm">
-                  <Bell className="h-4 w-4" />
+                  <Bell className="h-4 w-4" suppressHydrationWarning />
                 </Button>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -62,19 +62,19 @@ export function Navbar() {
                   <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuItem asChild>
                       <Link href="/profile" className="flex items-center">
-                        <User className="mr-2 h-4 w-4" />
+                        <User className="mr-2 h-4 w-4" suppressHydrationWarning />
                         Profile
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem asChild>
                       <Link href="/settings" className="flex items-center">
-                        <Settings className="mr-2 h-4 w-4" />
+                        <Settings className="mr-2 h-4 w-4" suppressHydrationWarning />
                         Settings
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => setIsLoggedIn(false)}>
-                      <LogOut className="mr-2 h-4 w-4" />
+                      <LogOut className="mr-2 h-4 w-4" suppressHydrationWarning />
                       Sign Out
                     </DropdownMenuItem>
                   </DropdownMenuContent>
@@ -95,7 +95,10 @@ export function Navbar() {
           {/* Mobile menu button */}
           <div className="md:hidden">
             <Button variant="ghost" size="sm" onClick={toggleMenu}>
-              {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {isMenuOpen ? 
+                <X className="h-6 w-6" suppressHydrationWarning /> : 
+                <Menu className="h-6 w-6" suppressHydrationWarning />
+              }
             </Button>
           </div>
         </div>

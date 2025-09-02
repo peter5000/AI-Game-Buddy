@@ -31,7 +31,7 @@ export default function SignInPage() {
             <Gamepad2 className="h-12 w-12 text-purple-600" />
           </div>
           <CardTitle className="text-2xl">Welcome Back</CardTitle>
-          <CardDescription>Sign in to your AI Gaming Friend account</CardDescription>
+          <CardDescription>Sign in to your account</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <form onSubmit={handleSubmit} className="space-y-4">
