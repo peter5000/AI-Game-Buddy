@@ -14,8 +14,8 @@ class GameState(BaseModel):
 
 # --- Generic Action ---
 class Action(BaseModel):
-    type: str                 # Type
-    payload: Dict[str, Any]
+    type: str                       # Type
+    payload: Dict[str, Any] | None
 
 # --- Generic Phase ---
 class Phase(BaseModel):
