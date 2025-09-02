@@ -31,6 +31,7 @@ class UltimateTicTacToePayload(BaseModel):
     row: int = Field(..., ge=0, le=2)
     col: int = Field(..., ge=0, le=2)
 
+# Action type would be either "PLACE_MARKER" or "RESIGN"
 class UltimateTicTacToeAction(Action):
-    type: Literal["PLACE_MARKER"] = "PLACE_MARKER"
+    type: Literal["PLACE_MARKER", "RESIGN"]
     payload: UltimateTicTacToePayload

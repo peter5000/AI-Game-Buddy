@@ -5,12 +5,11 @@ from typing import Any, Dict, List, Annotated
 # --- Generic GameState ---
 class GameState(BaseModel):
     player_ids: List[str]     # Player identifications
-    finished: bool = False       # Whether the game is finished
+    finished: bool = False    # Set True when game is finished
     meta: Dict[str, Any]      # Any Game Specific Data
 
 # --- Generic Action ---
 class Action(BaseModel):
-    player_id: str            # Player identification
     type: str                 # Type
     payload: Dict[str, Any]
 
@@ -60,7 +59,7 @@ class GameSystem(ABC):
         pass
 
     @abstractmethod
-    def make_action(self, state: GameState, action: Action) -> GameState:
+    def make_action(self, state: GameState, player_id: str, action: Action) -> GameState:
         """Processes a player's action and returns the new game state."""
         pass
 
@@ -72,9 +71,4 @@ class GameSystem(ABC):
     @abstractmethod
     def is_action_valid(self, state: GameState, player_id: str, action: Action) -> bool:
         """Returns whether the move is valid"""
-        pass
-
-    @abstractmethod
-    def is_game_finished(self, state: GameState) -> bool:
-        """Returns whether the game is finished"""
         pass
