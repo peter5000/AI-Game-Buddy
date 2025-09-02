@@ -1,12 +1,16 @@
+import uuid
 from abc import ABC, abstractmethod
 from pydantic import BaseModel, Field
 from typing import Any, Dict, List, Annotated
 
 # --- Generic GameState ---
 class GameState(BaseModel):
-    player_ids: List[str]     # Player identifications
+    game_id: str = Field(
+        default_factory=lambda: str(uuid.uuid4())
+    )  # Unique identifier for each game
+    player_ids: List[str]  # Player identifications
     finished: bool = False    # Set True when game is finished
-    meta: Dict[str, Any]      # Any Game Specific Data
+    meta: Dict[str, Any]  # Any Game Specific Data
 
 # --- Generic Action ---
 class Action(BaseModel):
@@ -50,6 +54,7 @@ class Phase(BaseModel):
 class GamePhaseState(GameState):
     turn: int
     phase: Phase
+
 
 # --- Generic GameSystem ---
 class GameSystem(ABC):

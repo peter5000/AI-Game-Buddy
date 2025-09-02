@@ -1,19 +1,48 @@
 {
 	"info": {
-		"_postman_id": "6d4afb36-226f-4a28-98a0-b76d4db17830",
+		"_postman_id": "90242428-6873-4130-95ac-201ac6bb41d7",
 		"name": "ai-game-friend",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "39210366"
+		"_exporter_id": "39210366",
+		"_collection_link": "https://gold-station-175155.postman.co/workspace/AI-Game-Friend-API-Testing~a0e67eb8-8ced-40bb-a822-336395b241d4/collection/39210366-90242428-6873-4130-95ac-201ac6bb41d7?action=share&source=collection_link&creator=39210366"
 	},
 	"item": [
 		{
 			"name": "Register",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const requestBodyString = pm.request.body.raw;\r",
+							"const requestBody = JSON.parse(requestBodyString);\r",
+							"\r",
+							"pm.environment.set(\"savedUsername\", requestBody.username);\r",
+							"pm.environment.set(\"savedEmail\", requestBody.email);\r",
+							"pm.environment.set(\"savedPassword\", requestBody.password);\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
 			"request": {
 				"method": "POST",
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"username\": \"testuser\",\r\n    \"email\": \"testuser@example.com\",\r\n    \"password\": \"password123\"\r\n}",
+					"raw": "{\r\n    \"username\": \"{{$randomWord}}\",\r\n    \"email\": \"{{$randomEmail}}\",\r\n    \"password\": \"{{$randomPassword}}\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -35,12 +64,37 @@
 		},
 		{
 			"name": "Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.cookies.has('access_token')) {\r",
+							"\r",
+							"    // Get the value of the cookie\r",
+							"    const jwtToken = pm.cookies.get('access_token');\r",
+							"\r",
+							"    // Save the token to an environment variable\r",
+							"    pm.environment.set('access_token', jwtToken);\r",
+							"\r",
+							"    console.log(\"✅ JWT Token saved to environment.\");\r",
+							"\r",
+							"} else {\r",
+							"    console.error(\"🚨 Could not find the specified JWT cookie!\");\r",
+							"}\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
 			"request": {
 				"method": "POST",
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n  \"identifier\": \"testuser@example.com\",\r\n  \"password\": \"password123\"\r\n}",
+					"raw": "{\r\n  \"identifier\": \"{{savedEmail}}\",\r\n  \"password\": \"{{savedPassword}}\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -80,6 +134,199 @@
 			"response": []
 		},
 		{
+			"name": "Refresh Token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.cookies.has('access_token')) {\r",
+							"\r",
+							"    // Get the value of the cookie\r",
+							"    const jwtToken = pm.cookies.get('access_token');\r",
+							"\r",
+							"    // Save the token to an environment variable\r",
+							"    pm.environment.set('access_token', jwtToken);\r",
+							"\r",
+							"    console.log(\"✅ JWT Token saved to environment.\");\r",
+							"\r",
+							"} else {\r",
+							"    console.error(\"🚨 Could not find the specified JWT cookie!\");\r",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/accounts/refresh",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"accounts",
+						"refresh"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Room",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const responseBody = pm.response.json()\r",
+							"\r",
+							"pm.environment.set(\"roomId\", responseBody.room_id.room_id);\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/rooms/create?room_name={{savedUsername}}'s Room&game_type=chess",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"rooms",
+						"create"
+					],
+					"query": [
+						{
+							"key": "room_name",
+							"value": "{{savedUsername}}'s Room"
+						},
+						{
+							"key": "game_type",
+							"value": "chess"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Room",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/rooms/get",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"rooms",
+						"get"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Start Game",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/rooms/start_game",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"rooms",
+						"start_game"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Game State",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/rooms/get_game_state",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"rooms",
+						"get_game_state"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "End Game",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/rooms/end_game",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"rooms",
+						"end_game"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Leave Room",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/rooms/leave",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"rooms",
+						"leave"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Room",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/rooms/delete",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"rooms",
+						"delete"
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "Delete account",
 			"request": {
 				"method": "DELETE",
@@ -98,11 +345,26 @@
 			"response": []
 		}
 	],
-	"variable": [
+	"event": [
 		{
-			"key": "baseURL",
-			"value": "https://myaigamingfriendcontainerjj.bravebay-621a33e9.westus3.azurecontainerapps.io",
-			"type": "default"
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
 		}
 	]
 }
