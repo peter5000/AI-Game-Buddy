@@ -34,7 +34,7 @@ class UltimateTicTacToeSystem(GameSystem):
             return state
 
         p = action.payload
-        marker = "X" if state.meta["curr_player_index"] == 1 else "O"
+        marker = "X" if state.meta["curr_player_index"] == 0 else "O"
 
         # Apply the move to the board.
         state.large_board[p.board_row][p.board_col][p.row][p.col] = marker
