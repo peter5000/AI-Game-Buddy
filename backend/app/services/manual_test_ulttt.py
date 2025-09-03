@@ -77,7 +77,7 @@ def main():
 
         curr_player_index = state.meta["curr_player_index"]
         player_id = state.player_ids[curr_player_index]
-        player_marker = "X" if curr_player_index == 1 else "O"
+        player_marker = "X" if curr_player_index == 0 else "O"
 
         if state.active_board:
             br, bc = state.active_board
