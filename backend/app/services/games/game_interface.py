@@ -31,24 +31,20 @@ class Phase(BaseModel):
         """Returns the iterator object (self)."""
         return self
 
-    def __next__(self):
+    def next_phase(self):
         """Calculates and returns the next phase, looping back to the start."""
         try:
             # Find the index of the current phase
             current_index = self.available_phases.index(self.current)
         except ValueError:
             # If current phase isn't in the list, default to the first one
-            self.current = self.available_phases[0]
-            return self
+            return self.model_copy(update={"current": self.available_phases[0]})
 
         # Calculate the next index, looping back to 0 if at the end
         num_phases = len(self.available_phases)
-        next_index = (current_index + 1) % num_phases
-
-        # Update the current phase
-        self.current = self.available_phases[next_index]
-
-        return self
+        next_index = (current_index + 1) % len(self.available_phases)
+        
+        return self.model_copy(update={"current": self.available_phases[next_index]})
 
 # --- Generic GamePhaseState ---
 class GamePhaseState(GameState):
