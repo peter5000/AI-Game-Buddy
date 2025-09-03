@@ -9,9 +9,7 @@ from azure.ai.agents.models import ListSortOrder
 
 logger = logging.getLogger("AIService")
 
-# Functions
-def test(prompt="I am going to Paris, what should I see?"):
-    # AI Setup
+def model_test(prompt="I am going to Paris, what should I see?"):
     endpoint = settings.OPENAI_ENDPOINT
     model_name = "gpt-4o"
     deployment = "gpt-4o"

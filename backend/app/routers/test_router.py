@@ -6,7 +6,7 @@ from app.services.blob_service import BlobService
 from app.dependencies import get_cosmos_service, get_blob_service
 
 # temp PETER
-from app.services.ai_service import test
+from app.services.ai_service import model_test
 
 router = APIRouter(prefix="/test", tags=["Testing"])
 
@@ -14,7 +14,7 @@ router = APIRouter(prefix="/test", tags=["Testing"])
 # temp PETER
 @router.post("/ai/{prompt}")
 def ask_ai(prompt: str):
-    return test(prompt)
+    return model_test(prompt)
 
 
 @router.get("/users/{document_id}")
