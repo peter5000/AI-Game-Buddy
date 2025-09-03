@@ -28,43 +28,44 @@ class UltimateTicTacToeSystem(GameSystem):
         # Validate the action before proceeding.
         self.is_action_valid(state, player_id, action)
 
+        new_state = state.model_copy(deep=True)
         if action.type == "RESIGN":
-            state.meta["winner"] = state.player_ids[1-state.meta["curr_player_index"]]
-            state.finished = True
-            return state
+            new_state.meta["winner"] = new_state.player_ids[1-new_state.meta["curr_player_index"]]
+            new_state.finished = True
+            return new_state
 
         p = action.payload
-        marker = "X" if state.meta["curr_player_index"] == 0 else "O"
+        marker = "X" if new_state.meta["curr_player_index"] == 0 else "O"
 
         # Apply the move to the board.
-        state.large_board[p.board_row][p.board_col][p.row][p.col] = marker
+        new_state.large_board[p.board_row][p.board_col][p.row][p.col] = marker
 
         # Check if this move won the small board.
-        small_board = state.large_board[p.board_row][p.board_col]
+        small_board = new_state.large_board[p.board_row][p.board_col]
         board_status = self._check_board_status(small_board)        # 'X', 'O', '-', or None
 
         if board_status:
-            state.meta_board[p.board_row][p.board_col] = board_status
+            new_state.meta_board[p.board_row][p.board_col] = board_status
 
             # If a small board was won, check if that wins the whole game.
-            game_status = self._check_board_status(state.meta_board)
+            game_status = self._check_board_status(new_state.meta_board)
             if game_status:
-                state.meta["winner"] = player_id if game_status != "-" else "Draw"
-                state.finished = True
-                return state # Game Over
+                new_state.meta["winner"] = player_id if game_status != "-" else "Draw"
+                new_state.finished = True
+                return new_state # Game Over
 
         # Determine the next active board based on the inner cell played.
-        next_board_status = state.meta_board[p.row][p.col]
+        next_board_status = new_state.meta_board[p.row][p.col]
         if next_board_status:
             # If the next board is already won/drawn, the player can go anywhere.
-            state.active_board = None
+            new_state.active_board = None
         else:
-            state.active_board = (p.row, p.col)
+            new_state.active_board = (p.row, p.col)
 
         # Switch to the next player.
-        state.meta["curr_player_index"] = 1 - state.meta["curr_player_index"]
+        new_state.meta["curr_player_index"] = 1 - new_state.meta["curr_player_index"]
 
-        return state
+        return new_state
 
     @validate_call
     def get_valid_actions(self, state: UltimateTicTacToeState, player_id: str) -> List[UltimateTicTacToeAction]:
