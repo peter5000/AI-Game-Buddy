@@ -2,7 +2,7 @@ from typing import List
 import logging
 from pydantic import validate_call
 from ..game_interface import GameSystem
-logger = logging.getLogger("__name__")
+logger = logging.getLogger(__name__)
 from .ulttt_interface import (
     UltimateTicTacToeState,
     UltimateTicTacToeAction,
