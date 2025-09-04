@@ -10,7 +10,7 @@ from .ulttt_interface import (
     SmallBoard,
 )
 
-class UltimateTicTacToeSystem(GameSystem):
+class UltimateTicTacToeSystem(GameSystem[UltimateTicTacToeState, UltimateTicTacToeAction]):
     """
     Implements the game logic for Ultimate Tic-Tac-Toe.
     """

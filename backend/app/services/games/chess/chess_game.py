@@ -9,7 +9,7 @@ from .chess_interface import (
     ChessMovePayload,
 )
 
-class ChessSystem(GameSystem):
+class ChessSystem(GameSystem[ChessState, ChessAction]):
     def initialize_game(self, player_ids: List[str]) -> ChessState:
         if len(player_ids) < 2:
             raise ValueError("Chess requires 2 players.")

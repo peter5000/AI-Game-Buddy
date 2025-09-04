@@ -1,7 +1,7 @@
 import uuid
 from abc import ABC, abstractmethod
 from pydantic import BaseModel, Field
-from typing import Any, Dict, List, Annotated
+from typing import Any, Dict, List, Annotated, TypeVar, Generic
 
 # --- Generic Phase ---
 class Phase(BaseModel):
@@ -52,24 +52,28 @@ class Action(BaseModel):
     type: str                       # Type
     payload: Dict[str, Any] | None
 
+# --- Type Variables ---
+StateType = TypeVar("StateType", bound=GameState)
+ActionType = TypeVar("ActionType", bound=Action)
+
 # --- Generic GameSystem ---
-class GameSystem(ABC):
+class GameSystem(ABC, Generic[StateType, ActionType]):
     @abstractmethod
-    def initialize_game(self, player_ids: List[str]) -> GameState:
+    def initialize_game(self, player_ids: List[str]) -> StateType:
         """Returns the starting state for a new game."""
         pass
 
     @abstractmethod
-    def make_action(self, state: GameState, player_id: str, action: Action) -> GameState:
+    def make_action(self, state: StateType, player_id: str, action: ActionType) -> StateType:
         """Processes a player's action and returns the new game state."""
         pass
 
     @abstractmethod
-    def get_valid_actions(self, state: GameState, player_id: str) -> List[Action]:
+    def get_valid_actions(self, state: StateType, player_id: str) -> List[ActionType]:
         """Returns all valid actions for a given player"""
         pass
 
     @abstractmethod
-    def is_action_valid(self, state: GameState, player_id: str, action: Action) -> bool:
+    def is_action_valid(self, state: StateType, player_id: str, action: ActionType) -> bool:
         """Raises an ValueError if move is invalid. Else returns True."""
         pass
