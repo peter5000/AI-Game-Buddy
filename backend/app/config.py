@@ -18,6 +18,7 @@ class Settings:
     # temp PETER
     OPENAI_ENDPOINT=os.getenv("OPENAI_ENDPOINT")
     OPENAI_API_KEY=os.getenv("OPENAI_API_KEY")
+    PROJECT_ENDPOINT=os.getenv("PROJECT_ENDPOINT")
     REDIS_CONNECTION_URL = os.getenv("REDIS_CONNECTION_URL")
 
     # const variables
