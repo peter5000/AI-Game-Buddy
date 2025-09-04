@@ -8,9 +8,6 @@ from app.services.user_service import UserService
 from fastapi import HTTPException
 from pydantic import SecretStr
 
-# Mark all tests in this file as asyncio tests
-pytestmark = pytest.mark.asyncio
-
 # --- Fixtures for Mocking and Test Data ---
 
 
@@ -41,6 +38,7 @@ def sample_user_create() -> UserCreate:
 
 ## Tests for create_user
 class TestCreateUser:
+    @pytest.mark.asyncio
     async def test_create_user_success(
         self, user_service, mock_cosmos_service, sample_user_create
     ):
@@ -65,6 +63,7 @@ class TestCreateUser:
         assert "password" in saved_item
         assert saved_item["password"] != sample_user_create.password.get_secret_value()
 
+    @pytest.mark.asyncio
     async def test_create_user_fails_if_email_exists(
         self, user_service, mock_cosmos_service, sample_user_create
     ):
@@ -80,6 +79,7 @@ class TestCreateUser:
         assert exc_info.value.status_code == 409
         assert "Email already registered" in exc_info.value.detail
 
+    @pytest.mark.asyncio
     async def test_create_user_fails_if_username_exists(
         self, user_service, mock_cosmos_service, sample_user_create
     ):
@@ -109,6 +109,7 @@ class TestCreateUser:
         assert exc_info.value.status_code == 409
         assert "Username already exists" in exc_info.value.detail
 
+    @pytest.mark.asyncio
     @pytest.mark.parametrize(
         "invalid_username",
         [
@@ -135,6 +136,7 @@ class TestCreateUser:
 
 ## Tests for get_user_by_username
 class TestGetUserByUsername:
+    @pytest.mark.asyncio
     async def test_get_user_by_username_success(
         self, user_service, mock_cosmos_service
     ):
@@ -159,6 +161,7 @@ class TestGetUserByUsername:
         assert isinstance(user, User)
         assert user.username == username
 
+    @pytest.mark.asyncio
     async def test_get_user_by_username_not_found(
         self, user_service, mock_cosmos_service
     ):
@@ -171,6 +174,7 @@ class TestGetUserByUsername:
         # ASSERT
         assert user is None
 
+    @pytest.mark.asyncio
     async def test_get_user_by_username_multiple_found_raises_error(
         self, user_service, mock_cosmos_service
     ):
@@ -186,6 +190,7 @@ class TestGetUserByUsername:
 
 ## Tests for delete_user
 class TestDeleteUser:
+    @pytest.mark.asyncio
     async def test_delete_user_success(self, user_service, mock_cosmos_service):
         # ARRANGE
         user_id = "user-to-delete"

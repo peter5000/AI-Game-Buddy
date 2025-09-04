@@ -7,9 +7,6 @@ from app.schemas import BroadcastPayload
 from app.services.room_service import RoomService
 from fastapi import HTTPException
 
-# Mark all tests in this file as asyncio tests
-pytestmark = pytest.mark.asyncio
-
 # --- Test Data Constants ---
 TEST_USER_ID = "user-123"
 TEST_ROOM_ID = "room-abc"

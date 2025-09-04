@@ -163,7 +163,7 @@ class RedisService:
             logger.error(f"Redis Error reading dict using key '{key}': {e}")
             raise
 
-    async def set_add(self, key: str, values: set):
+    async def set_add(self, key: str, values: set | list):
         """Add multiple values to a Redis set.
 
         Args:
@@ -221,7 +221,7 @@ class RedisService:
             logger.error(f"Redis Error adding to set using key '{key}': {e}")
             raise
 
-    async def set_remove(self, key: str, values: set):
+    async def set_remove(self, key: str, values: set | list):
         """Remove multiple values from a Redis set.
 
         Args:
