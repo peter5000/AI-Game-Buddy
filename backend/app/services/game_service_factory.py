@@ -1,4 +1,4 @@
-from backend.app.services.games.chess.chess_game import ChessSystem
+from app.services.games.chess.chess_game import ChessSystem
 from app.services.games.game_interface import GameSystem
 from app.services.games.ulttt.ultimate_tic_tac_toe import UltimateTicTacToeSystem
 
