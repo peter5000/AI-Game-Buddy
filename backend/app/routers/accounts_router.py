@@ -2,7 +2,7 @@ from datetime import timedelta
 from typing import Annotated, Any, Optional
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
-from jose import JWTError, jwt
+from jose import JWTError
 
 from app import auth
 from app.config import settings
