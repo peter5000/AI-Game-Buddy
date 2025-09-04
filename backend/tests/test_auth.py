@@ -1,5 +1,3 @@
-# tests/test_auth.py
-
 from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock
 
@@ -7,7 +5,7 @@ import pytest
 from fastapi import HTTPException, WebSocket, status
 from pydantic import SecretStr
 
-from backend.app import auth
+from app import auth
 
 # --- Test Password Hashing ---
 
