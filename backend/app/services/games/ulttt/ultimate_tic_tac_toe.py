@@ -10,7 +10,7 @@ from .ulttt_interface import (
     SmallBoard,
 )
 
-class UltimateTicTacToeSystem(GameSystem):
+class UltimateTicTacToeSystem(GameSystem[UltimateTicTacToeState, UltimateTicTacToeAction]):
     """
     Implements the game logic for Ultimate Tic-Tac-Toe.
     """
@@ -100,7 +100,7 @@ class UltimateTicTacToeSystem(GameSystem):
         return actions
 
     @validate_call
-    def is_action_valid(self, state: UltimateTicTacToeState, player_id: str, action: UltimateTicTacToeAction):
+    def is_action_valid(self, state: UltimateTicTacToeState, player_id: str, action: UltimateTicTacToeAction) -> bool:
         if state.finished:
             raise ValueError("Game is already finished.")
 
@@ -121,6 +121,8 @@ class UltimateTicTacToeSystem(GameSystem):
 
             if state.large_board[p.board_row][p.board_col][p.row][p.col] is not None:
                 raise ValueError("This cell is already occupied.")
+
+        return True
 
     # --- Helper Method ---
     @validate_call
