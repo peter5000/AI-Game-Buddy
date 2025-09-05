@@ -2,8 +2,6 @@ import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
-# Adjust this import based on your project's structure
 from app.services.redis_service import RedisService
 from fastapi import HTTPException
 from redis.exceptions import ConnectionError, RedisError

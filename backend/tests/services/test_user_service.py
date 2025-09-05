@@ -2,8 +2,6 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 from app.schemas import User, UserCreate
-
-# Adjust these imports based on your project's structure
 from app.services.user_service import UserService
 from fastapi import HTTPException
 from pydantic import SecretStr

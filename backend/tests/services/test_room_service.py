@@ -2,8 +2,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from app.schemas import BroadcastPayload
-
-# Adjust these imports based on your project's structure
 from app.services.room_service import RoomService
 from fastapi import HTTPException
 
