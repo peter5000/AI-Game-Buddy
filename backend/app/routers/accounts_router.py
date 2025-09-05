@@ -2,7 +2,7 @@ from datetime import timedelta
 from typing import Annotated, Any, Optional
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
-from jose import JWTError, jwt
+from jose import JWTError
 
 from app import auth
 from app.config import settings
@@ -103,11 +103,7 @@ async def refresh_access_token(
         )
     try:
         # Validate the refresh token
-        payload = jwt.decode(
-            refresh_token,
-            settings.REFRESH_TOKEN_SECRET,
-            algorithms=[settings.ALGORITHM],
-        )
+        payload = auth.verify_refresh_token(refresh_token=refresh_token)
         user_id: str = payload.get("sub")
         if user_id is None:
             raise HTTPException(status_code=401, detail="Invalid refresh token")
