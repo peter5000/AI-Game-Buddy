@@ -41,7 +41,6 @@ class Phase(BaseModel):
             return self.model_copy(update={"current": self.available_phases[0]})
 
         # Calculate the next index, looping back to 0 if at the end
-        num_phases = len(self.available_phases)
         next_index = (current_index + 1) % len(self.available_phases)
         
         return self.model_copy(update={"current": self.available_phases[next_index]})
