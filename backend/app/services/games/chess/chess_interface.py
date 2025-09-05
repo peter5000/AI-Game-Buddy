@@ -14,4 +14,4 @@ class ChessMovePayload(BaseModel):
 
 class ChessAction(Action):
     type: Literal["MAKE_MOVE", "RESIGN"] = "MAKE_MOVE"
-    payload: ChessMovePayload
+    payload: ChessMovePayload | None = None

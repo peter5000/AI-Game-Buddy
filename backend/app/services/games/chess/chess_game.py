@@ -1,15 +1,20 @@
 import random
 from typing import Any, Dict, List
+
 import chess
+from chess import InvalidMoveError
 from pydantic import validate_call
+
 from ..game_interface import GameSystem
 from .chess_interface import (
-    ChessState,
     ChessAction,
     ChessMovePayload,
+    ChessState,
 )
 
+
 class ChessSystem(GameSystem[ChessState, ChessAction]):
+    @validate_call
     def initialize_game(self, player_ids: List[str]) -> ChessState:
         if len(player_ids) < 2:
             raise ValueError("Chess requires 2 players.")
@@ -31,24 +36,24 @@ class ChessSystem(GameSystem[ChessState, ChessAction]):
     def make_action(
         self, state: ChessState, player_id: str, action: ChessAction
     ) -> ChessState:
-        board = self._create_board_from_state(state=state)
+        self.is_action_valid(state, player_id, action)
 
-        if not self.is_action_valid(
-            state=state, player_id=player_id, action=action
-        ):
-            raise ValueError("Invalid move")
+        board = self._create_board_from_state(state=state)
 
         if action.type == "RESIGN":
             current_player_index = state.meta["current_player_index"]
             winner = "white" if board.turn == chess.BLACK else "black"
             game_result = f"{winner}_wins"
-            new_state = state.model_copy(update={
-                "game_result": game_result,
-                "finished": True,
-                "meta": {
-                    **state.meta,
-                }
-            }, deep=True)
+            new_state = state.model_copy(
+                update={
+                    "game_result": game_result,
+                    "finished": True,
+                    "meta": {
+                        **state.meta,
+                    },
+                },
+                deep=True,
+            )
             return new_state
 
         move = chess.Move.from_uci(action.payload.move)
@@ -89,9 +94,7 @@ class ChessSystem(GameSystem[ChessState, ChessAction]):
         return new_state
 
     @validate_call  # validate ChessState
-    def get_valid_actions(
-        self, state: ChessState, player_id: str
-    ) -> List[ChessAction]:
+    def get_valid_actions(self, state: ChessState, player_id: str) -> List[ChessAction]:
         board = self._create_board_from_state(state=state)
 
         if state.finished:
@@ -103,14 +106,11 @@ class ChessSystem(GameSystem[ChessState, ChessAction]):
 
         valid_moves = [ChessAction(type="RESIGN", payload=None)]
         for move in board.legal_moves:
-            valid_moves.append(
-                ChessAction(
-                    payload=ChessMovePayload(move=move.uci())
-                )
-            )
+            valid_moves.append(ChessAction(payload=ChessMovePayload(move=move.uci())))
 
         return valid_moves
 
+    @validate_call
     def is_action_valid(
         self,
         state: ChessState,
@@ -118,19 +118,24 @@ class ChessSystem(GameSystem[ChessState, ChessAction]):
         action: ChessAction,
     ) -> bool:
         if state.finished:
-            return False
+            raise ValueError("Game is already finished.")
 
         current_player_index = state.meta["current_player_index"]
         if state.player_ids[current_player_index] != player_id:
-            return False
+            raise ValueError("It's not your turn.")
 
-        try:
-            board = self._create_board_from_state(state=state)
-            move = chess.Move.from_uci(action.payload.move)
-            return move in board.legal_moves
-        except Exception:
-            return False
+        if action.type == "MAKE_MOVE":
+            try:
+                board = self._create_board_from_state(state=state)
+                move = chess.Move.from_uci(action.payload.move)
+                if move not in board.legal_moves:
+                    raise ValueError("Move is invalid.")
+            except InvalidMoveError:
+                raise ValueError("Move is invalid.")
 
+        return True
+
+    @validate_call
     def get_board_representation(self, state: ChessState) -> Dict[str, Any]:
         """Returns a dictionary representation of the current board state"""
         board = self._create_board_from_state(state=state)
