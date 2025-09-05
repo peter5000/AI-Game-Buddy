@@ -72,7 +72,7 @@ class UltimateTicTacToeSystem(GameSystem[UltimateTicTacToeState, UltimateTicTacT
         if state.finished or state.player_ids[state.meta["curr_player_index"]] != player_id:
             return []
 
-        actions = []
+        actions = [UltimateTicTacToeAction(type="RESIGN", payload=None)]
 
         # If active_board is set, player is forced to play there.
         if state.active_board:
@@ -82,7 +82,6 @@ class UltimateTicTacToeSystem(GameSystem[UltimateTicTacToeState, UltimateTicTacT
                 for c in range(3):
                     if small_board[r][c] is None:
                         actions.append(UltimateTicTacToeAction(
-                            player_id=player_id,
                             payload=UltimateTicTacToePayload(board_row=board_r, board_col=board_c, row=r, col=c)
                         ))
         # Otherwise, player can play in any non-finished board.
@@ -96,7 +95,6 @@ class UltimateTicTacToeSystem(GameSystem[UltimateTicTacToeState, UltimateTicTacT
                             for c in range(3):
                                 if small_board[r][c] is None:
                                     actions.append(UltimateTicTacToeAction(
-                                        player_id=player_id,
                                         payload=UltimateTicTacToePayload(board_row=board_r, board_col=board_c, row=r, col=c)
                                     ))
         return actions
