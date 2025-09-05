@@ -33,5 +33,5 @@ class UltimateTicTacToePayload(BaseModel):
 
 # Action type would be either "PLACE_MARKER" or "RESIGN"
 class UltimateTicTacToeAction(Action):
-    type: Literal["PLACE_MARKER", "RESIGN"]
-    payload: UltimateTicTacToePayload
+    type: Literal["PLACE_MARKER", "RESIGN"] = "PLACE_MARKER"
+    payload: UltimateTicTacToePayload | None = None

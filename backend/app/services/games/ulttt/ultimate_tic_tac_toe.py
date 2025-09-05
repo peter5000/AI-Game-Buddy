@@ -2,7 +2,7 @@ from typing import List
 import logging
 from pydantic import validate_call
 from ..game_interface import GameSystem
-logger = logging.getLogger("game_router")
+logger = logging.getLogger(__name__)
 from .ulttt_interface import (
     UltimateTicTacToeState,
     UltimateTicTacToeAction,
@@ -10,7 +10,7 @@ from .ulttt_interface import (
     SmallBoard,
 )
 
-class UltimateTicTacToeSystem(GameSystem):
+class UltimateTicTacToeSystem(GameSystem[UltimateTicTacToeState, UltimateTicTacToeAction]):
     """
     Implements the game logic for Ultimate Tic-Tac-Toe.
     """
@@ -28,45 +28,51 @@ class UltimateTicTacToeSystem(GameSystem):
         # Validate the action before proceeding.
         self.is_action_valid(state, player_id, action)
 
+        new_state = state.model_copy(deep=True)
+        if action.type == "RESIGN":
+            new_state.meta["winner"] = new_state.player_ids[1-new_state.meta["curr_player_index"]]
+            new_state.finished = True
+            return new_state
+
         p = action.payload
-        marker = "X" if state.meta["curr_player_index"] == 1 else "O"
+        marker = "X" if new_state.meta["curr_player_index"] == 0 else "O"
 
         # Apply the move to the board.
-        state.large_board[p.board_row][p.board_col][p.row][p.col] = marker
+        new_state.large_board[p.board_row][p.board_col][p.row][p.col] = marker
 
         # Check if this move won the small board.
-        small_board = state.large_board[p.board_row][p.board_col]
+        small_board = new_state.large_board[p.board_row][p.board_col]
         board_status = self._check_board_status(small_board)        # 'X', 'O', '-', or None
 
         if board_status:
-            state.meta_board[p.board_row][p.board_col] = board_status
+            new_state.meta_board[p.board_row][p.board_col] = board_status
 
             # If a small board was won, check if that wins the whole game.
-            game_status = self._check_board_status(state.meta_board)
+            game_status = self._check_board_status(new_state.meta_board)
             if game_status:
-                state.meta["winner"] = player_id if game_status != "-" else "Draw"
-                state.finished = True
-                return state # Game Over
+                new_state.meta["winner"] = player_id if game_status != "-" else "Draw"
+                new_state.finished = True
+                return new_state # Game Over
 
         # Determine the next active board based on the inner cell played.
-        next_board_status = state.meta_board[p.row][p.col]
+        next_board_status = new_state.meta_board[p.row][p.col]
         if next_board_status:
             # If the next board is already won/drawn, the player can go anywhere.
-            state.active_board = None
+            new_state.active_board = None
         else:
-            state.active_board = (p.row, p.col)
+            new_state.active_board = (p.row, p.col)
 
         # Switch to the next player.
-        state.meta["curr_player_index"] = 1 - state.meta["curr_player_index"]
+        new_state.meta["curr_player_index"] = 1 - new_state.meta["curr_player_index"]
 
-        return state
+        return new_state
 
     @validate_call
     def get_valid_actions(self, state: UltimateTicTacToeState, player_id: str) -> List[UltimateTicTacToeAction]:
         if state.finished or state.player_ids[state.meta["curr_player_index"]] != player_id:
             return []
 
-        actions = []
+        actions = [UltimateTicTacToeAction(type="RESIGN", payload=None)]
 
         # If active_board is set, player is forced to play there.
         if state.active_board:
@@ -76,7 +82,6 @@ class UltimateTicTacToeSystem(GameSystem):
                 for c in range(3):
                     if small_board[r][c] is None:
                         actions.append(UltimateTicTacToeAction(
-                            player_id=player_id,
                             payload=UltimateTicTacToePayload(board_row=board_r, board_col=board_c, row=r, col=c)
                         ))
         # Otherwise, player can play in any non-finished board.
@@ -90,13 +95,12 @@ class UltimateTicTacToeSystem(GameSystem):
                             for c in range(3):
                                 if small_board[r][c] is None:
                                     actions.append(UltimateTicTacToeAction(
-                                        player_id=player_id,
                                         payload=UltimateTicTacToePayload(board_row=board_r, board_col=board_c, row=r, col=c)
                                     ))
         return actions
 
     @validate_call
-    def is_action_valid(self, state: UltimateTicTacToeState, player_id: str, action: UltimateTicTacToeAction):
+    def is_action_valid(self, state: UltimateTicTacToeState, player_id: str, action: UltimateTicTacToeAction) -> bool:
         if state.finished:
             raise ValueError("Game is already finished.")
 
@@ -117,6 +121,8 @@ class UltimateTicTacToeSystem(GameSystem):
 
             if state.large_board[p.board_row][p.board_col][p.row][p.col] is not None:
                 raise ValueError("This cell is already occupied.")
+
+        return True
 
     # --- Helper Method ---
     @validate_call

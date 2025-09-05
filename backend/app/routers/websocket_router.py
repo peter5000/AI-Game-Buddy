@@ -218,7 +218,7 @@ class ConnectionEndpoint(WebSocketEndpoint):
 
             # Make action given from user to current game state
             new_game_state = game_service.make_action(
-                current_state=game_state, player_id=self.user_id, action=action
+                state=game_state, player_id=self.user_id, action=action
             )
 
             # Set new game state after action is processed
