@@ -1,19 +1,23 @@
-from app.services.games.game_interface import GameSystem, GameState, Action, Phase
+from app.services.games.game_interface import GameSystem, GameState, Action
 from pydantic import BaseModel, Field
 from typing import List, Literal
+
 
 class TicTacToeState(GameState):
     board: List[List[str | None]] = Field(
         default_factory=lambda: [[None, None, None] for _ in range(3)]
     )
 
+
 class TicTacToeMovePayload(BaseModel):
     row: int = Field(..., ge=0, le=2)
     col: int = Field(..., ge=0, le=2)
 
+
 class TicTacToeAction(Action):
     type: Literal["PLACE_MARKER"] = "PLACE_MARKER"
     payload: TicTacToeMovePayload
+
 
 # --- TicTacToe Specific GameSystem ---
 class TicTacToeSystem(GameSystem):
@@ -21,11 +25,12 @@ class TicTacToeSystem(GameSystem):
         if len(player_ids) != 2:
             raise ValueError("TicTacToe requires exactly 2 players.")
         return TicTacToeState(
-            player_ids=player_ids,
-            meta={"winner": None, "curr_player_index": 0}
+            player_ids=player_ids, meta={"winner": None, "curr_player_index": 0}
         )
 
-    def make_action(self, state: TicTacToeState, action: TicTacToeAction) -> TicTacToeState:
+    def make_action(
+        self, state: TicTacToeState, action: TicTacToeAction
+    ) -> TicTacToeState:
         # Validate the move
         if self.is_game_finished(state):
             raise ValueError("Game is already finished")
@@ -43,11 +48,15 @@ class TicTacToeSystem(GameSystem):
             state.meta["winner"] = action.player_id
 
         # Update whose turn it is
-        state.meta["curr_player_index"] = 1 - state.meta["curr_player_index"] # Toggles between 0 and 1
+        state.meta["curr_player_index"] = (
+            1 - state.meta["curr_player_index"]
+        )  # Toggles between 0 and 1
 
         return state
 
-    def get_valid_actions(self, state: TicTacToeState, player_id: str) -> List[TicTacToeAction]:
+    def get_valid_actions(
+        self, state: TicTacToeState, player_id: str
+    ) -> List[TicTacToeAction]:
         actions = []
         for row in range(3):
             for col in range(3):
@@ -55,12 +64,14 @@ class TicTacToeSystem(GameSystem):
                     actions.append(
                         TicTacToeAction(
                             player_id=player_id,
-                            payload=TicTacToeMovePayload(row=row, col=col)
+                            payload=TicTacToeMovePayload(row=row, col=col),
                         )
                     )
         return actions
 
-    def is_action_valid(self, state: TicTacToeState, player_id: str, action: TicTacToeAction):
+    def is_action_valid(
+        self, state: TicTacToeState, player_id: str, action: TicTacToeAction
+    ):
         # Invalid Player
         if player_id not in state.player_ids:
             raise ValueError("Invalid player ID.")
@@ -75,7 +86,7 @@ class TicTacToeSystem(GameSystem):
 
     def is_game_finished(self, state: TicTacToeState) -> bool:
         """Returns whether the game is finished"""
-        return state.meta["winner"] != None
+        return state.meta["winner"] is not None
 
     def is_win(self, row: int, col: int, state: TicTacToeState) -> bool:
         """Check if the current player has won with last move"""

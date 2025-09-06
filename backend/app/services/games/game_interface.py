@@ -3,10 +3,13 @@ from abc import ABC, abstractmethod
 from pydantic import BaseModel, Field
 from typing import Any, Dict, List, Annotated, TypeVar, Generic
 
+
 # --- Generic Phase ---
 class Phase(BaseModel):
-    current: str                                                    # Current phase of the game
-    available_phases: Annotated[List[str], Field(min_length=1)]     # List of all available phases
+    current: str  # Current phase of the game
+    available_phases: Annotated[
+        List[str], Field(min_length=1)
+    ]  # List of all available phases
 
     def __init__(self, available_phases: List[str]):
         super().__init__(available_phases=available_phases)
@@ -20,25 +23,29 @@ class Phase(BaseModel):
             current_index = self.available_phases.index(self.current)
         except ValueError:
             # If current phase isn't in the list, default to the first one
-            return self.model_copy(update={"current": self.available_phases[0]}, deep=True)
+            return self.model_copy(
+                update={"current": self.available_phases[0]}, deep=True
+            )
 
         # Calculate the next index, looping back to 0 if at the end
         next_index = (current_index + 1) % len(self.available_phases)
-        
+
         return self.model_copy(update={"current": self.available_phases[next_index]})
+
 
 # --- Generic Components ---
 class PrivateStateComponent(BaseModel):
     states: Dict[str, Any]
 
+
 # --- Generic GameState ---
 class GameState(BaseModel):
     game_id: str = Field(
         default_factory=lambda: str(uuid.uuid4())
-    )                                               # Unique identifier for each game
-    player_ids: List[str]                           # Player identifications
-    finished: bool = False                          # Set True when game is finished
-    meta: Dict[str, Any]                            # Any Game Specific Data
+    )  # Unique identifier for each game
+    player_ids: List[str]  # Player identifications
+    finished: bool = False  # Set True when game is finished
+    meta: Dict[str, Any]  # Any Game Specific Data
 
     # Simple Optional Features
     turn: int | None = None
@@ -46,14 +53,17 @@ class GameState(BaseModel):
     # Complex Optional Features
     private_state: PrivateStateComponent | None = None
 
+
 # --- Generic Action ---
 class Action(BaseModel):
-    type: str                       # Type
+    type: str  # Type
     payload: Dict[str, Any] | None
+
 
 # --- Type Variables ---
 StateType = TypeVar("StateType", bound=GameState)
 ActionType = TypeVar("ActionType", bound=Action)
+
 
 # --- Generic GameSystem ---
 class GameSystem(ABC, Generic[StateType, ActionType]):
@@ -63,7 +73,9 @@ class GameSystem(ABC, Generic[StateType, ActionType]):
         pass
 
     @abstractmethod
-    def make_action(self, state: StateType, player_id: str, action: ActionType) -> StateType:
+    def make_action(
+        self, state: StateType, player_id: str, action: ActionType
+    ) -> StateType:
         """Processes a player's action and returns the new game state."""
         pass
 
@@ -73,6 +85,8 @@ class GameSystem(ABC, Generic[StateType, ActionType]):
         pass
 
     @abstractmethod
-    def is_action_valid(self, state: StateType, player_id: str, action: ActionType) -> bool:
+    def is_action_valid(
+        self, state: StateType, player_id: str, action: ActionType
+    ) -> bool:
         """Raises an ValueError if move is invalid. Else returns True."""
         pass

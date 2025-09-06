@@ -3,6 +3,7 @@
 This module defines the RedisListener class, which subscribes to Redis pub/sub channels
 and dispatches incoming messages to appropriate handlers for real-time game and user events.
 """
+
 import asyncio
 import logging
 
@@ -18,7 +19,7 @@ class RedisListener:
     RedisListener subscribes to a Redis pub/sub channel and routes incoming messages
     to handler functions based on the channel type.
     """
-    
+
     def __init__(self):
         """Initializes the RedisListener instance."""
         self._connection_service = get_connection_service()
@@ -40,7 +41,7 @@ class RedisListener:
         if not self._redis_service.r:
             logger.error("Redis client is not available. Listener cannot start.")
             return
-        
+
         pubsub = self._redis_service.r.pubsub()
         await pubsub.subscribe(self._connection_service.pubsub_channel)
         logger.info(

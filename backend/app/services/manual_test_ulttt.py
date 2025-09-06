@@ -5,20 +5,25 @@ from typing import Tuple
 
 # Add the game directory to the Python path to find the modules
 # This might not be necessary depending on your setup, but it's robust.
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '.')))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
 
 from games.ulttt.ultimate_tic_tac_toe import UltimateTicTacToeSystem
-from games.ulttt.ulttt_interface import UltimateTicTacToeState, UltimateTicTacToeAction, UltimateTicTacToePayload
+from games.ulttt.ulttt_interface import (
+    UltimateTicTacToeState,
+    UltimateTicTacToeAction,
+    UltimateTicTacToePayload,
+)
+
 
 def print_board(state: UltimateTicTacToeState):
     """Renders the entire game state to the console."""
-    os.system('cls' if os.name == 'nt' else 'clear')
+    os.system("cls" if os.name == "nt" else "clear")
     print("--- Ultimate Tic-Tac-Toe ---")
     print()
 
     # Board and Meta Board characters
-    markers = { 'X': 'X', 'O': 'O', None: '.' }
-    meta_markers = { 'X': 'X', 'O': 'O', '-': '#', None: ' ' }
+    markers = {"X": "X", "O": "O", None: "."}
+    meta_markers = {"X": "X", "O": "O", "-": "#", None: " "}
 
     # Print board row by row, including meta board status on the side
     for board_r in range(3):
@@ -37,12 +42,12 @@ def print_board(state: UltimateTicTacToeState):
                     line += f" {meta_markers[state.meta_board[board_r][meta_c]]}"
                 line += " |"
 
-            print(line[:-1]) # Print line without the last '|'
+            print(line[:-1])  # Print line without the last '|'
 
         if board_r < 2:
             print("---------+---------+---------")
 
-    print("\n" + "="*30 + "\n")
+    print("\n" + "=" * 30 + "\n")
 
 
 def get_player_input(player_marker: str) -> Tuple[int, int, int, int]:
@@ -94,16 +99,20 @@ def main():
                 if board_r == -1:  # Player chose to resign
                     action = UltimateTicTacToeAction(
                         type="RESIGN",
-                        payload=None  # No payload needed for resignation
+                        payload=None,  # No payload needed for resignation
                     )
-                    state = system.make_action(state, player_id=player_id, action=action)
+                    state = system.make_action(
+                        state, player_id=player_id, action=action
+                    )
                     break  # Exit the input loop after resignation
                 action = UltimateTicTacToeAction(
                     type="PLACE_MARKER",
-                    payload=UltimateTicTacToePayload(board_row=board_r, board_col=board_c, row=r, col=c)
+                    payload=UltimateTicTacToePayload(
+                        board_row=board_r, board_col=board_c, row=r, col=c
+                    ),
                 )
                 state = system.make_action(state, player_id=player_id, action=action)
-                break # Move was successful, break the input loop
+                break  # Move was successful, break the input loop
             except ValueError as e:
                 print(f"Invalid Move: {e}. Please try again.")
 
@@ -114,6 +123,7 @@ def main():
         print("It's a draw! The game is over.")
     elif winner:
         print(f"Congratulations {winner}! You have won the game! 🏆")
+
 
 if __name__ == "__main__":
     main()
