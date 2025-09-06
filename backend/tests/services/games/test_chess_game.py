@@ -75,7 +75,7 @@ class TestMakeAction:
             player_ids=["p1", "p2"],
             meta={"current_player_index": 1},
             board_fen=fools_mate_fen,
-            turn=3
+            turn=3,
         )
         action = ChessAction(payload=ChessMovePayload(move="d8h4"))
 

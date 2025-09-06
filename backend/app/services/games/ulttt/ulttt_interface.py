@@ -3,7 +3,8 @@ from typing import List, Literal, Tuple
 from pydantic import BaseModel, Field
 
 # A type alias for clarity
-SmallBoard = List[List[str | None]] # Represents a single 3x3 board
+SmallBoard = List[List[str | None]]  # Represents a single 3x3 board
+
 
 class UltimateTicTacToeState(GameState):
     # The entire board
@@ -22,6 +23,7 @@ class UltimateTicTacToeState(GameState):
     # None indicates the player can choose any board.
     active_board: Tuple[int, int] | None = None
 
+
 class UltimateTicTacToePayload(BaseModel):
     # Row and column of the large board
     board_row: int = Field(..., ge=0, le=2)
@@ -30,6 +32,7 @@ class UltimateTicTacToePayload(BaseModel):
     # Row and column of the small board
     row: int = Field(..., ge=0, le=2)
     col: int = Field(..., ge=0, le=2)
+
 
 # Action type would be either "PLACE_MARKER" or "RESIGN"
 class UltimateTicTacToeAction(Action):

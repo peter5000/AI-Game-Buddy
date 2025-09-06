@@ -88,7 +88,9 @@ class RoomService:
 
         try:
             # Write new room into redis
-            await self._redis_service.dict_add(key=f"room:{room_id}", mapping=redis_room)
+            await self._redis_service.dict_add(
+                key=f"room:{room_id}", mapping=redis_room
+            )
             await self._redis_service.expire(f"room:{room_id}", 86400)
 
             await self._redis_service.set_add(
@@ -270,7 +272,9 @@ class RoomService:
         try:
             room_data = await self._redis_service.dict_get_all(key=f"room:{room_id}")
             user_set = await self._redis_service.set_get(key=f"room:{room_id}:users")
-            game_state = await self._redis_service.get_value(key=f"room:{room_id}:state")
+            game_state = await self._redis_service.get_value(
+                key=f"room:{room_id}:state"
+            )
             if room_data and user_set is not None and game_state is not None:
                 # Combine the data into a single dictionary
                 full_room_data = room_data | {
@@ -443,7 +447,7 @@ class RoomService:
                     )
                 except HTTPException as e:
                     logger.warning(f"Redis unavailable for setting game state: {e}")
-                    
+
                 return game_state
 
         logger.warning(
@@ -463,7 +467,7 @@ class RoomService:
             await self._redis_service.delete_keys(keys=[f"room:{room_id}:state"])
         except HTTPException as e:
             logger.warning(f"Redis unavailable for deleting game state: {e}")
-            
+
         patch_operation = [{"op": "remove", "path": "/game_state"}]
 
         await self._cosmos_service.patch_item(
@@ -525,7 +529,7 @@ class RoomService:
             room_id = await self._redis_service.get_value(key=f"user:{user_id}:room")
         except HTTPException as e:
             logger.warning(f"Redis unavailable for getting user room: {e}")
-            
+
         if room_id:
             logger.info(f"User '{user_id}' room found in redis: {room_id}")
             return room_id
@@ -543,10 +547,10 @@ class RoomService:
                 try:
                     await self._redis_service.set_value(
                         key=f"user:{user_id}:room", value=room_id
-                    )                        
+                    )
                 except HTTPException as e:
                     logger.warning(f"Redis unavailable for setting user room: {e}")
-                    
+
                 return room_id
 
         logger.warning(
@@ -572,7 +576,7 @@ class RoomService:
             user_list = await self._redis_service.set_get(key=f"room:{room_id}:users")
         except HTTPException as e:
             logger.warning(f"Redis unavailable for getting user list: {e}")
-            
+
         if user_list is not None:
             return user_list
 
@@ -592,7 +596,7 @@ class RoomService:
                     )
                 except HTTPException as e:
                     logger.warning(f"Redis unavailable for setting user list: {e}")
-                    
+
                 return user_list
 
         logger.warning(

@@ -11,7 +11,9 @@ logger = logging.getLogger(__name__)
 
 class ConnectionService:
     def __init__(self, redis_service: RedisService):
-        self._active_connections: dict[str, list[WebSocket]] = {}  # user_id -> websocket
+        self._active_connections: dict[
+            str, list[WebSocket]
+        ] = {}  # user_id -> websocket
         self._redis_service = redis_service
 
         # All servers subscribe to one channel and get channel type in publish payload
