@@ -6,6 +6,8 @@ on:
     workflows: ["CI Checks"] 
     types:
       - completed
+      
+  workflow_dispatch:
 
 jobs:
   # Build Docker image and push to ACR
