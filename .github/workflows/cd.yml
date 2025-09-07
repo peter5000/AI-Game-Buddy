@@ -29,12 +29,6 @@ jobs:
             image=moby/buildkit:master
             network=host
 
-      # Log in to Azure to get access to ACR
-      - name: Log in to Azure
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
       # Log in to Azure Container Registry
       - name: Log in to ACR
         uses: azure/docker-login@v1
@@ -67,8 +61,14 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
 
   # Deploy built image from ACR to Azure Container App
   deploy:
