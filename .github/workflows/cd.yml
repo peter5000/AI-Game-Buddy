@@ -44,6 +44,8 @@ jobs:
         run: |
           # Extract the short SHA tag (first line of metadata output)
           first_tag=$(echo "${{ steps.meta.outputs.tags }}" | head -n 1)
+          echo "First tag: $first_tag"
+          echo "All tags: ${{ steps.meta.outputs.tags }}"
           echo "short-tag=$first_tag" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
