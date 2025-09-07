@@ -44,8 +44,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=registry,ref=${{ secrets.ACR_NAME }}.azurecr.io/peter5000/ai-game-buddy:buildcache
-          cache-to: type=registry,ref=${{ secrets.ACR_NAME }}.azurecr.io/peter5000/ai-game-buddy:buildcache,mode=max
 
   # Deploy built image from ACR to Azure Container App
   deploy:
