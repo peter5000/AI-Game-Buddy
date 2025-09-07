@@ -17,6 +17,9 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       # Log in to Azure to get access to ACR
       - name: Log in to Azure
         uses: azure/login@v1
