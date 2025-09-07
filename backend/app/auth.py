@@ -6,7 +6,7 @@ and WebSocket connections.
 
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Annotated, Optional
+from typing import Annotated, Any, Optional
 
 from fastapi import Cookie, HTTPException, WebSocket, status
 from jose import JWTError, jwt
@@ -78,6 +78,40 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 
+def verify_access_token(access_token: str) -> dict[str, Any]:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(
+            access_token, settings.ACCESS_TOKEN_SECRET, algorithms=[settings.ALGORITHM]
+        )
+        return payload
+    except JWTError:
+        logger.error("Invalid or expired JWT")
+        raise credentials_exception
+
+
+def verify_refresh_token(refresh_token: str) -> dict[str, Any]:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(
+            refresh_token,
+            settings.REFRESH_TOKEN_SECRET,
+            algorithms=[settings.ALGORITHM],
+        )
+        return payload
+    except JWTError:
+        logger.error("Invalid or expired refresh token")
+        raise credentials_exception
+
+
 def create_refresh_token(data: dict, expires_delta: timedelta | None = None):
     """Create a JWT refresh token for token renewal.
 
@@ -96,9 +130,7 @@ def create_refresh_token(data: dict, expires_delta: timedelta | None = None):
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(
-            days=14
-        )  # Default 14 days
+        expire = datetime.now(timezone.utc) + timedelta(days=14)  # Default 14 days
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(
         to_encode, settings.REFRESH_TOKEN_SECRET, algorithm=settings.ALGORITHM
@@ -173,22 +205,17 @@ async def get_user_id_http(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated: Missing session cookie",
         )
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(
-            access_token, settings.ACCESS_TOKEN_SECRET, algorithms=[settings.ALGORITHM]
+
+    payload = verify_access_token(access_token=access_token)
+    user_id = payload.get("sub")
+
+    if user_id is None:
+        logger.error("User ID not found in JWT")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
         )
-        user_id: str = payload.get("sub")
-        if user_id is None:
-            logger.error("User ID not found in JWT")
-            raise credentials_exception
-    except JWTError:
-        logger.error("Invalid or expired JWT")
-        raise credentials_exception
 
     return user_id
 
@@ -219,21 +246,16 @@ async def get_user_id_websocket(websocket: WebSocket) -> str | None:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated: Missing session cookie",
         )
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(
-            access_token, settings.ACCESS_TOKEN_SECRET, algorithms=[settings.ALGORITHM]
+
+    payload = verify_access_token(access_token=access_token)
+    user_id = payload.get("sub")
+
+    if user_id is None:
+        logger.error("User ID not found in JWT")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
         )
-        user_id: str = payload.get("sub")
-        if user_id is None:
-            logger.error("User ID not found in JWT")
-            raise credentials_exception
-    except JWTError:
-        logger.error("Invalid or expired JWT")
-        raise credentials_exception
 
     return user_id
