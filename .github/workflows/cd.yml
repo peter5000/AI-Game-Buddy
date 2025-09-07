@@ -64,7 +64,7 @@ jobs:
         with:
           resourceGroup: 'my-ai-gaming-friend'
           containerAppName: 'myaigamingfriendcontainerjj'
-          imageToDeploy: '${{ secrets.ACR_NAME }}.azurecr.io/${{ github.repository }}:sha-${{ steps.sha.outputs.short }}'
+          imageToDeploy: '${{ secrets.ACR_NAME }}.azurecr.io/peter5000/ai-game-buddy:sha-${{ steps.sha.outputs.short }}'
           registryUrl: ${{ secrets.ACR_NAME }}.azurecr.io
           registryUsername: ${{ secrets.ACR_USERNAME }}
           registryPassword: ${{ secrets.ACR_PASSWORD }}
