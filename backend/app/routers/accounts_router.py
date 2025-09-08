@@ -177,6 +177,8 @@ async def get_username(
     user_id: str = Depends(auth.get_user_id_http),
     cosmos_service: CosmosService = Depends(get_cosmos_service),
 ):
-    user = await cosmos_service.get_item(item_id=user_id, partition_key= user_id, container_type="users")
+    user = await cosmos_service.get_item(
+        item_id=user_id, partition_key=user_id, container_type="users"
+    )
     username = user.get("username")
     return {"message": "success", "username": username}

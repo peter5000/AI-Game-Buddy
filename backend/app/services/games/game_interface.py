@@ -3,10 +3,13 @@ from abc import ABC, abstractmethod
 from pydantic import BaseModel, Field, computed_field, model_validator, field_validator
 from typing import Any, Dict, List, Annotated, TypeVar, Generic
 
+
 # --- Generic Phase ---
 class Phase(BaseModel):
-    current: str                                                    # Current phase of the game
-    available_phases: Annotated[List[str], Field(min_length=1)]     # List of all available phases
+    current: str  # Current phase of the game
+    available_phases: Annotated[
+        List[str], Field(min_length=1)
+    ]  # List of all available phases
 
     @model_validator(mode="before")
     @classmethod
@@ -48,10 +51,10 @@ class PrivateStates(BaseModel, Generic[PrivateStateT]):
 class GameState(BaseModel):
     game_id: str = Field(
         default_factory=lambda: str(uuid.uuid4())
-    )                                               # Unique identifier for each game
-    player_ids: List[str]                           # Player identifications
-    finished: bool = False                          # Set True when game is finished
-    meta: Dict[str, Any]                            # Any Game Specific Data
+    )  # Unique identifier for each game
+    player_ids: List[str]  # Player identifications
+    finished: bool = False  # Set True when game is finished
+    meta: Dict[str, Any]  # Any Game Specific Data
 
     # Simple Optional Features
     turn: int | None = None
@@ -62,12 +65,14 @@ class GameState(BaseModel):
 
 # --- Generic Action ---
 class Action(BaseModel):
-    type: str                       # Type
+    type: str  # Type
     payload: Dict[str, Any] | None
+
 
 # --- Type Variables for GameSystem ---
 StateType = TypeVar("StateType", bound=GameState)
 ActionType = TypeVar("ActionType", bound=Action)
+
 
 # --- Generic GameSystem ---
 class GameSystem(ABC, Generic[StateType, ActionType]):
@@ -77,7 +82,9 @@ class GameSystem(ABC, Generic[StateType, ActionType]):
         pass
 
     @abstractmethod
-    def make_action(self, state: StateType, player_id: str, action: ActionType) -> StateType:
+    def make_action(
+        self, state: StateType, player_id: str, action: ActionType
+    ) -> StateType:
         """Processes a player's action and returns the new game state."""
         pass
 
@@ -87,6 +94,8 @@ class GameSystem(ABC, Generic[StateType, ActionType]):
         pass
 
     @abstractmethod
-    def is_action_valid(self, state: StateType, player_id: str, action: ActionType) -> bool:
+    def is_action_valid(
+        self, state: StateType, player_id: str, action: ActionType
+    ) -> bool:
         """Raises an ValueError if move is invalid. Else returns True."""
         pass

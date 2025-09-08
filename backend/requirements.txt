@@ -94,6 +94,7 @@ rich==14.0.0
 rich-toolkit==0.15.0
 rignore==0.5.1
 rsa==4.9.1
+ruff==0.12.12
 sentry-sdk==2.32.0
 shellingham==1.5.4
 six==1.17.0

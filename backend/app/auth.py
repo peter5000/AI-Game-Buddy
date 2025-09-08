@@ -93,6 +93,7 @@ def verify_access_token(access_token: str) -> dict[str, Any]:
         logger.error("Invalid or expired JWT")
         raise credentials_exception
 
+
 def verify_refresh_token(refresh_token: str) -> dict[str, Any]:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -101,7 +102,9 @@ def verify_refresh_token(refresh_token: str) -> dict[str, Any]:
     )
     try:
         payload = jwt.decode(
-            refresh_token, settings.REFRESH_TOKEN_SECRET, algorithms=[settings.ALGORITHM]
+            refresh_token,
+            settings.REFRESH_TOKEN_SECRET,
+            algorithms=[settings.ALGORITHM],
         )
         return payload
     except JWTError:

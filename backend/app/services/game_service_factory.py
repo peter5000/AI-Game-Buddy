@@ -2,11 +2,12 @@ from app.services.games.chess.chess_game import ChessSystem
 from app.services.games.game_interface import GameSystem
 from app.services.games.ulttt.ultimate_tic_tac_toe import UltimateTicTacToeSystem
 
+
 class GameServiceFactory:
     def __init__(self):
         self._service_map = {
             "chess": ChessSystem,
-            "ultimate_tic_tac_toe": UltimateTicTacToeSystem
+            "ultimate_tic_tac_toe": UltimateTicTacToeSystem,
         }
         self._instances = {}
 

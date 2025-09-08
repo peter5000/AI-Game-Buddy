@@ -1,17 +1,14 @@
-import os
-from openai import AzureOpenAI, project
+from openai import AzureOpenAI
 from app.config import settings
 import logging
 
-from azure.ai.projects import AIProjectClient
-from azure.identity import DefaultAzureCredential
-from azure.ai.agents.models import ListSortOrder
 
 logger = logging.getLogger("AIService")
 
+
 def model_test(prompt="I am going to Paris, what should I see?"):
     endpoint = settings.OPENAI_ENDPOINT
-    model_name = "gpt-4o"
+    # model_name = "gpt-4o"
     deployment = "gpt-4o"
 
     subscription_key = settings.OPENAI_API_KEY
@@ -31,17 +28,18 @@ def model_test(prompt="I am going to Paris, what should I see?"):
             {
                 "role": "user",
                 "content": prompt,
-            }
+            },
         ],
         max_tokens=1024,
         temperature=1.0,
         top_p=1.0,
-        model=deployment
+        model=deployment,
     )
 
     logger.info(response)
 
     return response
+
 
 # def thread_test(prompt):
 #     project = AIProjectClient(
