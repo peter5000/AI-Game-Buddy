@@ -26,7 +26,7 @@ class LandsState(GameState):
     # Public game areas
     boards: Dict[str, board]
     discard: Dict[str, discard]
-    phase: Phase = Field(default_factory=lambda: Phase(current="MAIN_PHASE", available_phases=["DRAW_PHASE", "MAIN_PHASE", "COUNTER_PHASE", "RESOLUTION_PHASE"]))
+    phase: Phase = Field(default_factory=lambda: Phase(current="MAIN_PHASE", available_phases=["DRAW_PHASE", "MAIN_PHASE", "COUNTER_PHASE", "RESOLUTION_PHASE", "CHOOSE_TARGET_PHASE"]))
 
     # Player-specific game areas
     private_state: PrivateStates[LandsPrivateState]
