@@ -40,8 +40,8 @@ class Phase(BaseModel):
 PrivateStateT = TypeVar("PrivateStateT")
 
 # --- Generic Components ---
-class PrivateStateComponent(BaseModel, Generic[PrivateStateT]):
-    """Represents the private state of a player in a game."""
+class PrivateStates(BaseModel, Generic[PrivateStateT]):
+    """Represents the private state of a player or group of players in a game."""
     states: Dict[str, PrivateStateT]
 
 # --- Generic GameState ---
@@ -58,7 +58,7 @@ class GameState(BaseModel):
     phase: Phase | None = None
 
     # Complex Optional Features
-    private_state: PrivateStateComponent | None = None
+    private_state: PrivateStates | None = None
 
 # --- Generic Action ---
 class Action(BaseModel):
