@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Gamepad2, Github, Mail } from "lucide-react"
+import { useQueryClient } from "@tanstack/react-query"
 import { signinUser } from "@/lib/api"
 import { toast } from "sonner"
 import { ApiError } from "@/lib/api/index"
@@ -23,6 +24,7 @@ export default function SignInPage() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const queryClient = useQueryClient()
 
   if (isAuthLoading || isAuthenticated) {
     return (
@@ -41,6 +43,10 @@ export default function SignInPage() {
     try {
       await signinUser({ identifier, password })
       toast.success("Signed in successfully!")
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["authStatus"] }),
+        queryClient.invalidateQueries({ queryKey: ["user"] }),
+      ])
       router.push("/")
     } catch (error: unknown) {
       if (error instanceof ApiError) {
@@ -50,7 +56,6 @@ export default function SignInPage() {
       } else {
         setError("An unexpected error occurred")
       }
-    } finally {
       setIsLoading(false)
     }
   }
