@@ -53,3 +53,25 @@ export interface AIFriend {
   avatar: string;
   specialties: string[];
 }
+
+// Websocket
+export type WebSocketMessage =
+| { type: 'game_update'; payload: any }
+| { type: 'player_joined'; payload: { userId: string; username: string } }
+| { type: 'move_made'; payload: any }
+| { type: 'game_over'; payload: any }
+| { type: 'error'; payload: { message: string } }
+
+export type WebSocketSendMessage =
+  | { type: 'game_action'; payload: any }
+  | { type: 'chat_message'; payload: any }
+
+export type WebSocketStatus = 'disconnected' | 'connecting' | 'connected';
+
+export interface WebSocketContextType {
+  sendMessage: (message: WebSocketSendMessage) => void;
+  lastMessage: WebSocketMessage | null;
+  status: WebSocketStatus;
+  error: string | null;
+  readyState: WebSocket['readyState'] | null;
+}

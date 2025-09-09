@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/query-provider";
 import { Navbar } from "@/components/navbar";
 import { Toaster } from "@/components/ui/toaster";
+import { WebSocketProvider } from "@/components/websocket-provider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -21,13 +22,15 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <QueryProvider>
-          <ThemeProvider>
-            <Navbar />
-            <main>{children}</main>
-            <Toaster />
-          </ThemeProvider>
-        </QueryProvider>
+        <WebSocketProvider>
+          <QueryProvider>
+            <ThemeProvider>
+              <Navbar />
+              <main>{children}</main>
+              <Toaster />
+            </ThemeProvider>
+          </QueryProvider>
+        </WebSocketProvider>
       </body>
     </html>
   );
