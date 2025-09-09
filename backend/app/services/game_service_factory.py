@@ -10,6 +10,7 @@ class GameServiceFactory:
     This factory ensures that there is only one instance of each game service
     and provides a way to get the correct service for a given game type.
     """
+
     def __init__(self):
         """
         Initializes the GameServiceFactory.

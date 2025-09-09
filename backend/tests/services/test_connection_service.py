@@ -30,6 +30,7 @@ def mock_websocket() -> AsyncMock:
 
 class TestConnectionService:
     """Tests for the ConnectionService."""
+
     @pytest.mark.asyncio
     async def test_connect_adds_user_to_active_connections(
         self, connection_service: ConnectionService, mock_websocket: AsyncMock

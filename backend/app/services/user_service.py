@@ -17,6 +17,7 @@ class UserService:
 
     This service provides methods for creating, deleting, and retrieving users.
     """
+
     def __init__(self, cosmos_service: CosmosService):
         """
         Initializes the UserService.

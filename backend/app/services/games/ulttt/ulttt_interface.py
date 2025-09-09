@@ -10,6 +10,7 @@ class UltimateTicTacToeState(GameState):
     """
     Represents the state of an Ultimate Tic-Tac-Toe game.
     """
+
     # The entire board
     large_board: List[List[SmallBoard]] = Field(
         default_factory=lambda: [
@@ -31,6 +32,7 @@ class UltimateTicTacToePayload(BaseModel):
     """
     Represents the payload for a move in Ultimate Tic-Tac-Toe.
     """
+
     # Row and column of the large board
     board_row: int = Field(..., ge=0, le=2)
     board_col: int = Field(..., ge=0, le=2)
@@ -45,5 +47,6 @@ class UltimateTicTacToeAction(Action):
     """
     Represents an action in an Ultimate Tic-Tac-Toe game.
     """
+
     type: Literal["PLACE_MARKER", "RESIGN"] = "PLACE_MARKER"
     payload: UltimateTicTacToePayload | None = None

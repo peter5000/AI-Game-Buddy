@@ -18,6 +18,7 @@ class BlobService:
     It handles the connection to Azure Blob Storage using either a connection
     string or an endpoint with Azure credentials.
     """
+
     def __init__(self):
         """
         Initializes the BlobService.

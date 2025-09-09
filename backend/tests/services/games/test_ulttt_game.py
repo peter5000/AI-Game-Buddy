@@ -73,6 +73,7 @@ class TestCheckBoardStatus:
 
 class TestInitializeGame:
     """Tests for the initialize_game method."""
+
     def test_initialization_success(
         self, ulttt_system: UltimateTicTacToeSystem, player_ids: list[str]
     ):
@@ -97,6 +98,7 @@ class TestInitializeGame:
 
 class TestMakeAction:
     """Tests for the make_action method."""
+
     def test_first_move_updates_state_correctly(
         self,
         ulttt_system: UltimateTicTacToeSystem,
@@ -175,6 +177,7 @@ class TestMakeAction:
 
 class TestGetValidActions:
     """Tests for the get_valid_actions method."""
+
     def test_get_actions_at_start_of_game(
         self,
         ulttt_system: UltimateTicTacToeSystem,
@@ -220,6 +223,7 @@ class TestGetValidActions:
 
 class TestIsActionValid:
     """Tests for the is_action_valid method."""
+
     def test_valid_action_passes(
         self,
         ulttt_system: UltimateTicTacToeSystem,

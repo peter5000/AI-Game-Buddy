@@ -9,6 +9,7 @@ class Phase(BaseModel):
     """
     Represents the current phase of a game.
     """
+
     current: str  # Current phase of the game
     available_phases: Annotated[
         List[str], Field(min_length=1)
@@ -47,6 +48,7 @@ class PrivateStateComponent(BaseModel):
     """
     Represents the private state of a game for each player.
     """
+
     states: Dict[str, Any]
 
 
@@ -55,6 +57,7 @@ class GameState(BaseModel):
     """
     Represents the state of a game.
     """
+
     game_id: str = Field(
         default_factory=lambda: str(uuid.uuid4())
     )  # Unique identifier for each game
@@ -74,6 +77,7 @@ class Action(BaseModel):
     """
     Represents an action taken by a player.
     """
+
     type: str  # Type
     payload: Dict[str, Any] | None
 
@@ -92,6 +96,7 @@ class GameSystem(ABC, Generic[StateType, ActionType]):
     methods for initializing a game, making actions, getting valid actions,
     and checking if an action is valid.
     """
+
     @abstractmethod
     def initialize_game(self, player_ids: List[str]) -> StateType:
         """Returns the starting state for a new game."""

@@ -17,6 +17,7 @@ class ChessSystem(GameSystem[ChessState, ChessAction]):
     """
     A game system for chess.
     """
+
     @validate_call
     def initialize_game(self, player_ids: List[str]) -> ChessState:
         """

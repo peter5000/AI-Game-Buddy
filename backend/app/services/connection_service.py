@@ -17,6 +17,7 @@ class ConnectionService:
     connecting and disconnecting users, and provides methods for sending
     messages to specific users or broadcasting to a list of users.
     """
+
     def __init__(self, redis_service: RedisService):
         """
         Initializes the ConnectionService.

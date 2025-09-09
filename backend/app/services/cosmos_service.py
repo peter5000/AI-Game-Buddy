@@ -19,6 +19,7 @@ class CosmosService:
     Cosmos DB containers. It handles the connection to Cosmos DB using either
     a connection string or an endpoint with Azure credentials.
     """
+
     def __init__(self):
         """
         Initializes the CosmosService.

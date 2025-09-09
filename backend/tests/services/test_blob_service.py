@@ -49,6 +49,7 @@ def mock_blob_service_client(mock_container_client: MagicMock) -> MagicMock:
 
 class TestBlobServiceInitialization:
     """Tests for the initialization of the BlobService."""
+
     def test_init_with_connection_string(
         self, mocker, mock_blob_service_client, monkeypatch
     ):
@@ -105,6 +106,7 @@ class TestBlobServiceInitialization:
 
 class TestBlobServiceMethods:
     """Tests for the public methods of the BlobService."""
+
     @pytest.fixture(autouse=True)
     def setup_service(self, mocker, mock_blob_service_client, monkeypatch):
         """

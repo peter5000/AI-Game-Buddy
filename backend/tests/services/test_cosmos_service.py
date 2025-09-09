@@ -48,6 +48,7 @@ def mock_cosmos_client(mock_db_client: MagicMock) -> MagicMock:
 
 class TestCosmosServiceInitialization:
     """Tests for the initialization of the CosmosService."""
+
     def test_init_with_connection_string(self, mocker, mock_cosmos_client, monkeypatch):
         """
         Tests that the CosmosService initializes correctly with a connection string.
@@ -108,6 +109,7 @@ class TestCosmosServiceInitialization:
 
 class TestCosmosServiceMethods:
     """Tests for the public methods of the CosmosService."""
+
     @pytest.fixture(autouse=True)
     def setup_service(self, mocker, mock_cosmos_client, monkeypatch):
         """

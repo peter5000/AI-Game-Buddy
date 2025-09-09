@@ -7,6 +7,7 @@ class ChessState(GameState):
     """
     Represents the state of a chess game.
     """
+
     board_fen: str = Field(
         default="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
     )
@@ -18,6 +19,7 @@ class ChessMovePayload(BaseModel):
     """
     Represents the payload for a move in a chess game.
     """
+
     move: str = Field(..., description="Move in UCI format (e.g., 'e2e4', 'e1g1')")
 
 
@@ -25,5 +27,6 @@ class ChessAction(Action):
     """
     Represents an action in a chess game.
     """
+
     type: Literal["MAKE_MOVE", "RESIGN"] = "MAKE_MOVE"
     payload: ChessMovePayload | None = None

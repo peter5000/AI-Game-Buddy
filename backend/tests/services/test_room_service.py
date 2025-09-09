@@ -58,6 +58,7 @@ def room_service(
 ## Tests for create_room
 class TestCreateRoom:
     """Tests for the create_room method."""
+
     @pytest.mark.asyncio
     async def test_create_room_success(
         self, room_service, mock_redis_service, mock_cosmos_service
@@ -110,6 +111,7 @@ class TestCreateRoom:
 ## Tests for join_room
 class TestJoinRoom:
     """Tests for the join_room method."""
+
     @pytest.mark.asyncio
     async def test_join_room_success(
         self, room_service, mock_redis_service, mock_cosmos_service
@@ -154,6 +156,7 @@ class TestJoinRoom:
 ## Tests for get_room
 class TestGetRoom:
     """Tests for the get_room method."""
+
     @pytest.mark.asyncio
     async def test_get_room_from_cache_success(
         self, room_service, mock_redis_service, mock_cosmos_service
@@ -216,6 +219,7 @@ class TestGetRoom:
 ## Tests for send_game_state
 class TestSendGameState:
     """Tests for the send_game_state method."""
+
     @pytest.mark.asyncio
     async def test_send_game_state_success(self, room_service, mock_connection_service):
         """

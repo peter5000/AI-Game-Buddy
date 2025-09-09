@@ -13,6 +13,7 @@ class UserCreate(BaseModel):
         email (EmailStr): The user's email address.
         password (SecretStr): The user's password.
     """
+
     username: str
     email: EmailStr
     password: SecretStr = Field(
@@ -33,6 +34,7 @@ class User(BaseModel):
         email_lower (str): The lowercase version of the email for case-insensitive lookups.
         password (str): The hashed password of the user.
     """
+
     id: str
     user_id: str
     username: str
@@ -50,6 +52,7 @@ class UserLogin(BaseModel):
         identifier (str): The user's username or email address.
         password (SecretStr): The user's password.
     """
+
     identifier: str
     password: SecretStr = Field(
         json_schema_extra={"format": "password"},
@@ -71,6 +74,7 @@ class Room(BaseModel):
         users (set[str]): A set of user IDs of the users in the room.
         game_state (dict): The current state of the game in the room.
     """
+
     id: str
     room_id: str
     name: str
@@ -90,6 +94,7 @@ class BroadcastPayload(BaseModel):
         user_list (set[str]): A set of user IDs to whom the message should be sent.
         message (dict[str, Any]): The message content.
     """
+
     user_list: set[str]
     message: dict[str, Any]
 
@@ -102,6 +107,7 @@ class PubSubMessage(BaseModel):
         channel (str): The name of the channel the message was received on.
         payload (BroadcastPayload): The payload of the message.
     """
+
     channel: str
     payload: BroadcastPayload
 
@@ -114,5 +120,6 @@ class GameUpdate(BaseModel):
         room_id (str): The ID of the room where the game is being played.
         game_state (dict): The new state of the game.
     """
+
     room_id: str
     game_state: dict

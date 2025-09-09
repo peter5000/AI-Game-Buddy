@@ -12,6 +12,7 @@ class Settings:
     available as attributes. It centralizes configuration management, making it
     easier to access settings throughout the application.
     """
+
     # read all variables from .env file
     COSMOS_CONNECTION_STRING = os.getenv("COSMOS_CONNECTION_STRING")
     COSMOS_ENDPOINT = os.getenv("COSMOS_ENDPOINT")

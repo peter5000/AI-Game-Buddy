@@ -36,6 +36,7 @@ def initial_state(chess_system: ChessSystem, player_ids: list[str]) -> ChessStat
 
 class TestInitializeGame:
     """Tests for the initialize_game method."""
+
     def test_initialization_success(
         self, chess_system: ChessSystem, player_ids: list[str], mocker
     ):
@@ -66,6 +67,7 @@ class TestInitializeGame:
 
 class TestMakeAction:
     """Tests for the make_action method."""
+
     def test_make_valid_move(
         self, chess_system: ChessSystem, initial_state: ChessState
     ):
@@ -129,6 +131,7 @@ class TestMakeAction:
 
 class TestValidActions:
     """Tests for the get_valid_actions and is_action_valid methods."""
+
     def test_get_valid_actions_for_current_player(
         self, chess_system: ChessSystem, initial_state: ChessState
     ):

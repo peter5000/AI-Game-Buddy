@@ -37,6 +37,7 @@ def sample_user_create() -> UserCreate:
 ## Tests for create_user
 class TestCreateUser:
     """Tests for the create_user method."""
+
     @pytest.mark.asyncio
     async def test_create_user_success(
         self, user_service, mock_cosmos_service, sample_user_create
@@ -148,6 +149,7 @@ class TestCreateUser:
 ## Tests for get_user_by_username
 class TestGetUserByUsername:
     """Tests for the get_user_by_username method."""
+
     @pytest.mark.asyncio
     async def test_get_user_by_username_success(
         self, user_service, mock_cosmos_service
@@ -212,6 +214,7 @@ class TestGetUserByUsername:
 ## Tests for delete_user
 class TestDeleteUser:
     """Tests for the delete_user method."""
+
     @pytest.mark.asyncio
     async def test_delete_user_success(self, user_service, mock_cosmos_service):
         """
