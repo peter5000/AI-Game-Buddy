@@ -79,7 +79,7 @@ export function Navbar() {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Avatar className="cursor-pointer">
-                      <AvatarImage src={user.avatar || "/placeholder-user.jpg"} />
+                      {/* <AvatarImage src={user || "/placeholder-user.jpg"} /> */}
                       <AvatarFallback>{user.username.charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
                   </DropdownMenuTrigger>

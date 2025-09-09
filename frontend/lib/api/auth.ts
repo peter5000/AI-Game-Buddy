@@ -1,15 +1,15 @@
 import { apiRequest } from './index';
-import { SignupRequest, SigninRequest, AuthResponse, ApiResponse } from '../types';
+import { SignupRequest, SigninRequest, User, ApiResponse } from '../types';
 
-export async function signupUser(data: SignupRequest): Promise<ApiResponse<AuthResponse>> {
-  return apiRequest<ApiResponse<AuthResponse>>('/accounts/register', {
+export async function signupUser(data: SignupRequest): Promise<ApiResponse<User>> {
+  return apiRequest<ApiResponse<User>>('/accounts/register', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 }
 
-export async function signinUser(data: SigninRequest): Promise<ApiResponse<AuthResponse>> {
-  return apiRequest<ApiResponse<AuthResponse>>('/accounts/login', {
+export async function signinUser(data: SigninRequest): Promise<ApiResponse<User>> {
+  return apiRequest<ApiResponse<User>>('/accounts/login', {
     method: 'POST',
     body: JSON.stringify(data),
   });
@@ -21,8 +21,8 @@ export async function signoutUser(): Promise<ApiResponse> {
   });
 }
 
-export async function getCurrentUser(): Promise<ApiResponse<AuthResponse['user']>> {
-  return apiRequest<ApiResponse<AuthResponse['user']>>('/accounts/user/me');
+export async function getCurrentUser(): Promise<ApiResponse<User>> {
+  return apiRequest<ApiResponse<User>>('/accounts/user');
 }
 
 export async function refreshToken(): Promise<ApiResponse<{ success: boolean }>> {

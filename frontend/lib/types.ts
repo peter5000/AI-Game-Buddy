@@ -8,11 +8,9 @@ export interface ApiResponse<T = any> {
 
 // Auth types
 export interface User {
-  id: string;
+  user_id: string;
   email: string;
   username: string;
-  avatar?: string;
-  createdAt: string;
 }
 
 export interface SignupRequest {
@@ -22,13 +20,8 @@ export interface SignupRequest {
 }
 
 export interface SigninRequest {
-  email: string;
+  identifier: string;
   password: string;
-}
-
-export interface AuthResponse {
-  user: User;
-  token: string;
 }
 
 // Game types
