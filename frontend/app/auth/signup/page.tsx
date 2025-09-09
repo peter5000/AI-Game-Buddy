@@ -152,7 +152,7 @@ export default function SignUpPage() {
 
           <Separator />
 
-          {/* <div className="space-y-2">
+          <div className="space-y-2">
             <Button variant="outline" className="w-full bg-transparent">
               <Github className="mr-2 h-4 w-4" />
               Continue with GitHub
@@ -161,7 +161,7 @@ export default function SignUpPage() {
               <Mail className="mr-2 h-4 w-4" />
               Continue with Google
             </Button>
-          </div> */}
+          </div>
 
           <div className="text-center text-sm">
             Already have an account?{" "}

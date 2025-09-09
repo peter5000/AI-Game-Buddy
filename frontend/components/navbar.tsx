@@ -23,11 +23,12 @@ export function Navbar() {
   const router = useRouter()
   const queryClient = useQueryClient()
 
-  const { data: user, isLoading: isUserLoading } = useQuery({
+  const { data: apiResponse, isLoading: isUserLoading } = useQuery({
     queryKey: ['user'],
     queryFn: getCurrentUser,
     enabled: isAuthenticated,
   })
+  const user = apiResponse?.data
 
   const handleSignOut = async () => {
     await signoutUser()
@@ -77,7 +78,7 @@ export function Navbar() {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Avatar className="cursor-pointer">
-                      {/* <AvatarImage src={user || "/placeholder-user.jpg"} /> */}
+                      <AvatarImage src={user.avatar || "/placeholder-user.jpg"} />
                       <AvatarFallback>{user.username.charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
                   </DropdownMenuTrigger>

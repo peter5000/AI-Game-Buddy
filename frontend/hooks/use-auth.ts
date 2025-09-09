@@ -14,7 +14,7 @@ export function useAuth(redirectIfAuthenticated = false, redirectUrl = '/') {
     refetchOnWindowFocus: false,
   });
 
-  const isAuthenticated = isSuccess && data?.message === 'authenticated';
+  const isAuthenticated = isSuccess && data?.status === 'authenticated';
 
   useEffect(() => {
     if (isAuthenticated && redirectIfAuthenticated) {
