@@ -20,6 +20,7 @@ export default function SignInPage() {
   const { isAuthenticated, isLoading: isAuthLoading } = useAuth(true, "/")
   const [identifier, setIdentifier] = useState("")
   const [password, setPassword] = useState("")
+  const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
@@ -35,6 +36,7 @@ export default function SignInPage() {
     e.preventDefault()
     if (isLoading) return
     setIsLoading(true)
+    setError(null)
 
     try {
       await signinUser({ identifier, password })
@@ -42,11 +44,11 @@ export default function SignInPage() {
       router.push("/")
     } catch (error: unknown) {
       if (error instanceof ApiError) {
-        toast.error(error.message)
+        setError(error.message)
       } else if (error instanceof Error) {
-        toast.error(error.message)
+        setError(error.message)
       } else {
-        toast.error("An unexpected error occurred")
+        setError("An unexpected error occurred")
       }
     } finally {
       setIsLoading(false)
@@ -87,6 +89,9 @@ export default function SignInPage() {
                 required
               />
             </div>
+            {error && (
+              <div className="text-red-500 text-sm text-center mb-4">{error}</div>
+            )}
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? "Signing In..." : "Sign In"}
             </Button>

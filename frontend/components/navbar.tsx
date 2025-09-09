@@ -24,9 +24,10 @@ export function Navbar() {
   const queryClient = useQueryClient()
 
   const { data: user, isLoading: isUserLoading } = useQuery({
-    queryKey: ['user'],
+    queryKey: ["user"],
     queryFn: getCurrentUser,
     enabled: isAuthenticated,
+    select: (data) => data.data,
   })
 
   const handleSignOut = async () => {

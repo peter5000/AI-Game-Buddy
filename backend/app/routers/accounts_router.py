@@ -179,5 +179,5 @@ async def get_user(
         raise HTTPException(status_code=404, detail="User not found")
 
     user_data.pop("password", None)  # Don't send hashed password back
-    
+
     return {"status": "success", "data": user_data}

@@ -57,7 +57,7 @@ export async function apiRequest<T>(
 
   if (!response.ok) {
     throw new ApiError(
-      data.message || 'An error occurred',
+      data.detail || data.message || 'An error occurred',
       response.status,
       data.errors
     );

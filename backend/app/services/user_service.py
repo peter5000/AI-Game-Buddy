@@ -76,7 +76,7 @@ class UserService:
 
         new_item = item.copy()
         new_item.pop("password", None)
-        
+
         return new_item
 
     async def delete_user(self, user_id: str):
