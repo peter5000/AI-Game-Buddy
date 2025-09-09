@@ -24,7 +24,7 @@ export async function signoutUser(): Promise<ApiResponse<void>> {
 export async function deleteUser(): Promise<ApiResponse<void>> {
   return apiRequest<ApiResponse<void>>('/accounts/delete', {
     method: 'DELETE',
-  })
+  });
 }
 
 export async function getCurrentUser(): Promise<ApiResponse<User>> {

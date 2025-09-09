@@ -25,7 +25,7 @@ export interface SigninRequest {
 
 // Game types
 export interface Game {
-  id:string;
+  id: string;
   name: string;
   description: string;
   image: string;
