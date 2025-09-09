@@ -13,7 +13,6 @@ import { Separator } from "@/components/ui/separator"
 import { Gamepad2, Github, Mail } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
 import { signinUser } from "@/lib/api"
-import { toast } from "sonner"
 import { ApiError } from "@/lib/api/index"
 import { useAuth } from "@/hooks/use-auth"
 
@@ -42,7 +41,6 @@ export default function SignInPage() {
 
     try {
       await signinUser({ identifier, password })
-      toast.success("Signed in successfully!")
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["authStatus"] }),
         queryClient.invalidateQueries({ queryKey: ["user"] }),

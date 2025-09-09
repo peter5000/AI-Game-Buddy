@@ -13,7 +13,6 @@ import { Separator } from "@/components/ui/separator"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Gamepad2, Github, Mail } from "lucide-react"
 import { signupUser } from "@/lib/api"
-import { toast } from "sonner"
 import { ApiError } from "@/lib/api/index"
 import { useAuth } from "@/hooks/use-auth"
 
@@ -26,6 +25,7 @@ export default function SignUpPage() {
     confirmPassword: "",
     agreeToTerms: false,
   })
+  const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
@@ -41,7 +41,7 @@ export default function SignUpPage() {
     e.preventDefault()
     if (isLoading) return
     if (formData.password !== formData.confirmPassword) {
-      toast.error("Passwords do not match")
+      setError("Passwords do not match")
       return
     }
     setIsLoading(true)
@@ -52,17 +52,15 @@ export default function SignUpPage() {
         email: formData.email,
         password: formData.password,
       })
-      toast.success("Account created successfully! Please sign in.")
       router.push("/auth/signin")
     } catch (error: unknown) {
       if (error instanceof ApiError) {
-        toast.error(error.message)
+        setError(error.message)
       } else if (error instanceof Error) {
-        toast.error(error.message)
+        setError(error.message)
       } else {
-        toast.error("An unexpected error occurred")
+        setError("An unexpected error occurred")
       }
-    } finally {
       setIsLoading(false)
     }
   }
@@ -144,7 +142,9 @@ export default function SignUpPage() {
                 </Link>
               </Label>
             </div>
-
+            {error && (
+              <div className="text-red-500 text-sm text-center mb-4">{error}</div>
+            )}
             <Button type="submit" className="w-full" disabled={isLoading || !formData.agreeToTerms}>
               {isLoading ? "Creating Account..." : "Create Account"}
             </Button>
