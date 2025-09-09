@@ -15,31 +15,29 @@ import {
 import { Gamepad2, Menu, X, User, Settings, LogOut, Bell } from "lucide-react"
 import { useAuth } from "@/hooks/use-auth"
 import { getCurrentUser, signoutUser } from "@/lib/api"
-import { User as UserType } from "@/lib/types"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 
 export function Navbar() {
-  const { isAuthenticated, isLoading } = useAuth()
-  const [user, setUser] = useState<UserType | null>(null)
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const router = useRouter()
+  const queryClient = useQueryClient()
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      getCurrentUser()
-        .then((data) => setUser(data.data as UserType))
-        .catch(() => setUser(null))
-    } else {
-      setUser(null)
-    }
-  }, [isAuthenticated])
+  const { data: user, isLoading: isUserLoading } = useQuery({
+    queryKey: ['user'],
+    queryFn: getCurrentUser,
+    enabled: isAuthenticated,
+  })
 
   const handleSignOut = async () => {
     await signoutUser()
-    setUser(null)
+    queryClient.invalidateQueries({ queryKey: ['authStatus'] })
+    queryClient.invalidateQueries({ queryKey: ['user'] })
     router.push("/auth/signin")
   }
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen)
+  const isLoading = isAuthLoading || (isAuthenticated && isUserLoading)
 
   return (
     <nav className="bg-white shadow-sm border-b sticky top-0 z-50">

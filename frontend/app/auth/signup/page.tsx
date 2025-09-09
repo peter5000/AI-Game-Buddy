@@ -18,7 +18,7 @@ import { ApiError } from "@/lib/api/index"
 import { useAuth } from "@/hooks/use-auth"
 
 export default function SignUpPage() {
-  const { isLoading: isAuthLoading } = useAuth(true, "/")
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth(true, "/")
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -29,7 +29,7 @@ export default function SignUpPage() {
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  if (isAuthLoading) {
+  if (isAuthLoading || isAuthenticated) {
     return (
       <div className="flex justify-center items-center h-screen">
         <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-purple-600"></div>
@@ -39,6 +39,7 @@ export default function SignUpPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isLoading) return
     if (formData.password !== formData.confirmPassword) {
       toast.error("Passwords do not match")
       return

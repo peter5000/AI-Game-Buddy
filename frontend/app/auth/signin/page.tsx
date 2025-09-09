@@ -17,13 +17,13 @@ import { ApiError } from "@/lib/api/index"
 import { useAuth } from "@/hooks/use-auth"
 
 export default function SignInPage() {
-  const { isLoading: isAuthLoading } = useAuth(true, "/")
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth(true, "/")
   const [identifier, setIdentifier] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
-  if (isAuthLoading) {
+  if (isAuthLoading || isAuthenticated) {
     return (
       <div className="flex justify-center items-center h-screen">
         <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-purple-600"></div>
@@ -33,6 +33,7 @@ export default function SignInPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isLoading) return
     setIsLoading(true)
 
     try {

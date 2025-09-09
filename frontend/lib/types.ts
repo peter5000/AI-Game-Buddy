@@ -1,9 +1,6 @@
 // Common API response structure
 export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  errors?: Record<string, string[]>;
+  [key: string]: any;
 }
 
 // Auth types
@@ -22,18 +19,20 @@ export interface SignupRequest {
 }
 
 export interface SigninRequest {
-  email: string;
+  identifier: string;
   password: string;
 }
 
 export interface AuthResponse {
-  user: User;
-  token: string;
+  status: string;
+  message?: string;
+  user?: User;
+  token?: string;
 }
 
 // Game types
 export interface Game {
-  id: string;
+  id:string;
   name: string;
   description: string;
   image: string;
