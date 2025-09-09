@@ -1,6 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { checkAuthStatus } from '@/lib/api';
+
+function getCookie(name: string): string | null {
+  if (typeof document === 'undefined') {
+    return null;
+  }
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) {
+    return parts.pop()?.split(';').shift() || null;
+  }
+  return null;
+}
 
 export function useAuth(redirectIfAuthenticated = false, redirectUrl = '/') {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -8,21 +19,17 @@ export function useAuth(redirectIfAuthenticated = false, redirectUrl = '/') {
   const router = useRouter();
 
   useEffect(() => {
-    async function checkStatus() {
-      try {
-        const authStatus = await checkAuthStatus();
-        setIsAuthenticated(authStatus);
-        if (authStatus && redirectIfAuthenticated) {
-          router.push(redirectUrl);
-        }
-      } catch (error) {
-        setIsAuthenticated(false);
-      } finally {
-        setIsLoading(false);
-      }
+    const accessToken = getCookie('access_token');
+    const refreshToken = getCookie('refresh_token');
+    const authStatus = !!(accessToken || refreshToken);
+
+    setIsAuthenticated(authStatus);
+
+    if (authStatus && redirectIfAuthenticated) {
+      router.push(redirectUrl);
     }
 
-    checkStatus();
+    setIsLoading(false);
   }, [redirectIfAuthenticated, redirectUrl, router]);
 
   return { isAuthenticated, isLoading };
