@@ -1,6 +1,7 @@
 import logging
 import re
 import uuid
+from typing import Any
 
 from fastapi import HTTPException, status
 
@@ -15,7 +16,7 @@ class UserService:
     def __init__(self, cosmos_service: CosmosService):
         self._cosmos_service = cosmos_service
 
-    async def create_user(self, user: UserCreate):
+    async def create_user(self, user: UserCreate) -> dict[str, Any]:
         logger.info(
             f"Attempting to create user: '{user.username}', email: '{user.email}'"
         )
@@ -67,11 +68,16 @@ class UserService:
             email_lower=user.email.lower(),
             password=hashed_password,
         )
-        item_to_save = new_user.model_dump()
+        item = new_user.model_dump()
 
-        logger.info(f"Adding new user to Cosmos DB: {item_to_save['id']}")
-        await self._cosmos_service.add_item(item=item_to_save, container_type="users")
+        logger.info(f"Adding new user to Cosmos DB: {item['id']}")
+        await self._cosmos_service.add_item(item=item, container_type="users")
         logger.info(f"User '{user.username}' created successfully.")
+
+        new_item = item.copy()
+        new_item.pop("password", None)
+        
+        return new_item
 
     async def delete_user(self, user_id: str):
         logger.info(f"Deleting user '{user_id}' from Cosmos DB")

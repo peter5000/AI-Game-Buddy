@@ -68,7 +68,7 @@ export async function apiRequest<T>(
 
 // Export all API modules
 export * from './auth';
-export * from './games';
-export * from './users';
-export * from './ai-friends';
-export * from './rooms';
+// export * from './games';
+// export * from './users';
+// export * from './ai-friends';
+// export * from './rooms';
