@@ -131,10 +131,9 @@ class UltimateTicTacToeSystem(
                     if small_board[r][c] is None:
                         actions.append(
                             UltimateTicTacToeAction(
-                                type="PLACE_MARKER",
                                 payload=UltimateTicTacToePayload(
                                     board_row=board_r, board_col=board_c, row=r, col=c
-                                ),
+                                )
                             )
                         )
         # Otherwise, player can play in any non-finished board.
@@ -149,13 +148,12 @@ class UltimateTicTacToeSystem(
                                 if small_board[r][c] is None:
                                     actions.append(
                                         UltimateTicTacToeAction(
-                                            type="PLACE_MARKER",
                                             payload=UltimateTicTacToePayload(
                                                 board_row=board_r,
                                                 board_col=board_c,
                                                 row=r,
                                                 col=c,
-                                            ),
+                                            )
                                         )
                                     )
         return actions
