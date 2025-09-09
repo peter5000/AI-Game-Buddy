@@ -14,6 +14,9 @@ router = APIRouter(prefix="/test", tags=["Testing"])
 # temp PETER
 @router.post("/ai/{prompt}")
 def ask_ai(prompt: str):
+    """
+    Sends a prompt to the AI model and returns the response.
+    """
     return model_test(prompt)
 
 
@@ -21,6 +24,9 @@ def ask_ai(prompt: str):
 async def get_user(
     document_id: str, cosmos_service: CosmosService = Depends(get_cosmos_service)
 ):
+    """
+    Gets a user from the database by their document ID.
+    """
     item = await cosmos_service.get_item(
         item_id=document_id, partition_key=document_id, container_type="users"
     )
@@ -34,6 +40,9 @@ async def get_user(
 async def delete_user(
     document_id: str, cosmos_service: CosmosService = Depends(get_cosmos_service)
 ):
+    """
+    Deletes a user from the database by their document ID.
+    """
     try:
         await cosmos_service.delete_item(
             item_id=document_id, partition_key=document_id, container_type="users"
@@ -47,6 +56,9 @@ async def delete_user(
 async def query_items(
     query: str, cosmos_service: CosmosService = Depends(get_cosmos_service)
 ):
+    """
+    Queries items from the database.
+    """
     items = await cosmos_service.get_items_by_query(query=query, container_type="users")
     if not items:
         raise HTTPException(status_code=404, detail="No items found for given query")
@@ -60,6 +72,9 @@ async def upload_blob(
     filename: Optional[str] = None,
     blob_service: BlobService = Depends(get_blob_service),
 ):
+    """
+    Uploads a blob to a specified container.
+    """
     filename = filename or file.filename
 
     try:
@@ -84,6 +99,9 @@ async def delete_blob(
     filename: str,
     blob_service: BlobService = Depends(get_blob_service),
 ):
+    """
+    Deletes a blob from a specified container.
+    """
     try:
         await blob_service.delete_blob(container_name=container_name, filename=filename)
         return JSONResponse(

@@ -23,6 +23,15 @@ class UltimateTicTacToeSystem(
 
     @validate_call  # Check type constraints for parameters
     def initialize_game(self, player_ids: List[str]) -> UltimateTicTacToeState:
+        """
+        Initializes a new Ultimate Tic-Tac-Toe game.
+
+        Args:
+            player_ids (List[str]): A list of two player IDs.
+
+        Returns:
+            UltimateTicTacToeState: The initial state of the game.
+        """
         if len(player_ids) != 2:
             raise ValueError("Ultimate Tic-Tac-Toe requires exactly 2 players.")
         return UltimateTicTacToeState(
@@ -36,6 +45,17 @@ class UltimateTicTacToeSystem(
         player_id: str,
         action: UltimateTicTacToeAction,
     ) -> UltimateTicTacToeState:
+        """
+        Makes a move in the Ultimate Tic-Tac-Toe game.
+
+        Args:
+            state (UltimateTicTacToeState): The current state of the game.
+            player_id (str): The ID of the player making the action.
+            action (UltimateTicTacToeAction): The action to make.
+
+        Returns:
+            UltimateTicTacToeState: The new state of the game.
+        """
         # Validate the action before proceeding.
         self.is_action_valid(state, player_id, action)
 
@@ -84,6 +104,16 @@ class UltimateTicTacToeSystem(
     def get_valid_actions(
         self, state: UltimateTicTacToeState, player_id: str
     ) -> List[UltimateTicTacToeAction]:
+        """
+        Gets a list of valid actions for the current player.
+
+        Args:
+            state (UltimateTicTacToeState): The current state of the game.
+            player_id (str): The ID of the player.
+
+        Returns:
+            List[UltimateTicTacToeAction]: A list of valid actions.
+        """
         if (
             state.finished
             or state.player_ids[state.meta["curr_player_index"]] != player_id
@@ -101,9 +131,10 @@ class UltimateTicTacToeSystem(
                     if small_board[r][c] is None:
                         actions.append(
                             UltimateTicTacToeAction(
+                                type="PLACE_MARKER",
                                 payload=UltimateTicTacToePayload(
                                     board_row=board_r, board_col=board_c, row=r, col=c
-                                )
+                                ),
                             )
                         )
         # Otherwise, player can play in any non-finished board.
@@ -118,12 +149,13 @@ class UltimateTicTacToeSystem(
                                 if small_board[r][c] is None:
                                     actions.append(
                                         UltimateTicTacToeAction(
+                                            type="PLACE_MARKER",
                                             payload=UltimateTicTacToePayload(
                                                 board_row=board_r,
                                                 board_col=board_c,
                                                 row=r,
                                                 col=c,
-                                            )
+                                            ),
                                         )
                                     )
         return actions
@@ -135,6 +167,20 @@ class UltimateTicTacToeSystem(
         player_id: str,
         action: UltimateTicTacToeAction,
     ) -> bool:
+        """
+        Checks if an action is valid.
+
+        Args:
+            state (UltimateTicTacToeState): The current state of the game.
+            player_id (str): The ID of the player making the action.
+            action (UltimateTicTacToeAction): The action to check.
+
+        Returns:
+            bool: True if the action is valid.
+
+        Raises:
+            ValueError: If the action is invalid.
+        """
         if state.finished:
             raise ValueError("Game is already finished.")
 

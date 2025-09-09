@@ -26,6 +26,14 @@ if settings.APPLICATIONINSIGHTS_CONNECTION_STRING:
 async def lifespan(app: FastAPI):
     """
     Handles application startup and shutdown events.
+
+    On startup, it starts a Redis listener as a background task.
+    On shutdown, it gracefully cancels the Redis listener task and closes
+    database and storage client connections. It also shuts down the
+    OpenTelemetry tracer and logger providers.
+
+    Args:
+        app (FastAPI): The FastAPI application instance.
     """
     # Start up
     # Start the Redis subscribe method as a background task
@@ -74,4 +82,10 @@ app.include_router(websocket_router.router)
 
 @app.get("/")
 def test():
+    """
+    A simple test endpoint to check if the server is running.
+
+    Returns:
+        dict: A dictionary with a "Hello" key and "World" value.
+    """
     return {"Hello": "World"}

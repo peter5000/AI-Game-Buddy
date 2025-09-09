@@ -36,10 +36,14 @@ def sample_user_create() -> UserCreate:
 
 ## Tests for create_user
 class TestCreateUser:
+    """Tests for the create_user method."""
     @pytest.mark.asyncio
     async def test_create_user_success(
         self, user_service, mock_cosmos_service, sample_user_create
     ):
+        """
+        Tests that a user is created successfully.
+        """
         # ARRANGE: Mock the database to show that neither the email nor the username exists.
         mock_cosmos_service.get_items_by_query.return_value = []
 
@@ -65,6 +69,9 @@ class TestCreateUser:
     async def test_create_user_fails_if_email_exists(
         self, user_service, mock_cosmos_service, sample_user_create
     ):
+        """
+        Tests that creating a user fails if the email already exists.
+        """
         # ARRANGE: Mock the database to return an existing user when checking the email.
         mock_cosmos_service.get_items_by_query.return_value = [
             {"email": "test@example.com"}
@@ -81,6 +88,9 @@ class TestCreateUser:
     async def test_create_user_fails_if_username_exists(
         self, user_service, mock_cosmos_service, sample_user_create
     ):
+        """
+        Tests that creating a user fails if the username already exists.
+        """
         # ARRANGE: Create a dictionary that looks like a full user record from the DB.
         existing_user_data = {
             "id": "existing-uuid",
@@ -121,6 +131,9 @@ class TestCreateUser:
     async def test_create_user_fails_with_invalid_username(
         self, user_service, sample_user_create, invalid_username
     ):
+        """
+        Tests that creating a user fails with an invalid username.
+        """
         # ARRANGE
         sample_user_create.username = invalid_username
 
@@ -134,10 +147,14 @@ class TestCreateUser:
 
 ## Tests for get_user_by_username
 class TestGetUserByUsername:
+    """Tests for the get_user_by_username method."""
     @pytest.mark.asyncio
     async def test_get_user_by_username_success(
         self, user_service, mock_cosmos_service
     ):
+        """
+        Tests that a user is retrieved successfully by username.
+        """
         # ARRANGE: Mock the DB to return a single user.
         username = "found_user"
         user_data = {
@@ -163,6 +180,9 @@ class TestGetUserByUsername:
     async def test_get_user_by_username_not_found(
         self, user_service, mock_cosmos_service
     ):
+        """
+        Tests that None is returned when a user is not found.
+        """
         # ARRANGE: Mock the DB to return an empty list.
         mock_cosmos_service.get_items_by_query.return_value = []
 
@@ -176,6 +196,9 @@ class TestGetUserByUsername:
     async def test_get_user_by_username_multiple_found_raises_error(
         self, user_service, mock_cosmos_service
     ):
+        """
+        Tests that an error is raised when multiple users are found with the same username.
+        """
         # ARRANGE: Mock the DB to return two users with the same username.
         mock_cosmos_service.get_items_by_query.return_value = [{}, {}]
 
@@ -188,8 +211,12 @@ class TestGetUserByUsername:
 
 ## Tests for delete_user
 class TestDeleteUser:
+    """Tests for the delete_user method."""
     @pytest.mark.asyncio
     async def test_delete_user_success(self, user_service, mock_cosmos_service):
+        """
+        Tests that a user is deleted successfully.
+        """
         # ARRANGE
         user_id = "user-to-delete"
 

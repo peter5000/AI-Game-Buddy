@@ -12,10 +12,32 @@ logger = logging.getLogger(__name__)
 
 
 class UserService:
+    """
+    A service for managing users.
+
+    This service provides methods for creating, deleting, and retrieving users.
+    """
     def __init__(self, cosmos_service: CosmosService):
+        """
+        Initializes the UserService.
+
+        Args:
+            cosmos_service (CosmosService): An instance of the CosmosService for
+                                            interacting with the database.
+        """
         self._cosmos_service = cosmos_service
 
     async def create_user(self, user: UserCreate):
+        """
+        Creates a new user.
+
+        Args:
+            user (UserCreate): The user data for creating the new user.
+
+        Raises:
+            HTTPException: If the username is invalid, the email or username
+                           already exists.
+        """
         logger.info(
             f"Attempting to create user: '{user.username}', email: '{user.email}'"
         )
@@ -74,6 +96,12 @@ class UserService:
         logger.info(f"User '{user.username}' created successfully.")
 
     async def delete_user(self, user_id: str):
+        """
+        Deletes a user.
+
+        Args:
+            user_id (str): The ID of the user to delete.
+        """
         logger.info(f"Deleting user '{user_id}' from Cosmos DB")
         await self._cosmos_service.delete_item(
             item_id=user_id, partition_key=user_id, container_type="users"
@@ -81,6 +109,19 @@ class UserService:
         logger.info(f"User '{user_id}' deleted successfully.")
 
     async def get_user_by_username(self, username: str) -> User:
+        """
+        Gets a user by their username.
+
+        Args:
+            username (str): The username of the user to get.
+
+        Returns:
+            User: The user if found, otherwise None.
+
+        Raises:
+            ValueError: If the username is missing.
+            HTTPException: If a database error occurs or multiple users are found.
+        """
         logger.info(f"Attempting to get user: '{username}'")
         if not username:
             raise ValueError("Missing username")
@@ -121,6 +162,18 @@ class UserService:
             )
 
     async def check_user_exists(self, username: str) -> bool:
+        """
+        Checks if a user exists by their username.
+
+        Args:
+            username (str): The username to check.
+
+        Returns:
+            bool: True if the user exists, otherwise False.
+
+        Raises:
+            ValueError: If the username is missing.
+        """
         if not username:
             raise ValueError("Missing username")
         user = await self.get_user_by_username(username)

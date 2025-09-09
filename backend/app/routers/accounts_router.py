@@ -18,6 +18,16 @@ router = APIRouter(prefix="/accounts", tags=["Accounts"])
 async def create_account(
     user: UserCreate, user_service: UserService = Depends(get_user_service)
 ):
+    """
+    Creates a new user account.
+
+    Args:
+        user (UserCreate): The user data for creating the new user.
+        user_service (UserService, optional): The user service dependency. Defaults to Depends(get_user_service).
+
+    Returns:
+        dict: A dictionary with a success message.
+    """
     await user_service.create_user(user=user)
     return {"status": "success", "message": f"User '{user.username}' created"}
 
@@ -28,6 +38,17 @@ async def login_account(
     user_login: UserLogin,
     cosmos_service: CosmosService = Depends(get_cosmos_service),
 ):
+    """
+    Logs in a user and sets access and refresh tokens in cookies.
+
+    Args:
+        response (Response): The response object.
+        user_login (UserLogin): The user login data.
+        cosmos_service (CosmosService, optional): The cosmos service dependency. Defaults to Depends(get_cosmos_service).
+
+    Returns:
+        dict: A dictionary with a success message.
+    """
     user = await auth.authenticate_user(
         identifier=user_login.identifier,
         password=user_login.password,
@@ -77,6 +98,16 @@ async def login_account(
 async def logout_account(
     response: Response, user_id: str = Depends(auth.get_user_id_http)
 ):
+    """
+    Logs out a user by deleting their access and refresh tokens.
+
+    Args:
+        response (Response): The response object.
+        user_id (str, optional): The user ID from the access token. Defaults to Depends(auth.get_user_id_http).
+
+    Returns:
+        dict: A dictionary with a success message.
+    """
     if not user_id:
         raise HTTPException(status_code=404, detail="User not found")
 
@@ -96,6 +127,16 @@ async def logout_account(
 async def refresh_access_token(
     response: Response, refresh_token: Annotated[Optional[str], Cookie()] = None
 ):
+    """
+    Refreshes a user's access token using a refresh token.
+
+    Args:
+        response (Response): The response object.
+        refresh_token (Annotated[Optional[str], Cookie, None]): The refresh token from the cookie. Defaults to None.
+
+    Returns:
+        dict: A dictionary with a success message.
+    """
     if refresh_token is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -132,6 +173,17 @@ async def delete_account(
     user_id: str = Depends(auth.get_user_id_http),
     user_service: UserService = Depends(get_user_service),
 ):
+    """
+    Deletes a user's account.
+
+    Args:
+        response (Response): The response object.
+        user_id (str, optional): The user ID from the access token. Defaults to Depends(auth.get_user_id_http).
+        user_service (UserService, optional): The user service dependency. Defaults to Depends(get_user_service).
+
+    Returns:
+        dict: A dictionary with a success message.
+    """
     if not user_id:
         raise HTTPException(status_code=404, detail="User not found")
     await user_service.delete_user(user_id=user_id)

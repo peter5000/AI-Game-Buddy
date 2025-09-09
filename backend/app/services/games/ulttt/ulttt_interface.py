@@ -7,6 +7,9 @@ SmallBoard = List[List[str | None]]  # Represents a single 3x3 board
 
 
 class UltimateTicTacToeState(GameState):
+    """
+    Represents the state of an Ultimate Tic-Tac-Toe game.
+    """
     # The entire board
     large_board: List[List[SmallBoard]] = Field(
         default_factory=lambda: [
@@ -25,6 +28,9 @@ class UltimateTicTacToeState(GameState):
 
 
 class UltimateTicTacToePayload(BaseModel):
+    """
+    Represents the payload for a move in Ultimate Tic-Tac-Toe.
+    """
     # Row and column of the large board
     board_row: int = Field(..., ge=0, le=2)
     board_col: int = Field(..., ge=0, le=2)
@@ -36,5 +42,8 @@ class UltimateTicTacToePayload(BaseModel):
 
 # Action type would be either "PLACE_MARKER" or "RESIGN"
 class UltimateTicTacToeAction(Action):
+    """
+    Represents an action in an Ultimate Tic-Tac-Toe game.
+    """
     type: Literal["PLACE_MARKER", "RESIGN"] = "PLACE_MARKER"
     payload: UltimateTicTacToePayload | None = None

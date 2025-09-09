@@ -29,10 +29,14 @@ def mock_websocket() -> AsyncMock:
 
 
 class TestConnectionService:
+    """Tests for the ConnectionService."""
     @pytest.mark.asyncio
     async def test_connect_adds_user_to_active_connections(
         self, connection_service: ConnectionService, mock_websocket: AsyncMock
     ):
+        """
+        Tests that a user is added to the active connections when they connect.
+        """
         # ACT: Connect a new user
         await connection_service.connect(mock_websocket, "user1")
 
@@ -44,6 +48,9 @@ class TestConnectionService:
     async def test_disconnect_removes_existing_user(
         self, connection_service: ConnectionService, mock_websocket: AsyncMock
     ):
+        """
+        Tests that a user is removed from the active connections when they disconnect.
+        """
         # ARRANGE: Connect a user first
         await connection_service.connect(mock_websocket, "user1")
         assert "user1" in connection_service._active_connections  # Sanity check
@@ -57,6 +64,9 @@ class TestConnectionService:
     def test_disconnect_handles_nonexistent_user_gracefully(
         self, connection_service: ConnectionService
     ):
+        """
+        Tests that disconnecting a user who is not connected does not raise an error.
+        """
         # ACT & ASSERT: Disconnecting a user who isn't connected should not raise an error
         try:
             connection_service.disconnect("user_who_never_connected")
@@ -67,6 +77,9 @@ class TestConnectionService:
     async def test_send_message_to_connected_user(
         self, connection_service: ConnectionService, mock_websocket: AsyncMock
     ):
+        """
+        Tests that a message is sent to a connected user.
+        """
         # ARRANGE: Connect a user with our mock websocket
         await connection_service.connect(mock_websocket, "user1")
         message = {"type": "GREETING", "text": "hello"}
@@ -81,6 +94,9 @@ class TestConnectionService:
     async def test_send_message_to_disconnected_user(
         self, connection_service: ConnectionService, mock_websocket: AsyncMock
     ):
+        """
+        Tests that a message is not sent to a disconnected user.
+        """
         # ARRANGE: Connect a user
         await connection_service.connect(mock_websocket, "user1")
         message = {"type": "GREETING", "text": "hello"}
@@ -95,6 +111,9 @@ class TestConnectionService:
     async def test_broadcast_calls_send_message_for_each_user(
         self, connection_service: ConnectionService, mocker
     ):
+        """
+        Tests that a broadcast message is sent to each user in the user list.
+        """
         # ARRANGE
         user_list = ["user1", "user2", "user3"]
         message = {"type": "ANNOUNCEMENT", "text": "Server maintenance soon"}
@@ -118,6 +137,9 @@ class TestConnectionService:
     async def test_get_active_users_from_list(
         self, connection_service: ConnectionService, mock_websocket: AsyncMock
     ):
+        """
+        Tests that the list of active users is correctly filtered from a list of users.
+        """
         # ARRANGE: Connect some users but not others
         await connection_service.connect(mock_websocket, "user1")
         await connection_service.connect(mock_websocket, "user3")
@@ -134,6 +156,9 @@ class TestConnectionService:
     async def test_publish_event_calls_redis_service_correctly(
         self, connection_service: ConnectionService, mock_redis_service: AsyncMock
     ):
+        """
+        Tests that an event is published to the Redis service with the correct payload.
+        """
         # ARRANGE
         channel = "game-updates"
         user_list = {"user1", "user2"}

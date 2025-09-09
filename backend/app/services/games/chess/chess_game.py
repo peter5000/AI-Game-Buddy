@@ -14,8 +14,23 @@ from .chess_interface import (
 
 
 class ChessSystem(GameSystem[ChessState, ChessAction]):
+    """
+    A game system for chess.
+    """
     @validate_call
     def initialize_game(self, player_ids: List[str]) -> ChessState:
+        """
+        Initializes a new chess game.
+
+        Args:
+            player_ids (List[str]): A list of player IDs.
+
+        Returns:
+            ChessState: The initial state of the game.
+
+        Raises:
+            ValueError: If the number of players is less than 2.
+        """
         if len(player_ids) < 2:
             raise ValueError("Chess requires 2 players.")
 
@@ -36,12 +51,22 @@ class ChessSystem(GameSystem[ChessState, ChessAction]):
     def make_action(
         self, state: ChessState, player_id: str, action: ChessAction
     ) -> ChessState:
+        """
+        Makes a move in the chess game.
+
+        Args:
+            state (ChessState): The current state of the game.
+            player_id (str): The ID of the player making the action.
+            action (ChessAction): The action to make.
+
+        Returns:
+            ChessState: The new state of the game after the action is made.
+        """
         self.is_action_valid(state, player_id, action)
 
         board = self._create_board_from_state(state=state)
 
         if action.type == "RESIGN":
-            current_player_index = state.meta["current_player_index"]
             winner = "white" if board.turn == chess.BLACK else "black"
             game_result = f"{winner}_wins"
             new_state = state.model_copy(
@@ -95,6 +120,16 @@ class ChessSystem(GameSystem[ChessState, ChessAction]):
 
     @validate_call  # validate ChessState
     def get_valid_actions(self, state: ChessState, player_id: str) -> List[ChessAction]:
+        """
+        Gets a list of valid actions for the current player.
+
+        Args:
+            state (ChessState): The current state of the game.
+            player_id (str): The ID of the player.
+
+        Returns:
+            List[ChessAction]: A list of valid actions.
+        """
         board = self._create_board_from_state(state=state)
 
         if state.finished:
@@ -117,6 +152,20 @@ class ChessSystem(GameSystem[ChessState, ChessAction]):
         player_id: str,
         action: ChessAction,
     ) -> bool:
+        """
+        Checks if an action is valid.
+
+        Args:
+            state (ChessState): The current state of the game.
+            player_id (str): The ID of the player making the action.
+            action (ChessAction): The action to check.
+
+        Returns:
+            bool: True if the action is valid.
+
+        Raises:
+            ValueError: If the action is invalid.
+        """
         if state.finished:
             raise ValueError("Game is already finished.")
 

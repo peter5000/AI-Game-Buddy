@@ -301,6 +301,12 @@ class RedisService:
             raise
 
     def _check_client(self):
+        """
+        Checks if the Redis client is available.
+
+        Raises:
+            HTTPException: If the Redis client is not available.
+        """
         if not self.r:
             logger.error("Redis client is not available.")
             raise HTTPException(status_code=503, detail="Redis service unavailable")

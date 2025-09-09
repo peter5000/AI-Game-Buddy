@@ -48,9 +48,13 @@ def mock_blob_service_client(mock_container_client: MagicMock) -> MagicMock:
 
 
 class TestBlobServiceInitialization:
+    """Tests for the initialization of the BlobService."""
     def test_init_with_connection_string(
         self, mocker, mock_blob_service_client, monkeypatch
     ):
+        """
+        Tests that the BlobService initializes correctly with a connection string.
+        """
         monkeypatch.setattr(
             blob_service.settings, "BLOB_CONNECTION_STRING", "test_conn_str"
         )
@@ -70,6 +74,9 @@ class TestBlobServiceInitialization:
     def test_init_with_endpoint_and_credential(
         self, mocker, mock_blob_service_client, monkeypatch
     ):
+        """
+        Tests that the BlobService initializes correctly with an endpoint and credentials.
+        """
         monkeypatch.setattr(blob_service.settings, "BLOB_CONNECTION_STRING", None)
         monkeypatch.setattr(blob_service.settings, "BLOB_ENDPOINT", "test_endpoint")
         mocker.patch("app.services.blob_service.DefaultAzureCredential")
@@ -84,6 +91,9 @@ class TestBlobServiceInitialization:
         assert service.client is not None
 
     def test_init_no_config_raises_error(self, monkeypatch):
+        """
+        Tests that a ValueError is raised if no storage configuration is provided.
+        """
         monkeypatch.setattr(blob_service.settings, "BLOB_CONNECTION_STRING", None)
         monkeypatch.setattr(blob_service.settings, "BLOB_ENDPOINT", None)
         with pytest.raises(ValueError, match="Storage configuration missing"):
@@ -94,8 +104,12 @@ class TestBlobServiceInitialization:
 
 
 class TestBlobServiceMethods:
+    """Tests for the public methods of the BlobService."""
     @pytest.fixture(autouse=True)
     def setup_service(self, mocker, mock_blob_service_client, monkeypatch):
+        """
+        Sets up the BlobService for testing.
+        """
         monkeypatch.setattr(
             blob_service.settings, "BLOB_CONNECTION_STRING", "test_conn_str"
         )
@@ -110,6 +124,9 @@ class TestBlobServiceMethods:
 
     @pytest.mark.asyncio
     async def test_write_blob_when_container_exists(self):
+        """
+        Tests writing a blob when the container already exists.
+        """
         await self.service.write_blob("test-container", "test.txt", b"data")
         self.mock_container.get_container_properties.assert_awaited_once()
         self.mock_container.create_container.assert_not_awaited()
@@ -117,6 +134,9 @@ class TestBlobServiceMethods:
 
     @pytest.mark.asyncio
     async def test_write_blob_creates_container_if_not_found(self):
+        """
+        Tests that a container is created if it does not exist when writing a blob.
+        """
         self.mock_container.get_container_properties.side_effect = (
             ResourceNotFoundError()
         )
@@ -127,6 +147,9 @@ class TestBlobServiceMethods:
 
     @pytest.mark.asyncio
     async def test_get_blob_succeeds(self):
+        """
+        Tests successfully getting a blob.
+        """
         data = await self.service.get_blob("test-container", "test.txt")
         assert data == b"test blob content"
         self.mock_blob.download_blob.assert_awaited_once()
@@ -134,17 +157,26 @@ class TestBlobServiceMethods:
 
     @pytest.mark.asyncio
     async def test_get_blob_raises_when_not_found(self):
+        """
+        Tests that getting a non-existent blob raises a ResourceNotFoundError.
+        """
         self.mock_blob.download_blob.side_effect = ResourceNotFoundError()
         with pytest.raises(ResourceNotFoundError):
             await self.service.get_blob("test-container", "test.txt")
 
     @pytest.mark.asyncio
     async def test_delete_blob_succeeds(self):
+        """
+        Tests successfully deleting a blob.
+        """
         await self.service.delete_blob("test-container", "test.txt")
         self.mock_blob.delete_blob.assert_awaited_once()
 
     @pytest.mark.asyncio
     async def test_delete_blob_handles_not_found_gracefully(self):
+        """
+        Tests that deleting a non-existent blob does not raise an exception.
+        """
         self.mock_blob.delete_blob.side_effect = ResourceNotFoundError()
         try:
             await self.service.delete_blob("test-container", "test.txt")
