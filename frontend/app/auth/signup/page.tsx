@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -11,6 +12,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Gamepad2, Github, Mail } from "lucide-react"
+import { signupUser } from "@/lib/api"
+import { toast } from "sonner"
+import { ApiError } from "@/lib/api/index"
 
 export default function SignUpPage() {
   const [formData, setFormData] = useState({
@@ -21,12 +25,35 @@ export default function SignUpPage() {
     agreeToTerms: false,
   })
   const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match")
+      return
+    }
     setIsLoading(true)
-    // Handle sign up logic here
-    setTimeout(() => setIsLoading(false), 1000)
+
+    try {
+      await signupUser({
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+      })
+      toast.success("Account created successfully! Please sign in.")
+      router.push("/auth/signin")
+    } catch (error: unknown) {
+      if (error instanceof ApiError) {
+        toast.error(error.message)
+      } else if (error instanceof Error) {
+        toast.error(error.message)
+      } else {
+        toast.error("An unexpected error occurred")
+      }
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleInputChange = (field: string, value: string | boolean) => {

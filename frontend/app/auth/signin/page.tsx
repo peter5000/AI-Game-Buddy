@@ -4,23 +4,42 @@ import type React from "react"
 
 import { useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Gamepad2, Github, Mail } from "lucide-react"
+import { signinUser } from "@/lib/api"
+import { toast } from "sonner"
+import { ApiError } from "@/lib/api/index"
 
 export default function SignInPage() {
-  const [email, setEmail] = useState("")
+  const [identifier, setIdentifier] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    // Handle sign in logic here
-    setTimeout(() => setIsLoading(false), 1000)
+
+    try {
+      await signinUser({ identifier, password })
+      toast.success("Signed in successfully!")
+      router.push("/")
+    } catch (error: unknown) {
+      if (error instanceof ApiError) {
+        toast.error(error.message)
+      } else if (error instanceof Error) {
+        toast.error(error.message)
+      } else {
+        toast.error("An unexpected error occurred")
+      }
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -36,13 +55,13 @@ export default function SignInPage() {
         <CardContent className="space-y-4">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="identifier">Username or Email</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="identifier"
+                type="text"
+                placeholder="Enter your username or email"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
                 required
               />
             </div>
