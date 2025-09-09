@@ -1,15 +1,15 @@
 import { apiRequest } from './index';
 import { SignupRequest, SigninRequest, User, ApiResponse } from '../types';
 
-export async function signupUser(data: SignupRequest): Promise<ApiResponse<User>> {
-  return apiRequest<ApiResponse<User>>('/accounts/register', {
+export async function signupUser(data: SignupRequest): Promise<User> {
+  return apiRequest<User>('/accounts/register', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 }
 
 export async function signinUser(data: SigninRequest): Promise<ApiResponse<User>> {
-  return apiRequest<ApiResponse<User>>('/accounts/login', {
+  return apiRequest<User>('/accounts/login', {
     method: 'POST',
     body: JSON.stringify(data),
   });
