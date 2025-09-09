@@ -31,10 +31,14 @@ export async function refreshToken(): Promise<ApiResponse<{ success: boolean }>>
   });
 }
 
+export async function checkAuth(): Promise<ApiResponse<{ status: string }>> {
+  return apiRequest<ApiResponse<{ status: string }>>('/accounts/status');
+}
+
 // Helper function to check if user is authenticated
 export async function checkAuthStatus(): Promise<boolean> {
   try {
-    await getCurrentUser();
+    await checkAuth();
     return true;
   } catch (error) {
     return false;

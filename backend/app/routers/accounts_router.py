@@ -149,6 +149,15 @@ async def delete_account(
     return {"status": "success", "message": "Account deleted"}
 
 
+@router.get("/status")
+async def get_auth_status(user_id: str = Depends(auth.get_user_id_http)):
+    """
+    A lightweight endpoint to check if the user's access token is valid.
+    It doesn't hit the database. It only validates the JWT.
+    """
+    return {"status": "authenticated", "user_id": user_id}
+
+
 @router.get(
     "/user/me", response_model=dict[str, Any]
 )  # Adjust response_model if you fetch full user
