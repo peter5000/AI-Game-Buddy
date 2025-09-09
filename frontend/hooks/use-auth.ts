@@ -13,7 +13,7 @@ export function useAuth(redirectIfAuthenticated = false, redirectUrl = '/') {
     retry: 1,
   });
 
-  const isAuthenticated = isSuccess && data?.data?.status === 'authenticated';
+  const isAuthenticated = isSuccess && data?.status === 'authenticated';
 
   useEffect(() => {
     if (isAuthenticated && redirectIfAuthenticated) {
