@@ -1,38 +1,48 @@
 import { apiRequest } from './index';
 import { SignupRequest, SigninRequest, User, ApiResponse } from '../types';
 
-export async function signupUser(data: SignupRequest): Promise<User> {
-  return apiRequest<User>('/accounts/register', {
+export async function signupUser(data: SignupRequest): Promise<ApiResponse<User>> {
+  return apiRequest<ApiResponse<User>>('/accounts/register', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 }
 
 export async function signinUser(data: SigninRequest): Promise<ApiResponse<User>> {
-  return apiRequest<User>('/accounts/login', {
+  return apiRequest<ApiResponse<User>>('/accounts/login', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 }
 
-export async function signoutUser(): Promise<ApiResponse> {
-  return apiRequest<ApiResponse>('/accounts/logout', {
+export async function signoutUser(): Promise<ApiResponse<void>> {
+  return apiRequest<ApiResponse<void>>('/accounts/logout', {
     method: 'POST',
   });
+}
+
+export async function deleteUser(): Promise<ApiResponse<void>> {
+  return apiRequest<ApiResponse<void>>('/accounts/delete', {
+    method: 'DELETE',
+  })
 }
 
 export async function getCurrentUser(): Promise<ApiResponse<User>> {
-  return apiRequest<ApiResponse<User>>('/accounts/user');
+  return apiRequest<ApiResponse<User>>('/accounts/user', {
+    method: 'GET',
+  });
 }
 
-export async function refreshToken(): Promise<ApiResponse<{ success: boolean }>> {
-  return apiRequest<ApiResponse<{ success: boolean }>>('/accounts/refresh', {
+export async function refreshToken(): Promise<ApiResponse<void>> {
+  return apiRequest<ApiResponse<void>>('/accounts/refresh', {
     method: 'POST',
   });
 }
 
-export async function checkAuth(): Promise<ApiResponse<{ status: string }>> {
-  return apiRequest<ApiResponse<{ status: string }>>('/accounts/status');
+export async function checkAuth(): Promise<ApiResponse<void>> {
+  return apiRequest<ApiResponse<void>>('/accounts/status', {
+    method: 'GET',
+  });
 }
 
 // Helper function to check if user is authenticated

@@ -1,6 +1,8 @@
 // Common API response structure
-export interface ApiResponse<T = any> {
-  [key: string]: any;
+export interface ApiResponse<T> {
+  status: string;
+  message?: string;
+  data?: T;
 }
 
 // Auth types

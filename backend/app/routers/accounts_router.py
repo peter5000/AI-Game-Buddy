@@ -19,7 +19,7 @@ async def create_account(
     user: UserCreate, user_service: UserService = Depends(get_user_service)
 ):
     new_user = await user_service.create_user(user=user)
-    return new_user
+    return {"status": "success", "message": "Account created", "data": new_user}
 
 
 @router.post("/login")
@@ -73,7 +73,7 @@ async def login_account(
 
     user.pop("password", None)
 
-    return user
+    return {"status": "success", "message": "Account logged in", "data": user}
 
 
 @router.post("/logout")
@@ -158,7 +158,7 @@ async def get_auth_status(user_id: str = Depends(auth.get_user_id_http)):
     A lightweight endpoint to check if the user's access token is valid.
     It doesn't hit the database. It only validates the JWT.
     """
-    return {"message": "authenticated", "user_id": user_id}
+    return {"status": "success", "message": "authenticated", "data": user_id}
 
 
 @router.get("/user", response_model=dict[str, Any])
@@ -179,4 +179,5 @@ async def get_user(
         raise HTTPException(status_code=404, detail="User not found")
 
     user_data.pop("password", None)  # Don't send hashed password back
-    return user_data
+    
+    return {"status": "success", "data": user_data}
