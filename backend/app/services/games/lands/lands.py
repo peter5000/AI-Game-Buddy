@@ -154,7 +154,7 @@ class LandsSystem(GameSystem[LandsState, LandsAction]):
             case "COUNTER_PHASE":
                 # player can choose to counter or not
                 valid_actions.append(
-                    LandsAction(type="COUNTER", payload=LandsPayload(target=[0]))
+                    LandsAction(type="COUNTER", payload=LandsPayload(target=0))
                 )  # Don't counter
 
                 # Check if can counter
@@ -172,14 +172,14 @@ class LandsSystem(GameSystem[LandsState, LandsAction]):
                             else:
                                 valid_actions.append(
                                     LandsAction(
-                                        type="COUNTER", payload=LandsPayload(target=[1])
+                                        type="COUNTER", payload=LandsPayload(target=1)
                                     )
                                 )  # Counter
                     else:  # If it is a counter to a counter, need two water cards
                         if hand[lv.WATER] > 1:
                             valid_actions.append(
                                 LandsAction(
-                                    type="COUNTER", payload=LandsPayload(target=[1])
+                                    type="COUNTER", payload=LandsPayload(target=1)
                                 )
                             )  # Counter
             case "RESOLUTION_PHASE":
