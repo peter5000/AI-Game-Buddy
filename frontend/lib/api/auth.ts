@@ -15,14 +15,14 @@ export async function signinUser(data: SigninRequest): Promise<ApiResponse<User>
   });
 }
 
-export async function signoutUser(): Promise<ApiResponse<void>> {
-  return apiRequest<ApiResponse<void>>('/accounts/logout', {
+export async function signoutUser(): Promise<ApiResponse<never>> {
+  return apiRequest<ApiResponse<never>>('/accounts/logout', {
     method: 'POST',
   });
 }
 
-export async function deleteUser(): Promise<ApiResponse<void>> {
-  return apiRequest<ApiResponse<void>>('/accounts/delete', {
+export async function deleteUser(): Promise<ApiResponse<never>> {
+  return apiRequest<ApiResponse<never>>('/accounts/delete', {
     method: 'DELETE',
   });
 }
@@ -33,14 +33,14 @@ export async function getCurrentUser(): Promise<ApiResponse<User>> {
   });
 }
 
-export async function refreshToken(): Promise<ApiResponse<void>> {
-  return apiRequest<ApiResponse<void>>('/accounts/refresh', {
+export async function refreshToken(): Promise<ApiResponse<never>> {
+  return apiRequest<ApiResponse<never>>('/accounts/refresh', {
     method: 'POST',
   });
 }
 
-export async function checkAuth(): Promise<ApiResponse<void>> {
-  return apiRequest<ApiResponse<void>>('/accounts/status', {
+export async function checkAuth(): Promise<ApiResponse<never>> {
+  return apiRequest<ApiResponse<never>>('/accounts/status', {
     method: 'GET',
   });
 }

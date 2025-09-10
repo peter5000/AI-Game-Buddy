@@ -32,8 +32,8 @@ export function Navbar() {
 
   const handleSignOut = async () => {
     await signoutUser()
-    queryClient.invalidateQueries({ queryKey: ["authStatus"] })
-    queryClient.invalidateQueries({ queryKey: ["user"] })
+    queryClient.resetQueries({ queryKey: ["user"] })
+    queryClient.resetQueries({ queryKey: ["authStatus"] })
     router.push("/")
   }
 

@@ -40,11 +40,10 @@ export default function SignInPage() {
     setError(null)
 
     try {
-      await signinUser({ identifier, password })
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["authStatus"] }),
-        queryClient.invalidateQueries({ queryKey: ["user"] }),
-      ])
+      const response = await signinUser({ identifier, password })
+      queryClient.setQueryData(["user"], response)
+      await queryClient.invalidateQueries({ queryKey: ["authStatus"] })
+
       router.push("/")
     } catch (error: unknown) {
       if (error instanceof ApiError) {
