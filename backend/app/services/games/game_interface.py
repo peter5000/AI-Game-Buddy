@@ -1,6 +1,6 @@
 import uuid
 from abc import ABC, abstractmethod
-from pydantic import BaseModel, Field, computed_field, model_validator, field_validator
+from pydantic import BaseModel, Field, computed_field, model_validator
 from typing import Any, Dict, List, Annotated, TypeVar, Generic
 
 
@@ -19,13 +19,17 @@ class Phase(BaseModel):
                 # Set 'current' to the first available phase
                 values["current"] = values["available_phases"][0]
             else:
-                raise ValueError("'current' is missing and cannot be defaulted from 'available_phases'")
+                raise ValueError(
+                    "'current' is missing and cannot be defaulted from 'available_phases'"
+                )
         return values
 
     @model_validator(mode="after")
     def validate_current_index(self):
         if self.current not in self.available_phases:
-            raise ValueError(f"Current phase '{self.current}' is not in available phases {self.available_phases}")
+            raise ValueError(
+                f"Current phase '{self.current}' is not in available phases {self.available_phases}"
+            )
         return self
 
     # Index of the current phase in available_phases
@@ -37,15 +41,21 @@ class Phase(BaseModel):
         # Calculate the next index, looping back to 0 if at the end
         next_index = (self._current_index + 1) % len(self.available_phases)
 
-        return self.model_copy(update={"current": self.available_phases[next_index]}, deep=True)
+        return self.model_copy(
+            update={"current": self.available_phases[next_index]}, deep=True
+        )
+
 
 # --- Type Variables for Components ---
 PrivateStateT = TypeVar("PrivateStateT")
 
+
 # --- Generic Components ---
 class PrivateStates(BaseModel, Generic[PrivateStateT]):
     """Represents the private state of a player or group of players in a game."""
+
     states: Dict[str, PrivateStateT]
+
 
 # --- Generic GameState ---
 class GameState(BaseModel):
@@ -62,6 +72,7 @@ class GameState(BaseModel):
 
     # Complex Optional Features
     private_state: PrivateStates | None = None
+
 
 # --- Generic Action ---
 class Action(BaseModel):
