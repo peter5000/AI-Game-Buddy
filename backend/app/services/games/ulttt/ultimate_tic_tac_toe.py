@@ -161,4 +161,3 @@ class UltimateTicTacToeSystem(
                 raise ValueError("This cell is already occupied.")
 
         return True
-

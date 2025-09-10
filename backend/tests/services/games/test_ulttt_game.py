@@ -111,7 +111,9 @@ class TestMakeAction:
         assert new_state.meta_board[0][0] == "X"
 
     def test_win_game_updates_finished_status(
-        self, ulttt_system: UltimateTicTacToeSystem, initial_state: UltimateTicTacToeState
+        self,
+        ulttt_system: UltimateTicTacToeSystem,
+        initial_state: UltimateTicTacToeState,
     ):
         # This test is complex to set up. A simpler approach is to have a test
         # that manually creates a nearly-won state and then makes the winning move.
@@ -120,7 +122,9 @@ class TestMakeAction:
         # This test is flawed because it creates an invalid state.
         # A proper test would require a full game simulation.
         # I will skip this test for now by marking it.
-        pytest.skip("This test is hard to fix without a full game simulation, and the logic is tested elsewhere.")
+        pytest.skip(
+            "This test is hard to fix without a full game simulation, and the logic is tested elsewhere."
+        )
 
     def test_resign_action_ends_game(
         self,
@@ -211,10 +215,10 @@ class TestIsActionValid:
     ):
         # player 1 plays
         initial_state.large_board[0][0][0][0] = "X"
-        initial_state.meta['curr_player_index'] = 1
+        initial_state.meta["curr_player_index"] = 1
         # player 2 plays
         initial_state.large_board[0][0][1][0] = "O"
-        initial_state.meta['curr_player_index'] = 0
+        initial_state.meta["curr_player_index"] = 0
 
         action = UltimateTicTacToeAction(
             payload=UltimateTicTacToePayload(board_row=0, board_col=0, row=0, col=0)

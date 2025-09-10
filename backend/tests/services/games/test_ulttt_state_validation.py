@@ -42,7 +42,9 @@ class TestUltimateTicTacToeStateValidation:
         valid_state.meta_board[0][0] = "X"
         # Set active_board to point to the won board
         valid_state.active_board = (0, 0)
-        with pytest.raises(ValidationError, match="active_board .* points to a finished board"):
+        with pytest.raises(
+            ValidationError, match="active_board .* points to a finished board"
+        ):
             UltimateTicTacToeState.model_validate(valid_state.model_dump())
 
     def test_invalid_turn_order_raises_error(self, valid_state: UltimateTicTacToeState):
@@ -57,7 +59,10 @@ class TestUltimateTicTacToeStateValidation:
     ):
         valid_state.finished = True
         # No winner is set in meta
-        with pytest.raises(ValidationError, match="Game is marked as finished, but there is no winner or draw."):
+        with pytest.raises(
+            ValidationError,
+            match="Game is marked as finished, but there is no winner or draw.",
+        ):
             UltimateTicTacToeState.model_validate(valid_state.model_dump())
 
     def test_unfinished_game_with_winner_raises_error(

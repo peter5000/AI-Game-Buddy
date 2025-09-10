@@ -80,9 +80,7 @@ class UltimateTicTacToeState(GameState):
                     "Game is marked as finished, but there is no winner or draw."
                 )
             if self.meta.get("winner") is None:
-                raise ValueError(
-                    "Game is marked as finished, but winner is not set."
-                )
+                raise ValueError("Game is marked as finished, but winner is not set.")
         else:
             if game_status and self.meta.get("winner") is not None:
                 raise ValueError(
