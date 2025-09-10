@@ -11,14 +11,15 @@ class ChessState(GameState):
     The `move_history` is not validated for performance reasons. The primary source of truth
     for the board state is `board_fen`.
     """
+
     board_fen: str = Field(
         default="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
     )
     game_result: Optional[str] = None
     move_history: List[str] = Field(default_factory=list)
 
-    @model_validator(mode='after')
-    def validate_chess_state(self) -> 'ChessState':
+    @model_validator(mode="after")
+    def validate_chess_state(self) -> "ChessState":
         try:
             board = chess.Board(self.board_fen)
         except ValueError:
@@ -35,9 +36,13 @@ class ChessState(GameState):
         current_player_index = self.meta.get("current_player_index")
 
         if is_white_turn and current_player_index != 0:
-            raise ValueError("FEN indicates white's turn, but current_player_index is not 0")
+            raise ValueError(
+                "FEN indicates white's turn, but current_player_index is not 0"
+            )
         if not is_white_turn and current_player_index != 1:
-            raise ValueError("FEN indicates black's turn, but current_player_index is not 1")
+            raise ValueError(
+                "FEN indicates black's turn, but current_player_index is not 1"
+            )
 
         return self
 
