@@ -251,11 +251,12 @@ def test_stress_game_simulation(lands_system: LandsSystem):
                     winner_board = state.boards[winner_id]
                     win_by_5_same = any(count >= 5 for count in winner_board)
                     win_by_1_each = all(count >= 1 for count in winner_board)
+                    print(state)
                     assert win_by_5_same or win_by_1_each
                 break
 
             current_player_id = state.player_ids[state.meta["curr_player_index"]]
-            valid_actions = lands_system.get_valid_actions(state, current_player_id)
+            valid_actions = lands_system.get_valid_actions(state, current_player_id)[1:] # Exclude "RESIGN" action
 
             assert valid_actions, (
                 f"No valid actions for player {current_player_id} in phase {state.phase.current} on turn {turn}"
@@ -271,7 +272,5 @@ def test_stress_game_simulation(lands_system: LandsSystem):
                 deck_count = len(state.private_state.states[pid].deck)
                 board_count = sum(state.boards[pid])
                 discard_count = sum(state.discard[pid])
-                pending_count = 1 if state.pending_card is not None else 0
-                if hand_count + deck_count + board_count + discard_count + pending_count != 25:
-                    print(state)
+                pending_count = 1 if pid == state.player_ids[state.meta["main_player_index"]] and state.pending_card is not None and state.phase.current != "RESOLUTION_PHASE" else 0
                 assert hand_count + deck_count + board_count + discard_count + pending_count == 25
