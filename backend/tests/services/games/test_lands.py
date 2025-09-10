@@ -234,6 +234,205 @@ def test_deck_reshuffle(lands_system: LandsSystem, initial_state: LandsState):
     assert sum(state.discard[player_id]) == 0
 
 
+# --- Invalid Action Tests ---
+
+
+def test_invalid_action_out_of_turn(
+    lands_system: LandsSystem, initial_state: LandsState
+):
+    """
+    Tests that a player cannot make a move when it's not their turn.
+    """
+    opponent_id = initial_state.player_ids[1]
+    action = LandsAction(type="PLAY_ENERGY", payload=LandsPayload(target=lv.GRASS))
+
+    with pytest.raises(ValueError, match="Invalid action."):
+        lands_system.is_action_valid(initial_state, opponent_id, action)
+
+
+def test_invalid_action_wrong_phase(
+    lands_system: LandsSystem, initial_state: LandsState
+):
+    """
+    Tests that a player cannot make a move in the wrong game phase.
+    """
+    player_id = initial_state.player_ids[0]
+    opponent_id = initial_state.player_ids[1]
+
+    # --- Test actions in COUNTER_PHASE ---
+    # Setup: Player 1 plays a card, moving to COUNTER_PHASE for Player 2
+    state_counter_phase = initial_state.model_copy(deep=True)
+    state_counter_phase.private_state.states[player_id].hand[lv.GRASS] = 1
+    play_action = LandsAction(type="PLAY_ENERGY", payload=LandsPayload(target=lv.GRASS))
+    state_counter_phase = lands_system.make_action(
+        state_counter_phase, player_id, play_action
+    )
+    assert state_counter_phase.phase.current == "COUNTER_PHASE"
+
+    # Test: Player 2 (current player) tries to PLAY_ENERGY in COUNTER_PHASE
+    with pytest.raises(ValueError, match="Invalid action."):
+        lands_system.is_action_valid(state_counter_phase, opponent_id, play_action)
+
+    # Test: Player 2 (current player) tries to CHOOSE_TARGET in COUNTER_PHASE
+    choose_target_action = LandsAction(
+        type="CHOOSE_TARGET", payload=LandsPayload(target=0)
+    )
+    with pytest.raises(ValueError, match="Invalid action."):
+        lands_system.is_action_valid(
+            state_counter_phase, opponent_id, choose_target_action
+        )
+
+    # --- Test actions in MAIN_PHASE ---
+    state_main_phase = initial_state.model_copy(deep=True)
+    assert state_main_phase.phase.current == "MAIN_PHASE"
+
+    # Test: Player 1 tries to COUNTER in MAIN_PHASE
+    counter_action = LandsAction(type="COUNTER", payload=LandsPayload(target=1))
+    with pytest.raises(ValueError, match="Invalid action."):
+        lands_system.is_action_valid(state_main_phase, player_id, counter_action)
+
+    # Test: Player 1 tries to CHOOSE_TARGET in MAIN_PHASE
+    with pytest.raises(ValueError, match="Invalid action."):
+        lands_system.is_action_valid(
+            state_main_phase, player_id, choose_target_action
+        )
+
+    # --- Test actions in RESOLUTION_PHASE ---
+    # Setup: Player 1 plays GRASS, Player 2 doesn't counter -> RESOLUTION_PHASE
+    state_resolution_phase = initial_state.model_copy(deep=True)
+    state_resolution_phase.private_state.states[player_id].hand[lv.GRASS] = 1
+    state_resolution_phase.discard[player_id][lv.FIRE] = 1  # to have a target
+
+    state_resolution_phase = lands_system.make_action(
+        state_resolution_phase, player_id, play_action
+    )
+    state_resolution_phase = lands_system.make_action(
+        state_resolution_phase,
+        opponent_id,
+        LandsAction(type="COUNTER", payload=LandsPayload(target=0)),
+    )
+
+    assert state_resolution_phase.phase.current == "RESOLUTION_PHASE"
+
+    # Test: Player 1 tries to PLAY_ENERGY in RESOLUTION_PHASE
+    with pytest.raises(ValueError, match="Invalid action."):
+        lands_system.is_action_valid(state_resolution_phase, player_id, play_action)
+
+    # Test: Player 1 tries to COUNTER in RESOLUTION_PHASE
+    with pytest.raises(ValueError, match="Invalid action."):
+        lands_system.is_action_valid(
+            state_resolution_phase, player_id, counter_action
+        )
+
+
+def test_invalid_action_play_card_not_in_hand(
+    lands_system: LandsSystem, initial_state: LandsState
+):
+    """
+    Tests that a player cannot play a card that they do not have in their hand.
+    """
+    player_id = initial_state.player_ids[0]
+    state = initial_state.model_copy(deep=True)
+    # Ensure player does not have a grass card
+    state.private_state.states[player_id].hand[lv.GRASS] = 0
+
+    action = LandsAction(type="PLAY_ENERGY", payload=LandsPayload(target=lv.GRASS))
+
+    with pytest.raises(ValueError, match="Invalid action."):
+        lands_system.is_action_valid(state, player_id, action)
+
+
+def test_invalid_counter_action(lands_system: LandsSystem, initial_state: LandsState):
+    """
+    Tests various scenarios of invalid counter actions.
+    """
+    player_id = initial_state.player_ids[0]
+    opponent_id = initial_state.player_ids[1]
+
+    # --- Setup for COUNTER_PHASE ---
+    state = initial_state.model_copy(deep=True)
+    state.private_state.states[player_id].hand[lv.FIRE] = 1
+    play_action = LandsAction(type="PLAY_ENERGY", payload=LandsPayload(target=lv.FIRE))
+    state = lands_system.make_action(state, player_id, play_action)
+    assert state.phase.current == "COUNTER_PHASE"
+    counter_action = LandsAction(type="COUNTER", payload=LandsPayload(target=1))
+
+    # --- Test counter without matching card ---
+    state_no_match = state.model_copy(deep=True)
+    state_no_match.private_state.states[opponent_id].hand[lv.WATER] = 1
+    state_no_match.private_state.states[opponent_id].hand[lv.FIRE] = 0
+    with pytest.raises(ValueError, match="Invalid action."):
+        lands_system.is_action_valid(state_no_match, opponent_id, counter_action)
+
+    # --- Test counter without water card ---
+    state_no_water = state.model_copy(deep=True)
+    state_no_water.private_state.states[opponent_id].hand[lv.WATER] = 0
+    state_no_water.private_state.states[opponent_id].hand[lv.FIRE] = 1
+    with pytest.raises(ValueError, match="Invalid action."):
+        lands_system.is_action_valid(state_no_water, opponent_id, counter_action)
+
+    # --- Test counter-a-counter without two water cards ---
+    # Setup: Opponent counters successfully
+    state_countered = state.model_copy(deep=True)
+    state_countered.private_state.states[opponent_id].hand[lv.WATER] = 1
+    state_countered.private_state.states[opponent_id].hand[lv.FIRE] = 1
+    state_countered = lands_system.make_action(
+        state_countered, opponent_id, counter_action
+    )
+    assert state_countered.meta["countered"] == 1
+
+    # Test: Player 1 (now current) tries to counter back with insufficient water
+    state_countered.private_state.states[player_id].hand[lv.WATER] = 1
+    with pytest.raises(ValueError, match="Invalid action."):
+        lands_system.is_action_valid(state_countered, player_id, counter_action)
+
+
+def test_invalid_target_selection(
+    lands_system: LandsSystem, initial_state: LandsState
+):
+    """
+    Tests that a player cannot select a target that is not in the selection list.
+    """
+    player_id = initial_state.player_ids[0]
+    opponent_id = initial_state.player_ids[1]
+
+    # --- Setup for RESOLUTION_PHASE with a selection ---
+    state = initial_state.model_copy(deep=True)
+    state.private_state.states[player_id].hand[lv.FIRE] = 1
+    state.boards[opponent_id][lv.GRASS] = 1  # Target for fire card
+    play_action = LandsAction(type="PLAY_ENERGY", payload=LandsPayload(target=lv.FIRE))
+    state = lands_system.make_action(state, player_id, play_action)
+    state = lands_system.make_action(
+        state, opponent_id, LandsAction(type="COUNTER", payload=LandsPayload(target=0))
+    )
+    assert state.phase.current == "RESOLUTION_PHASE"
+    assert state.selection == [lv.GRASS]
+
+    # --- Test choosing an invalid target ---
+    invalid_action = LandsAction(
+        type="CHOOSE_TARGET", payload=LandsPayload(target=lv.WATER)
+    )  # WATER is not in selection
+    with pytest.raises(ValueError, match="Invalid action."):
+        lands_system.is_action_valid(state, player_id, invalid_action)
+
+
+def test_invalid_action_on_finished_game(
+    lands_system: LandsSystem, initial_state: LandsState
+):
+    """
+    Tests that no actions can be taken after the game has finished.
+    """
+    player_id = initial_state.player_ids[0]
+    state = initial_state.model_copy(deep=True)
+    state.finished = True
+    state.private_state.states[player_id].hand[lv.GRASS] = 1
+
+    action = LandsAction(type="PLAY_ENERGY", payload=LandsPayload(target=lv.GRASS))
+
+    with pytest.raises(ValueError, match="Invalid action."):
+        lands_system.is_action_valid(state, player_id, action)
+
+
 def test_stress_game_simulation(lands_system: LandsSystem):
     """
     Simulates multiple games with random actions to stress test the system.
