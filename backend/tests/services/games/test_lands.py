@@ -292,3 +292,46 @@ def test_stress_game_simulation(lands_system: LandsSystem):
                     + pending_count
                     == 25
                 )
+
+
+def test_resign_action(lands_system: LandsSystem, initial_state: LandsState):
+    player_id = "player1"
+    opponent_id = "player2"
+
+    action = LandsAction(type="RESIGN", payload=None)
+    final_state = lands_system.make_action(initial_state, player_id, action)
+
+    assert final_state.meta["winner"] == opponent_id
+    assert final_state.finished is True
+
+
+def test_is_action_valid(lands_system: LandsSystem, initial_state: LandsState):
+    player_id = "player1"
+
+    # Test valid action
+    valid_action = lands_system.get_valid_actions(initial_state, player_id)[0]
+    assert lands_system.is_action_valid(initial_state, player_id, valid_action) is True
+
+    # Test invalid action: playing a card that the player does not have
+    initial_state.private_state.states[player_id].hand[lv.FIRE] = 0
+    invalid_action = LandsAction(
+        type="PLAY_ENERGY", payload=LandsPayload(target=lv.FIRE)
+    )
+    with pytest.raises(ValueError):
+        lands_system.is_action_valid(initial_state, player_id, invalid_action)
+
+    # Test invalid action: playing a card when it's not the player's turn
+    initial_state.meta["curr_player_index"] = 1  # It's opponent's turn
+    with pytest.raises(ValueError):
+        lands_system.is_action_valid(initial_state, player_id, valid_action)
+    initial_state.meta["curr_player_index"] = 0  # Reset turn
+
+    # Test invalid action: countering when it's not the counter phase
+    invalid_action = LandsAction(type="COUNTER", payload=LandsPayload(target=0))
+    with pytest.raises(ValueError):
+        lands_system.is_action_valid(initial_state, player_id, invalid_action)
+
+    # Test invalid action: choosing a target when it's not the resolution phase
+    invalid_action = LandsAction(type="CHOOSE_TARGET", payload=LandsPayload(target=0))
+    with pytest.raises(ValueError):
+        lands_system.is_action_valid(initial_state, player_id, invalid_action)
