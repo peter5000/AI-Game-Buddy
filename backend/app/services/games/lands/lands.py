@@ -300,6 +300,7 @@ class LandsSystem(GameSystem[LandsState, LandsAction]):
                 else:
                     state = self._end_turn(state)
                     state = self._start_turn(state)
+        return state
 
     def _check_win_condition(self, state: LandsState, player_id: str) -> LandsState:
         board = state.boards[player_id]
