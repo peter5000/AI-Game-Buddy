@@ -216,13 +216,8 @@ def test_win_condition_one_of_each(
         state, "player2", LandsAction(type="COUNTER", payload=LandsPayload(target=0))
     )
 
-    # Water effect resolution
-    action = LandsAction(
-        type="CHOOSE_TARGET", payload=LandsPayload(target=0)
-    )  # Keep on top
-    final_state = lands_system.make_action(state, player_id, action)
 
-    assert final_state.meta["winner"] == player_id
+    assert state.meta["winner"] == player_id
 
 
 def test_deck_reshuffle(lands_system: LandsSystem, initial_state: LandsState):
@@ -276,4 +271,7 @@ def test_stress_game_simulation(lands_system: LandsSystem):
                 deck_count = len(state.private_state.states[pid].deck)
                 board_count = sum(state.boards[pid])
                 discard_count = sum(state.discard[pid])
-                assert hand_count + deck_count + board_count + discard_count == 25
+                pending_count = 1 if state.pending_card is not None else 0
+                if hand_count + deck_count + board_count + discard_count + pending_count != 25:
+                    print(state)
+                assert hand_count + deck_count + board_count + discard_count + pending_count == 25

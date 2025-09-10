@@ -76,6 +76,7 @@ class LandsSystem(GameSystem[LandsState, LandsAction]):
                         main_player_id = state.player_ids[
                             state.meta["main_player_index"]
                         ]
+                        new_state.meta["curr_player_index"] = new_state.meta["main_player_index"]
                         card_type = state.pending_card
                         if card_type is not None:
                             new_state.boards[main_player_id][card_type] += 1
@@ -291,14 +292,10 @@ class LandsSystem(GameSystem[LandsState, LandsAction]):
                 ]
             case lv.WATER:
                 state.meta["curr_player_index"] = state.meta["main_player_index"]
-                if state.private_state.states[main_player_id].deck:
-                    state.selection = [0, 1]  # 0: keep on top, 1: move to bottom
-                    state.private_state.states[
-                        main_player_id
-                    ].top_card = state.private_state.states[main_player_id].deck[0]
-                else:
-                    state = self._end_turn(state)
-                    state = self._start_turn(state)
+                state.selection = [0, 1]  # 0: keep on top, 1: move to bottom
+                state.private_state.states[
+                    main_player_id
+                ].top_card = state.private_state.states[main_player_id].deck[0]
         return state
 
     def _check_win_condition(self, state: LandsState, player_id: str) -> LandsState:
@@ -307,11 +304,13 @@ class LandsSystem(GameSystem[LandsState, LandsAction]):
         # Check for 5 of the same type of energy
         if any(count >= 5 for count in board):
             state.meta["winner"] = player_id
+            state.finished = True
             return state
 
         # Check for 1 of each type of energy
         if all(count >= 1 for count in board):
             state.meta["winner"] = player_id
+            state.finished = True
             return state
 
         return state
