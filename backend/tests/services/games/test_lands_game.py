@@ -26,7 +26,7 @@ def test_initialize_game(initial_state):
     assert initial_state.meta["winner"] is None
     assert initial_state.meta["curr_player_index"] == 0
     assert initial_state.phase.current == "MAIN_PHASE"
-    assert initial_state.meta["turn_count"] == 0
+    assert initial_state.turn == 0
 
 def test_play_lightning_card(lands_system: LandsSystem, initial_state):
     player_id = initial_state.player_ids[0]
