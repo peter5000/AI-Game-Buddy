@@ -61,7 +61,7 @@ class LandsSystem(GameSystem[LandsState, LandsAction]):
             case "PLAY_ENERGY":
                 card_type = action.payload.target
                 new_state.private_state.states[player_id].hand[card_type] -= 1
-                new_state.pending_card = lv.ELEMENTS[card_type]
+                new_state.pending_card = card_type
                 new_state.meta["curr_player_index"] = (
                     1 - new_state.meta["curr_player_index"]
                 )
