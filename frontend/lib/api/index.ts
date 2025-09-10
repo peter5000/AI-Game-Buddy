@@ -30,9 +30,9 @@ export async function apiRequest<T>(
 
   // If we get a 401 (unauthorized) and it's not already a refresh request,
   // try to refresh the token automatically
-  if (response.status === 401 && !endpoint.includes('/auth/refresh')) {
+  if (response.status === 401 && !endpoint.includes('/accounts/refresh')) {
     try {
-      const refreshResponse = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+      const refreshResponse = await fetch(`${API_BASE_URL}/accounts/refresh`, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -57,7 +57,7 @@ export async function apiRequest<T>(
 
   if (!response.ok) {
     throw new ApiError(
-      data.message || 'An error occurred',
+      data.detail || data.message || 'An error occurred',
       response.status,
       data.errors
     );
@@ -68,7 +68,7 @@ export async function apiRequest<T>(
 
 // Export all API modules
 export * from './auth';
-export * from './games';
-export * from './users';
-export * from './ai-friends';
-export * from './rooms';
+// export * from './games';
+// export * from './users';
+// export * from './ai-friends';
+// export * from './rooms';

@@ -1,42 +1,46 @@
 import { apiRequest } from './index';
-import { SignupRequest, SigninRequest, AuthResponse, ApiResponse } from '../types';
+import { SignupRequest, SigninRequest, User, ApiResponse } from '../types';
 
-export async function signupUser(data: SignupRequest): Promise<ApiResponse<AuthResponse>> {
-  return apiRequest<ApiResponse<AuthResponse>>('/api/auth/signup', {
+export async function signupUser(data: SignupRequest): Promise<ApiResponse<User>> {
+  return apiRequest<ApiResponse<User>>('/accounts/register', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 }
 
-export async function signinUser(data: SigninRequest): Promise<ApiResponse<AuthResponse>> {
-  return apiRequest<ApiResponse<AuthResponse>>('/api/auth/signin', {
+export async function signinUser(data: SigninRequest): Promise<ApiResponse<User>> {
+  return apiRequest<ApiResponse<User>>('/accounts/login', {
     method: 'POST',
     body: JSON.stringify(data),
   });
 }
 
-export async function signoutUser(): Promise<ApiResponse> {
-  return apiRequest<ApiResponse>('/api/auth/signout', {
+export async function signoutUser(): Promise<ApiResponse<void>> {
+  return apiRequest<ApiResponse<void>>('/accounts/logout', {
     method: 'POST',
   });
 }
 
-export async function getCurrentUser(): Promise<ApiResponse<AuthResponse['user']>> {
-  return apiRequest<ApiResponse<AuthResponse['user']>>('/api/auth/me');
+export async function deleteUser(): Promise<ApiResponse<void>> {
+  return apiRequest<ApiResponse<void>>('/accounts/delete', {
+    method: 'DELETE',
+  });
 }
 
-export async function refreshToken(): Promise<ApiResponse<{ success: boolean }>> {
-  return apiRequest<ApiResponse<{ success: boolean }>>('/api/auth/refresh', {
+export async function getCurrentUser(): Promise<ApiResponse<User>> {
+  return apiRequest<ApiResponse<User>>('/accounts/user', {
+    method: 'GET',
+  });
+}
+
+export async function refreshToken(): Promise<ApiResponse<void>> {
+  return apiRequest<ApiResponse<void>>('/accounts/refresh', {
     method: 'POST',
   });
 }
 
-// Helper function to check if user is authenticated
-export async function checkAuthStatus(): Promise<boolean> {
-  try {
-    await getCurrentUser();
-    return true;
-  } catch (error) {
-    return false;
-  }
+export async function checkAuth(): Promise<ApiResponse<void>> {
+  return apiRequest<ApiResponse<void>>('/accounts/status', {
+    method: 'GET',
+  });
 }

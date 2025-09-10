@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -12,12 +13,32 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Gamepad2, Menu, X, User, Settings, LogOut, Bell } from "lucide-react"
+import { useAuth } from "@/hooks/use-auth"
+import { getCurrentUser, signoutUser } from "@/lib/api"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 
 export function Navbar() {
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [isLoggedIn, setIsLoggedIn] = useState(false) // This would come from your auth context
+  const router = useRouter()
+  const queryClient = useQueryClient()
+
+  const { data: user, isLoading: isUserLoading } = useQuery({
+    queryKey: ["user"],
+    queryFn: getCurrentUser,
+    enabled: isAuthenticated,
+    select: (data) => data.data,
+  })
+
+  const handleSignOut = async () => {
+    await signoutUser()
+    queryClient.invalidateQueries({ queryKey: ['authStatus'] })
+    queryClient.invalidateQueries({ queryKey: ['user'] })
+    router.push("/auth/signin")
+  }
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen)
+  const isLoading = isAuthLoading || (isAuthenticated && isUserLoading)
 
   return (
     <nav className="bg-white shadow-sm border-b sticky top-0 z-50">
@@ -47,7 +68,9 @@ export function Navbar() {
 
           {/* User Actions */}
           <div className="hidden md:flex items-center space-x-4">
-            {isLoggedIn ? (
+            {isLoading ? (
+              <div className="h-8 w-32 bg-gray-200 rounded-md animate-pulse" />
+            ) : user ? (
               <div className="flex items-center space-x-3">
                 <Button variant="ghost" size="sm">
                   <Bell className="h-4 w-4" suppressHydrationWarning />
@@ -55,8 +78,8 @@ export function Navbar() {
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Avatar className="cursor-pointer">
-                      <AvatarImage src="/placeholder.svg?height=32&width=32" />
-                      <AvatarFallback>JD</AvatarFallback>
+                      {/* <AvatarImage src={user || "/placeholder-user.jpg"} /> */}
+                      <AvatarFallback>{user.username.charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
@@ -73,7 +96,7 @@ export function Navbar() {
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => setIsLoggedIn(false)}>
+                    <DropdownMenuItem onClick={handleSignOut}>
                       <LogOut className="mr-2 h-4 w-4" suppressHydrationWarning />
                       Sign Out
                     </DropdownMenuItem>
@@ -119,7 +142,9 @@ export function Navbar() {
               <Link href="/docs" className="text-gray-700 hover:text-purple-600 transition-colors px-2 py-1">
                 Documentation
               </Link>
-              {!isLoggedIn && (
+              {isLoading ? (
+                <div className="h-8 w-full bg-gray-200 rounded-md animate-pulse mt-3 pt-3 border-t" />
+              ) : !user ? (
                 <div className="flex flex-col space-y-2 pt-3 border-t">
                   <Link href="/auth/signin">
                     <Button variant="ghost" className="w-full justify-start">
@@ -129,6 +154,13 @@ export function Navbar() {
                   <Link href="/auth/signup">
                     <Button className="w-full">Sign Up</Button>
                   </Link>
+                </div>
+              ) : (
+                <div className="pt-3 border-t">
+                  <Button onClick={handleSignOut} className="w-full justify-start">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign Out
+                  </Button>
                 </div>
               )}
             </div>

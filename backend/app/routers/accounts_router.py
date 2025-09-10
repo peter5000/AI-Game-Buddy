@@ -18,8 +18,8 @@ router = APIRouter(prefix="/accounts", tags=["Accounts"])
 async def create_account(
     user: UserCreate, user_service: UserService = Depends(get_user_service)
 ):
-    await user_service.create_user(user=user)
-    return {"status": "success", "message": f"User '{user.username}' created"}
+    new_user = await user_service.create_user(user=user)
+    return {"status": "success", "message": "Account created", "data": new_user}
 
 
 @router.post("/login")
@@ -70,7 +70,10 @@ async def login_account(
         samesite="lax",
         max_age=int(refresh_token_expires.total_seconds()),
     )
-    return {"status": "success", "message": "User logged in"}
+
+    user.pop("password", None)
+
+    return {"status": "success", "message": "Account logged in", "data": user}
 
 
 @router.post("/logout")
@@ -149,10 +152,17 @@ async def delete_account(
     return {"status": "success", "message": "Account deleted"}
 
 
-@router.get(
-    "/user/me", response_model=dict[str, Any]
-)  # Adjust response_model if you fetch full user
-async def read_users_me(
+@router.get("/status")
+async def get_auth_status(user_id: str = Depends(auth.get_user_id_http)):
+    """
+    A lightweight endpoint to check if the user's access token is valid.
+    It doesn't hit the database. It only validates the JWT.
+    """
+    return {"status": "success", "message": "authenticated", "data": user_id}
+
+
+@router.get("/user", response_model=dict[str, Any])
+async def get_user(
     user_id: str = Depends(auth.get_user_id_http),
     cosmos_service: CosmosService = Depends(get_cosmos_service),
 ):
@@ -169,16 +179,5 @@ async def read_users_me(
         raise HTTPException(status_code=404, detail="User not found")
 
     user_data.pop("password", None)  # Don't send hashed password back
-    return user_data
 
-
-@router.get("/get_user")
-async def get_username(
-    user_id: str = Depends(auth.get_user_id_http),
-    cosmos_service: CosmosService = Depends(get_cosmos_service),
-):
-    user = await cosmos_service.get_item(
-        item_id=user_id, partition_key=user_id, container_type="users"
-    )
-    username = user.get("username")
-    return {"message": "success", "username": username}
+    return {"status": "success", "data": user_data}
