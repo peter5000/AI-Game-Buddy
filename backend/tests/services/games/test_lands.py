@@ -125,7 +125,8 @@ def test_darkness_effect_opponent_reveals(
     action = LandsAction(type="CHOOSE_TARGET", payload=LandsPayload(target=lv.FIRE))
     final_state = lands_system.make_action(state, player_id, action)
 
-    assert final_state.private_state.states[opponent_id].hand[lv.FIRE] == 0
+    # Fire card should be discarded from opponent's hand, if not drawn fire card from the deck
+    assert final_state.private_state.states[opponent_id].hand[lv.FIRE] == 0 or final_state.private_state.states[opponent_id].hand[lv.FIRE] == 1 and state.private_state.states[opponent_id].deck[0] == lv.FIRE
     assert final_state.discard[opponent_id][lv.FIRE] == 1
 
 
