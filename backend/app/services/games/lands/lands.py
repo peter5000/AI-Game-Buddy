@@ -34,10 +34,12 @@ class LandsSystem(GameSystem[LandsState, LandsAction]):
         for pid in player_ids:
             new_state = self._draw_cards(new_state, pid, 5)
 
+        new_state = self._start_turn(new_state)
         return new_state
 
     @validate_call
     def make_action(self, state: LandsState, player_id: str, action: LandsAction) -> LandsState:
+        # TODO
         if not self.is_action_valid(state, player_id, action):
             raise ValueError("Invalid action.")
 
@@ -224,8 +226,6 @@ class LandsSystem(GameSystem[LandsState, LandsAction]):
             case lv.DARKNESS:
                 # Opponent has to choose a card from their hand if they have any
                 state.meta["curr_player_index"] = 1 - state.meta["main_player_index"]
-                # Put copy of opponent's hand into selection
-                state.selection = [cards for cards in state.private_state.states[opponent_id].hand]
             case lv.WATER:
                 state.meta["curr_player_index"] = state.meta["main_player_index"]
                 if state.private_state.states[main_player_id].deck:
@@ -308,9 +308,8 @@ class LandsSystem(GameSystem[LandsState, LandsAction]):
             case lv.WATER:
                 if target is not None:
                     # target is either 0 (keep it top) or 1 (move to bottom)
+                    top_card = state.private_state.states[active_player_id].deck.pop(0)
                     if target == 1: # Move to bottom
-                        top_card = state.private_state.states[active_player_id].deck.pop(0)
-
                         state.private_state.states[active_player_id].deck.append(top_card)
                     # Hide top card
                     state.private_state.states[active_player_id].top_card = None
