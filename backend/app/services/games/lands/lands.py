@@ -2,9 +2,9 @@ from typing import List
 import logging
 import random
 from pydantic import validate_call
-from . import lands_vars as lv
 from ..game_interface import GameSystem, PrivateStates
 from .lands_interface import LandsPrivateState, LandsState, LandsAction, LandsPayload
+from . import lands_vars as lv
 
 logger = logging.getLogger("__name__")
 
