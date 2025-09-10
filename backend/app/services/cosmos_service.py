@@ -12,7 +12,26 @@ logger = logging.getLogger(__name__)
 
 
 class CosmosService:
+    """
+    A service for interacting with Azure Cosmos DB.
+
+    This class provides methods for performing CRUD operations on items in
+    Cosmos DB containers. It handles the connection to Cosmos DB using either
+    a connection string or an endpoint with Azure credentials.
+    """
+
     def __init__(self):
+        """
+        Initializes the CosmosService.
+
+        The client is initialized using either a connection string or an endpoint
+        with Azure credentials, based on the application settings. It also
+        initializes clients for the 'users' and 'rooms' containers.
+
+        Raises:
+            ValueError: If the database configuration is missing.
+            ConnectionError: If the connection to the CosmosClient fails.
+        """
         self.client: Optional[CosmosClient] = None
 
         if settings.COSMOS_CONNECTION_STRING:
@@ -40,10 +59,23 @@ class CosmosService:
         self.rooms_container_client = db_client.get_container_client("rooms")
 
     async def close(self):
+        """Closes the Cosmos DB client session."""
         logger.info("Closing Cosmos client session")
         await self.client.close()
 
     def get_container(self, container_type: str):
+        """
+        Gets the container client for a specified container type.
+
+        Args:
+            container_type (str): The type of container ('users' or 'rooms').
+
+        Returns:
+            The container client for the specified container type.
+
+        Raises:
+            ValueError: If the container type is invalid.
+        """
         if container_type == "users":
             return self.users_container_client
         elif container_type == "rooms":
@@ -53,6 +85,17 @@ class CosmosService:
 
     # Database access functions
     async def add_item(self, item: dict[str, Any], container_type: str):
+        """
+        Adds an item to a specified container.
+
+        Args:
+            item (dict[str, Any]): The item to add.
+            container_type (str): The type of container.
+
+        Raises:
+            ValueError: If the item is invalid.
+            HTTPException: If a database error occurs.
+        """
         if not item:
             raise ValueError("Invalid Item")
 
@@ -73,6 +116,21 @@ class CosmosService:
             raise
 
     async def get_item(self, item_id: str, partition_key: str, container_type: str):
+        """
+        Gets an item from a specified container.
+
+        Args:
+            item_id (str): The ID of the item to get.
+            partition_key (str): The partition key of the item.
+            container_type (str): The type of container.
+
+        Returns:
+            The item if found, otherwise None.
+
+        Raises:
+            ValueError: If the item ID or partition key is empty.
+            HTTPException: If a database error occurs.
+        """
         if not item_id or not partition_key:
             raise ValueError("Item ID and partition key cannot be empty")
 
@@ -107,6 +165,21 @@ class CosmosService:
         container_type: str,
         parameters: Optional[list[dict[str, Any]]] = None,
     ) -> list[dict[str, Any]]:
+        """
+        Gets items from a specified container using a SQL query.
+
+        Args:
+            query (str): The SQL query to execute.
+            container_type (str): The type of container.
+            parameters (Optional[list[dict[str, Any]]], optional): The parameters for the query. Defaults to None.
+
+        Returns:
+            list[dict[str, Any]]: A list of items returned by the query.
+
+        Raises:
+            ValueError: If the query string is empty.
+            HTTPException: If a database error occurs.
+        """
         if not query:
             raise ValueError("Query string cannot be empty")
 
@@ -140,6 +213,17 @@ class CosmosService:
             raise
 
     async def update_item(self, item: dict[str, Any], container_type: str):
+        """
+        Updates an item in a specified container.
+
+        Args:
+            item (dict[str, Any]): The item to update.
+            container_type (str): The type of container.
+
+        Raises:
+            ValueError: If the item is invalid.
+            HTTPException: If the item is not found or a database error occurs.
+        """
         if not item:
             raise ValueError("Invalid Item")
 
@@ -176,6 +260,19 @@ class CosmosService:
         patch_operations: dict[str, Any],
         container_type: str,
     ):
+        """
+        Patches an item in a specified container.
+
+        Args:
+            item_id (str): The ID of the item to patch.
+            partition_key (str): The partition key of the item.
+            patch_operations (dict[str, Any]): The patch operations to perform.
+            container_type (str): The type of container.
+
+        Raises:
+            ValueError: If the item ID or partition key is empty.
+            HTTPException: If the item is not found or a database error occurs.
+        """
         if not item_id or not partition_key:
             raise ValueError("Item ID and partition key cannot be empty")
 
@@ -211,6 +308,18 @@ class CosmosService:
             )
 
     async def delete_item(self, item_id: str, partition_key: str, container_type: str):
+        """
+        Deletes an item from a specified container.
+
+        Args:
+            item_id (str): The ID of the item to delete.
+            partition_key (str): The partition key of the item.
+            container_type (str): The type of container.
+
+        Raises:
+            ValueError: If the item ID or partition key is empty.
+            HTTPException: If the item is not found or a database error occurs.
+        """
         if not item_id or not partition_key:
             raise ValueError("Item ID and partition key cannot be empty")
 

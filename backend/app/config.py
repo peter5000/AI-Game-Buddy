@@ -5,6 +5,14 @@ load_dotenv()
 
 
 class Settings:
+    """
+    A class to manage application settings from environment variables.
+
+    This class loads environment variables from a .env file and makes them
+    available as attributes. It centralizes configuration management, making it
+    easier to access settings throughout the application.
+    """
+
     # read all variables from .env file
     COSMOS_CONNECTION_STRING = os.getenv("COSMOS_CONNECTION_STRING")
     COSMOS_ENDPOINT = os.getenv("COSMOS_ENDPOINT")

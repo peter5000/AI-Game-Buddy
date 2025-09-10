@@ -51,18 +51,15 @@ def get_password_hash(password: SecretStr) -> str:
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None):
-    """Create a JWT access token for user authentication.
+    """
+    Create a JWT access token for user authentication.
 
     Args:
         data (dict): Dictionary containing user data to encode in the token.
-        expires_delta (timedelta | None, optional): Custom expiration time for the token.
+        expires_delta (timedelta | None, optional): Custom expiration time for the token. Defaults to None.
 
     Returns:
         str: The encoded JWT access token string.
-
-    Note:
-        The token includes an 'exp' (expiration) claim set to UTC time.
-        Uses the ACCESS_TOKEN_SECRET from settings for signing.
     """
     to_encode = data.copy()
     if expires_delta:
@@ -79,6 +76,18 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
 
 
 def verify_access_token(access_token: str) -> dict[str, Any]:
+    """
+    Verifies a JWT access token.
+
+    Args:
+        access_token (str): The JWT access token to verify.
+
+    Returns:
+        dict[str, Any]: The decoded token payload.
+
+    Raises:
+        HTTPException: If the token is invalid or expired.
+    """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -95,6 +104,18 @@ def verify_access_token(access_token: str) -> dict[str, Any]:
 
 
 def verify_refresh_token(refresh_token: str) -> dict[str, Any]:
+    """
+    Verifies a JWT refresh token.
+
+    Args:
+        refresh_token (str): The JWT refresh token to verify.
+
+    Returns:
+        dict[str, Any]: The decoded token payload.
+
+    Raises:
+        HTTPException: If the token is invalid or expired.
+    """
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -113,18 +134,15 @@ def verify_refresh_token(refresh_token: str) -> dict[str, Any]:
 
 
 def create_refresh_token(data: dict, expires_delta: timedelta | None = None):
-    """Create a JWT refresh token for token renewal.
+    """
+    Create a JWT refresh token for token renewal.
 
     Args:
         data (dict): Dictionary containing user data to encode in the token.
-        expires_delta (timedelta | None, optional): Custom expiration time for the token.
+        expires_delta (timedelta | None, optional): Custom expiration time for the token. Defaults to None.
 
     Returns:
         str: The encoded JWT refresh token string.
-
-    Note:
-        The token includes an 'exp' (expiration) claim set to UTC time.
-        Uses the REFRESH_TOKEN_SECRET from settings for signing.
     """
     to_encode = data.copy()
     if expires_delta:

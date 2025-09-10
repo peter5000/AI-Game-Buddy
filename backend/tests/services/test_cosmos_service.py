@@ -47,7 +47,12 @@ def mock_cosmos_client(mock_db_client: MagicMock) -> MagicMock:
 
 
 class TestCosmosServiceInitialization:
+    """Tests for the initialization of the CosmosService."""
+
     def test_init_with_connection_string(self, mocker, mock_cosmos_client, monkeypatch):
+        """
+        Tests that the CosmosService initializes correctly with a connection string.
+        """
         # ARRANGE
         monkeypatch.setattr(
             cosmos_service.settings, "COSMOS_CONNECTION_STRING", "test_conn_str"
@@ -69,6 +74,9 @@ class TestCosmosServiceInitialization:
     def test_init_with_endpoint_and_credential(
         self, mocker, mock_cosmos_client, monkeypatch
     ):
+        """
+        Tests that the CosmosService initializes correctly with an endpoint and credentials.
+        """
         # ARRANGE
         monkeypatch.setattr(cosmos_service.settings, "COSMOS_CONNECTION_STRING", None)
         monkeypatch.setattr(cosmos_service.settings, "COSMOS_ENDPOINT", "test_endpoint")
@@ -87,6 +95,9 @@ class TestCosmosServiceInitialization:
         service.client.get_database_client.assert_called_once()
 
     def test_init_no_config_raises_error(self, monkeypatch):
+        """
+        Tests that a ValueError is raised if no database configuration is provided.
+        """
         monkeypatch.setattr(cosmos_service.settings, "COSMOS_CONNECTION_STRING", None)
         monkeypatch.setattr(cosmos_service.settings, "COSMOS_ENDPOINT", None)
         with pytest.raises(ValueError, match="Database configuration missing"):
@@ -97,6 +108,8 @@ class TestCosmosServiceInitialization:
 
 
 class TestCosmosServiceMethods:
+    """Tests for the public methods of the CosmosService."""
+
     @pytest.fixture(autouse=True)
     def setup_service(self, mocker, mock_cosmos_client, monkeypatch):
         """
@@ -118,24 +131,36 @@ class TestCosmosServiceMethods:
 
     @pytest.mark.asyncio
     async def test_add_item_succeeds(self):
+        """
+        Tests that an item is added successfully.
+        """
         item = {"id": "user123"}
         await self.service.add_item(item, "users")
         self.mock_users_container.create_item.assert_awaited_once_with(body=item)
 
     @pytest.mark.asyncio
     async def test_get_item_succeeds(self):
+        """
+        Tests that an item is retrieved successfully.
+        """
         self.mock_rooms_container.read_item.return_value = {"id": "room123"}
         result = await self.service.get_item("room123", "room123", "rooms")
         assert result == {"id": "room123"}
 
     @pytest.mark.asyncio
     async def test_get_item_returns_none_when_not_found(self):
+        """
+        Tests that None is returned when an item is not found.
+        """
         self.mock_users_container.read_item.side_effect = CosmosResourceNotFoundError()
         result = await self.service.get_item("123", "123", "users")
         assert result is None
 
     @pytest.mark.asyncio
     async def test_patch_item_raises_404_when_not_found(self):
+        """
+        Tests that a 404 HTTPException is raised when patching a non-existent item.
+        """
         self.mock_users_container.patch_item.side_effect = CosmosResourceNotFoundError()
         with pytest.raises(HTTPException) as exc_info:
             await self.service.patch_item("123", "123", {}, "users")
@@ -143,6 +168,9 @@ class TestCosmosServiceMethods:
 
     @pytest.mark.asyncio
     async def test_delete_item_raises_http_exception_on_cosmos_error(self):
+        """
+        Tests that an HTTPException is raised when a Cosmos DB error occurs during deletion.
+        """
         self.mock_users_container.delete_item.side_effect = CosmosHttpResponseError()
         with pytest.raises(HTTPException) as exc_info:
             await self.service.delete_item("123", "123", "users")

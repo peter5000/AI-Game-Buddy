@@ -7,6 +7,15 @@ logger = logging.getLogger("AIService")
 
 
 def model_test(prompt="I am going to Paris, what should I see?"):
+    """
+    Sends a prompt to the Azure OpenAI service and returns the response.
+
+    Args:
+        prompt (str, optional): The prompt to send to the model. Defaults to "I am going to Paris, what should I see?".
+
+    Returns:
+        The response from the Azure OpenAI service.
+    """
     endpoint = settings.OPENAI_ENDPOINT
     # model_name = "gpt-4o"
     deployment = "gpt-4o"

@@ -11,7 +11,25 @@ logger = logging.getLogger(__name__)
 
 
 class BlobService:
+    """
+    A service for interacting with Azure Blob Storage.
+
+    This class provides methods for uploading, downloading, and deleting blobs.
+    It handles the connection to Azure Blob Storage using either a connection
+    string or an endpoint with Azure credentials.
+    """
+
     def __init__(self):
+        """
+        Initializes the BlobService.
+
+        The client is initialized using either a connection string or an endpoint
+        with Azure credentials, based on the application settings.
+
+        Raises:
+            ValueError: If the storage configuration is missing.
+            ConnectionError: If the connection to the BlobServiceClient fails.
+        """
         self.client: BlobServiceClient
         if settings.BLOB_CONNECTION_STRING:
             logger.info("Initializing Blob Service Client with Connection String")
@@ -33,10 +51,25 @@ class BlobService:
             raise ConnectionError("Failed to connect to BlobServiceClient")
 
     async def close(self):
+        """Closes the Blob Storage client session."""
         logger.info("Closing Blob Storage client session")
         await self.client.close()
 
     async def write_blob(self, container_name: str, filename: str, blobstream: Any):
+        """
+        Uploads a blob to a specified container.
+
+        If the container does not exist, it will be created.
+
+        Args:
+            container_name (str): The name of the container.
+            filename (str): The name of the blob.
+            blobstream (Any): The content of the blob to upload.
+
+        Raises:
+            ValueError: If the container name or blob content is empty.
+            HttpResponseError: If the Azure Storage request fails.
+        """
         if not container_name:
             raise ValueError("Container name cannot be empty")
         if not blobstream:
@@ -64,6 +97,21 @@ class BlobService:
             raise
 
     async def get_blob(self, container_name: str, filename: str) -> bytes:
+        """
+        Downloads a blob from a specified container.
+
+        Args:
+            container_name (str): The name of the container.
+            filename (str): The name of the blob.
+
+        Returns:
+            bytes: The content of the blob.
+
+        Raises:
+            ValueError: If the container name or filename is empty.
+            ResourceNotFoundError: If the blob is not found.
+            HttpResponseError: If the Azure Storage request fails.
+        """
         if not container_name:
             raise ValueError("Container name cannot be empty")
         if not filename:
@@ -88,6 +136,17 @@ class BlobService:
             raise
 
     async def delete_blob(self, container_name: str, filename: str):
+        """
+        Deletes a blob from a specified container.
+
+        Args:
+            container_name (str): The name of the container.
+            filename (str): The name of the blob.
+
+        Raises:
+            ValueError: If the container name or filename is empty.
+            HttpResponseError: If the Azure Storage request fails.
+        """
         if not container_name:
             raise ValueError("Container name cannot be empty")
         if not filename:

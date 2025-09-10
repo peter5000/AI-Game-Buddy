@@ -35,9 +35,14 @@ def initial_state(chess_system: ChessSystem, player_ids: list[str]) -> ChessStat
 
 
 class TestInitializeGame:
+    """Tests for the initialize_game method."""
+
     def test_initialization_success(
         self, chess_system: ChessSystem, player_ids: list[str], mocker
     ):
+        """
+        Tests that the game is initialized correctly.
+        """
         # ARRANGE: Mock random.sample for a predictable player order.
         mocker.patch("random.sample", return_value=["player1", "player2"])
 
@@ -53,14 +58,22 @@ class TestInitializeGame:
         )
 
     def test_initialization_fails_with_too_few_players(self, chess_system: ChessSystem):
+        """
+        Tests that the game fails to initialize with fewer than 2 players.
+        """
         with pytest.raises(ValueError, match="Chess requires 2 players."):
             chess_system.initialize_game(["player1"])
 
 
 class TestMakeAction:
+    """Tests for the make_action method."""
+
     def test_make_valid_move(
         self, chess_system: ChessSystem, initial_state: ChessState
     ):
+        """
+        Tests that a valid move is made successfully.
+        """
         action = ChessAction(payload=ChessMovePayload(move="e2e4"))
         new_state = chess_system.make_action(initial_state, "player1", action)
 
@@ -70,6 +83,9 @@ class TestMakeAction:
         assert new_state.finished is False
 
     def test_make_move_causes_checkmate(self, chess_system: ChessSystem):
+        """
+        Tests that a move that causes a checkmate correctly ends the game.
+        """
         fools_mate_fen = "rnbqkbnr/pppp1ppp/8/4p3/5PP1/8/PPPPP2P/RNBQKBNR b KQkq - 0 2"
         state = ChessState(
             player_ids=["p1", "p2"],
@@ -87,6 +103,9 @@ class TestMakeAction:
     def test_resign_action_ends_game(
         self, chess_system: ChessSystem, initial_state: ChessState
     ):
+        """
+        Tests that a resign action correctly ends the game.
+        """
         # ARRANGE: Player1 (White) decides to resign on their first turn.
         action = ChessAction(type="RESIGN")
 
@@ -102,15 +121,23 @@ class TestMakeAction:
     def test_make_invalid_move_raises_error(
         self, chess_system: ChessSystem, initial_state: ChessState
     ):
+        """
+        Tests that an invalid move raises a ValueError.
+        """
         action = ChessAction(payload=ChessMovePayload(move="e2e5"))  # Illegal move
         with pytest.raises(ValueError, match="Move is invalid."):
             chess_system.make_action(initial_state, "player1", action)
 
 
 class TestValidActions:
+    """Tests for the get_valid_actions and is_action_valid methods."""
+
     def test_get_valid_actions_for_current_player(
         self, chess_system: ChessSystem, initial_state: ChessState
     ):
+        """
+        Tests that the correct number of valid actions is returned for the current player.
+        """
         actions = chess_system.get_valid_actions(initial_state, "player1")
 
         # There are 20 possible opening moves + 1 RESIGN action.
@@ -121,12 +148,18 @@ class TestValidActions:
     def test_get_valid_actions_for_other_player_is_empty(
         self, chess_system: ChessSystem, initial_state: ChessState
     ):
+        """
+        Tests that no valid actions are returned for the other player.
+        """
         actions = chess_system.get_valid_actions(initial_state, "player2")
         assert len(actions) == 0
 
     def test_is_action_valid_for_legal_move(
         self, chess_system: ChessSystem, initial_state: ChessState
     ):
+        """
+        Tests that a legal move is considered valid.
+        """
         # A valid move for the correct player should return True and not raise an error.
         action = ChessAction(payload=ChessMovePayload(move="g1f3"))
         assert chess_system.is_action_valid(initial_state, "player1", action) is True
@@ -134,6 +167,9 @@ class TestValidActions:
     def test_is_action_valid_for_resign(
         self, chess_system: ChessSystem, initial_state: ChessState
     ):
+        """
+        Tests that a resign action is considered valid.
+        """
         # A RESIGN action for the correct player should return True.
         action = ChessAction(type="RESIGN")
         assert chess_system.is_action_valid(initial_state, "player1", action) is True
@@ -141,6 +177,9 @@ class TestValidActions:
     def test_is_action_valid_raises_error_for_illegal_move(
         self, chess_system: ChessSystem, initial_state: ChessState
     ):
+        """
+        Tests that an illegal move raises a ValueError.
+        """
         action = ChessAction(
             payload=ChessMovePayload(move="g1f4")
         )  # Illegal knight move
@@ -150,6 +189,9 @@ class TestValidActions:
     def test_is_action_valid_raises_error_for_wrong_player(
         self, chess_system: ChessSystem, initial_state: ChessState
     ):
+        """
+        Tests that a move by the wrong player raises a ValueError.
+        """
         action = ChessAction(payload=ChessMovePayload(move="e7e5"))
         with pytest.raises(ValueError, match="It's not your turn."):
             chess_system.is_action_valid(initial_state, "player2", action)

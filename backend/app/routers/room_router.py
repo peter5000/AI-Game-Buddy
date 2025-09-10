@@ -18,6 +18,18 @@ async def create_room(
     user_id: str = Depends(auth.get_user_id_http),
     room_service: RoomService = Depends(get_room_service),
 ):
+    """
+    Creates a new room.
+
+    Args:
+        room_name (str): The name of the room.
+        game_type (str): The type of game to be played in the room.
+        user_id (str, optional): The ID of the user creating the room. Defaults to Depends(auth.get_user_id_http).
+        room_service (RoomService, optional): The room service dependency. Defaults to Depends(get_room_service).
+
+    Returns:
+        dict: A dictionary with a success message and the created room.
+    """
     try:
         room = await room_service.create_room(
             room_name=room_name, game_type=game_type, user_id=user_id
@@ -40,6 +52,17 @@ async def join_room(
     user_id: str = Depends(auth.get_user_id_http),
     room_service: RoomService = Depends(get_room_service),
 ):
+    """
+    Joins a room.
+
+    Args:
+        room_id (str): The ID of the room to join.
+        user_id (str, optional): The ID of the user joining the room. Defaults to Depends(auth.get_user_id_http).
+        room_service (RoomService, optional): The room service dependency. Defaults to Depends(get_room_service).
+
+    Returns:
+        dict: A dictionary with a success message.
+    """
     try:
         await room_service.join_room(room_id=room_id, user_id=user_id)
 
@@ -56,6 +79,16 @@ async def leave_room(
     user_id: str = Depends(auth.get_user_id_http),
     room_service: RoomService = Depends(get_room_service),
 ):
+    """
+    Leaves the current room.
+
+    Args:
+        user_id (str, optional): The ID of the user leaving the room. Defaults to Depends(auth.get_user_id_http).
+        room_service (RoomService, optional): The room service dependency. Defaults to Depends(get_room_service).
+
+    Returns:
+        dict: A dictionary with a success message.
+    """
     try:
         room_id = await room_service.get_user_room(user_id=user_id)
         if not room_id:
@@ -78,6 +111,16 @@ async def delete_room(
     user_id: str = Depends(auth.get_user_id_http),
     room_service: RoomService = Depends(get_room_service),
 ):
+    """
+    Deletes the current room.
+
+    Args:
+        user_id (str, optional): The ID of the user deleting the room. Defaults to Depends(auth.get_user_id_http).
+        room_service (RoomService, optional): The room service dependency. Defaults to Depends(get_room_service).
+
+    Returns:
+        dict: A dictionary with a success message and the deleted room ID.
+    """
     try:
         room_id = await room_service.get_user_room(user_id=user_id)
         if not room_id:
@@ -99,6 +142,16 @@ async def get_room(
     user_id: str = Depends(auth.get_user_id_http),
     room_service: RoomService = Depends(get_room_service),
 ):
+    """
+    Gets the current room.
+
+    Args:
+        user_id (str, optional): The ID of the user getting the room. Defaults to Depends(auth.get_user_id_http).
+        room_service (RoomService, optional): The room service dependency. Defaults to Depends(get_room_service).
+
+    Returns:
+        dict: A dictionary with a success message and the room data.
+    """
     try:
         room_id = await room_service.get_user_room(user_id=user_id)
         if not room_id:
@@ -121,6 +174,17 @@ async def create_game(
     room_service: RoomService = Depends(get_room_service),
     game_service_factory: GameServiceFactory = Depends(get_game_service_factory),
 ):
+    """
+    Starts a new game in the current room.
+
+    Args:
+        user_id (str, optional): The ID of the user starting the game. Defaults to Depends(auth.get_user_id_http).
+        room_service (RoomService, optional): The room service dependency. Defaults to Depends(get_room_service).
+        game_service_factory (GameServiceFactory, optional): The game service factory dependency. Defaults to Depends(get_game_service_factory).
+
+    Returns:
+        dict: A dictionary with a success message and the initial game state.
+    """
     try:
         room_id = await room_service.get_user_room(user_id=user_id)
         if not room_id:
@@ -158,6 +222,16 @@ async def end_game(
     user_id: str = Depends(auth.get_user_id_http),
     room_service: RoomService = Depends(get_room_service),
 ):
+    """
+    Ends the current game in the room.
+
+    Args:
+        user_id (str, optional): The ID of the user ending the game. Defaults to Depends(auth.get_user_id_http).
+        room_service (RoomService, optional): The room service dependency. Defaults to Depends(get_room_service).
+
+    Returns:
+        dict: A dictionary with a success message and the room ID.
+    """
     try:
         room_id = await room_service.get_user_room(user_id=user_id)
         if not room_id:
@@ -179,6 +253,16 @@ async def get_game_state(
     user_id: str = Depends(auth.get_user_id_http),
     room_service: RoomService = Depends(get_room_service),
 ):
+    """
+    Gets the game state of the current game.
+
+    Args:
+        user_id (str, optional): The ID of the user getting the game state. Defaults to Depends(auth.get_user_id_http).
+        room_service (RoomService, optional): The room service dependency. Defaults to Depends(get_room_service).
+
+    Returns:
+        dict: A dictionary with a success message and the game state.
+    """
     try:
         room_id = await room_service.get_user_room(user_id=user_id)
         if not room_id:

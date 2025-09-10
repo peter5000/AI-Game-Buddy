@@ -57,10 +57,15 @@ def room_service(
 
 ## Tests for create_room
 class TestCreateRoom:
+    """Tests for the create_room method."""
+
     @pytest.mark.asyncio
     async def test_create_room_success(
         self, room_service, mock_redis_service, mock_cosmos_service
     ):
+        """
+        Tests that a room is created successfully.
+        """
         # ARRANGE: Mock that the user is not currently in any room.
         room_service.get_user_room = AsyncMock(return_value=None)
 
@@ -89,6 +94,9 @@ class TestCreateRoom:
 
     @pytest.mark.asyncio
     async def test_create_room_fails_if_user_already_in_room(self, room_service):
+        """
+        Tests that creating a room fails if the user is already in a room.
+        """
         # ARRANGE: Mock that the user is already in a room.
         room_service.get_user_room = AsyncMock(return_value="existing-room")
 
@@ -102,10 +110,15 @@ class TestCreateRoom:
 
 ## Tests for join_room
 class TestJoinRoom:
+    """Tests for the join_room method."""
+
     @pytest.mark.asyncio
     async def test_join_room_success(
         self, room_service, mock_redis_service, mock_cosmos_service
     ):
+        """
+        Tests that a user can successfully join a room.
+        """
         # ARRANGE
         joining_user_id = "user-456"
         room_service.get_user_room = AsyncMock(return_value=None)
@@ -127,6 +140,9 @@ class TestJoinRoom:
 
     @pytest.mark.asyncio
     async def test_join_room_fails_if_user_already_in_room(self, room_service):
+        """
+        Tests that joining a room fails if the user is already in a room.
+        """
         # ARRANGE
         room_service.get_user_room = AsyncMock(return_value="existing-room")
 
@@ -139,10 +155,15 @@ class TestJoinRoom:
 
 ## Tests for get_room
 class TestGetRoom:
+    """Tests for the get_room method."""
+
     @pytest.mark.asyncio
     async def test_get_room_from_cache_success(
         self, room_service, mock_redis_service, mock_cosmos_service
     ):
+        """
+        Tests that a room is successfully retrieved from the cache.
+        """
         # ARRANGE: Simulate a full cache hit.
         mock_redis_service.dict_get_all.return_value = {
             "id": TEST_ROOM_ID,
@@ -167,6 +188,9 @@ class TestGetRoom:
     async def test_get_room_from_db_on_cache_miss(
         self, room_service, mock_redis_service, mock_cosmos_service
     ):
+        """
+        Tests that a room is successfully retrieved from the database on a cache miss.
+        """
         # ARRANGE: Simulate a cache miss and a database hit.
         mock_redis_service.dict_get_all.return_value = {}  # Cache is empty
         db_data = {
@@ -194,8 +218,13 @@ class TestGetRoom:
 
 ## Tests for send_game_state
 class TestSendGameState:
+    """Tests for the send_game_state method."""
+
     @pytest.mark.asyncio
     async def test_send_game_state_success(self, room_service, mock_connection_service):
+        """
+        Tests that the game state is sent successfully.
+        """
         # ARRANGE
         game_state = {"turn": "white"}
         initial_user_list = ["user1", "user2"]
