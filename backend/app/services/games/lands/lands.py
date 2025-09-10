@@ -224,7 +224,8 @@ class LandsSystem(GameSystem[LandsState, LandsAction]):
             case lv.DARKNESS:
                 # Opponent has to choose a card from their hand if they have any
                 state.meta["curr_player_index"] = 1 - state.meta["main_player_index"]
-                state.selection = [cards for cards in state.private_state.hands[opponent_id]]
+                # Put copy of opponent's hand into selection
+                state.selection = [cards for cards in state.private_state.states[opponent_id].hand]
             case lv.WATER:
                 state.meta["curr_player_index"] = state.meta["main_player_index"]
                 if state.private_state.states[main_player_id].deck:
