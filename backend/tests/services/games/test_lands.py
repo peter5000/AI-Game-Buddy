@@ -293,9 +293,7 @@ def test_invalid_action_wrong_phase(
 
     # Test: Player 1 tries to CHOOSE_TARGET in MAIN_PHASE
     with pytest.raises(ValueError, match="Invalid action."):
-        lands_system.is_action_valid(
-            state_main_phase, player_id, choose_target_action
-        )
+        lands_system.is_action_valid(state_main_phase, player_id, choose_target_action)
 
     # --- Test actions in RESOLUTION_PHASE ---
     # Setup: Player 1 plays GRASS, Player 2 doesn't counter -> RESOLUTION_PHASE
@@ -320,9 +318,7 @@ def test_invalid_action_wrong_phase(
 
     # Test: Player 1 tries to COUNTER in RESOLUTION_PHASE
     with pytest.raises(ValueError, match="Invalid action."):
-        lands_system.is_action_valid(
-            state_resolution_phase, player_id, counter_action
-        )
+        lands_system.is_action_valid(state_resolution_phase, player_id, counter_action)
 
 
 def test_invalid_action_play_card_not_in_hand(
@@ -387,9 +383,7 @@ def test_invalid_counter_action(lands_system: LandsSystem, initial_state: LandsS
         lands_system.is_action_valid(state_countered, player_id, counter_action)
 
 
-def test_invalid_target_selection(
-    lands_system: LandsSystem, initial_state: LandsState
-):
+def test_invalid_target_selection(lands_system: LandsSystem, initial_state: LandsState):
     """
     Tests that a player cannot select a target that is not in the selection list.
     """
