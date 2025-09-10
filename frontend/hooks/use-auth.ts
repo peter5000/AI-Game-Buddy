@@ -1,26 +1,27 @@
-import { useRouter } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
-import { checkAuth } from '@/lib/api';
-import { useEffect } from 'react';
+import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
-export function useAuth(redirectIfAuthenticated = false, redirectUrl = '/') {
-  const router = useRouter();
+import { checkAuth } from "@/lib/api";
 
-  const { data, isLoading, isSuccess } = useQuery({
-    queryKey: ['authStatus'],
-    queryFn: checkAuth,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    retry: false,
-    refetchOnWindowFocus: false,
-  });
+export function useAuth(redirectIfAuthenticated = false, redirectUrl = "/") {
+    const router = useRouter();
 
-  const isAuthenticated = isSuccess && data?.message === 'authenticated';
+    const { data, isLoading, isSuccess } = useQuery({
+        queryKey: ["authStatus"],
+        queryFn: checkAuth,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+        retry: false,
+        refetchOnWindowFocus: false,
+    });
 
-  useEffect(() => {
-    if (isAuthenticated && redirectIfAuthenticated) {
-      router.push(redirectUrl);
-    }
-  }, [isAuthenticated, redirectIfAuthenticated, redirectUrl, router]);
+    const isAuthenticated = isSuccess && data?.message === "authenticated";
 
-  return { isAuthenticated, isLoading };
+    useEffect(() => {
+        if (isAuthenticated && redirectIfAuthenticated) {
+            router.push(redirectUrl);
+        }
+    }, [isAuthenticated, redirectIfAuthenticated, redirectUrl, router]);
+
+    return { isAuthenticated, isLoading };
 }

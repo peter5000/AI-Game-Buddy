@@ -1,46 +1,50 @@
-import { apiRequest } from './index';
-import { SignupRequest, SigninRequest, User, ApiResponse } from '../types';
+import { ApiResponse, SigninRequest, SignupRequest, User } from "../types";
+import { apiRequest } from "./index";
 
-export async function signupUser(data: SignupRequest): Promise<ApiResponse<User>> {
-  return apiRequest<ApiResponse<User>>('/accounts/register', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
+export async function signupUser(
+    data: SignupRequest
+): Promise<ApiResponse<User>> {
+    return apiRequest<ApiResponse<User>>("/accounts/register", {
+        method: "POST",
+        body: JSON.stringify(data),
+    });
 }
 
-export async function signinUser(data: SigninRequest): Promise<ApiResponse<User>> {
-  return apiRequest<ApiResponse<User>>('/accounts/login', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
+export async function signinUser(
+    data: SigninRequest
+): Promise<ApiResponse<User>> {
+    return apiRequest<ApiResponse<User>>("/accounts/login", {
+        method: "POST",
+        body: JSON.stringify(data),
+    });
 }
 
 export async function signoutUser(): Promise<ApiResponse<never>> {
-  return apiRequest<ApiResponse<never>>('/accounts/logout', {
-    method: 'POST',
-  });
+    return apiRequest<ApiResponse<never>>("/accounts/logout", {
+        method: "POST",
+    });
 }
 
 export async function deleteUser(): Promise<ApiResponse<never>> {
-  return apiRequest<ApiResponse<never>>('/accounts/delete', {
-    method: 'DELETE',
-  });
+    return apiRequest<ApiResponse<never>>("/accounts/delete", {
+        method: "DELETE",
+    });
 }
 
 export async function getCurrentUser(): Promise<ApiResponse<User>> {
-  return apiRequest<ApiResponse<User>>('/accounts/user', {
-    method: 'GET',
-  });
+    return apiRequest<ApiResponse<User>>("/accounts/user", {
+        method: "GET",
+    });
 }
 
 export async function refreshToken(): Promise<ApiResponse<never>> {
-  return apiRequest<ApiResponse<never>>('/accounts/refresh', {
-    method: 'POST',
-  });
+    return apiRequest<ApiResponse<never>>("/accounts/refresh", {
+        method: "POST",
+    });
 }
 
 export async function checkAuth(): Promise<ApiResponse<never>> {
-  return apiRequest<ApiResponse<never>>('/accounts/status', {
-    method: 'GET',
-  });
+    return apiRequest<ApiResponse<never>>("/accounts/status", {
+        method: "GET",
+    });
 }
