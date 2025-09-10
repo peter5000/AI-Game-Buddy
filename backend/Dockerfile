@@ -11,10 +11,11 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Install pip requirements
-COPY requirements.txt .
-RUN python -m pip install -r requirements.txt
+# Install project dependencies from pyproject.toml
+COPY pyproject.toml .
+RUN python -m pip install --no-cache-dir .
 
+# Copy the rest of the application code
 COPY . .
 
 # Creates a non-root user with an explicit UID and adds permission to access the /app folder
