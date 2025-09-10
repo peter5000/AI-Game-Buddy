@@ -5,7 +5,6 @@ from pydantic import validate_call
 
 from ..game_interface import GameSystem
 from .ulttt_interface import (
-    SmallBoard,
     UltimateTicTacToeAction,
     UltimateTicTacToePayload,
     UltimateTicTacToeState,
