@@ -2,11 +2,11 @@ from typing import List
 import logging
 import random
 from pydantic import validate_call
+from . import lands_vars as lv
 from ..game_interface import GameSystem, PrivateStates
+from .lands_interface import LandsPrivateState, LandsState, LandsAction, LandsPayload
 
 logger = logging.getLogger("__name__")
-from .lands_interface import LandsPrivateState, LandsState, LandsAction, LandsPayload
-from . import lands_vars as lv
 
 
 class LandsSystem(GameSystem[LandsState, LandsAction]):
@@ -132,8 +132,6 @@ class LandsSystem(GameSystem[LandsState, LandsAction]):
             or player_id != state.player_ids[state.meta["curr_player_index"]]
         ):
             return valid_actions
-
-        current_player_id = state.player_ids[state.meta["curr_player_index"]]
 
         # Always possible to resign for the current player
         valid_actions.append(LandsAction(type="RESIGN", payload=None))
