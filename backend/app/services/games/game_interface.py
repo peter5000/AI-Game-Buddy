@@ -1,7 +1,8 @@
 import uuid
 from abc import ABC, abstractmethod
+from typing import Annotated, Any, Generic, TypeVar
+
 from pydantic import BaseModel, Field, computed_field, model_validator
-from typing import Any, Dict, List, Annotated, TypeVar, Generic
 
 
 # --- Generic Phase ---
@@ -54,7 +55,7 @@ PrivateStateT = TypeVar("PrivateStateT")
 class PrivateStates(BaseModel, Generic[PrivateStateT]):
     """Represents the private state of a player or group of players in a game."""
 
-    states: Dict[str, PrivateStateT]
+    states: dict[str, PrivateStateT]
 
 
 # --- Generic GameState ---
