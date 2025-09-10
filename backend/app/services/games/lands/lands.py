@@ -71,12 +71,16 @@ class LandsSystem(GameSystem[LandsState, LandsAction]):
                 if action.payload.target == 0:
                     # Move to resolution phase
                     new_state.phase = new_state.phase.next_phase()
-                    if new_state.meta["countered"] % 2 == 0:  # Not countered or countered the counter
+                    if (
+                        new_state.meta["countered"] % 2 == 0
+                    ):  # Not countered or countered the counter
                         # Card goes to the board
                         main_player_id = state.player_ids[
                             state.meta["main_player_index"]
                         ]
-                        new_state.meta["curr_player_index"] = new_state.meta["main_player_index"]
+                        new_state.meta["curr_player_index"] = new_state.meta[
+                            "main_player_index"
+                        ]
                         card_type = state.pending_card
                         if card_type is not None:
                             new_state.boards[main_player_id][card_type] += 1

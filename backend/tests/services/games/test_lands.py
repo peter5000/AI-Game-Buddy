@@ -126,7 +126,11 @@ def test_darkness_effect_opponent_reveals(
     final_state = lands_system.make_action(state, player_id, action)
 
     # Fire card should be discarded from opponent's hand, if not drawn fire card from the deck
-    assert final_state.private_state.states[opponent_id].hand[lv.FIRE] == 0 or final_state.private_state.states[opponent_id].hand[lv.FIRE] == 1 and state.private_state.states[opponent_id].deck[0] == lv.FIRE
+    assert (
+        final_state.private_state.states[opponent_id].hand[lv.FIRE] == 0
+        or final_state.private_state.states[opponent_id].hand[lv.FIRE] == 1
+        and state.private_state.states[opponent_id].deck[0] == lv.FIRE
+    )
     assert final_state.discard[opponent_id][lv.FIRE] == 1
 
 
@@ -216,7 +220,6 @@ def test_win_condition_one_of_each(
         state, "player2", LandsAction(type="COUNTER", payload=LandsPayload(target=0))
     )
 
-
     assert state.meta["winner"] == player_id
 
 
@@ -256,7 +259,9 @@ def test_stress_game_simulation(lands_system: LandsSystem):
                 break
 
             current_player_id = state.player_ids[state.meta["curr_player_index"]]
-            valid_actions = lands_system.get_valid_actions(state, current_player_id)[1:] # Exclude "RESIGN" action
+            valid_actions = lands_system.get_valid_actions(state, current_player_id)[
+                1:
+            ]  # Exclude "RESIGN" action
 
             assert valid_actions, (
                 f"No valid actions for player {current_player_id} in phase {state.phase.current} on turn {turn}"
@@ -272,5 +277,18 @@ def test_stress_game_simulation(lands_system: LandsSystem):
                 deck_count = len(state.private_state.states[pid].deck)
                 board_count = sum(state.boards[pid])
                 discard_count = sum(state.discard[pid])
-                pending_count = 1 if pid == state.player_ids[state.meta["main_player_index"]] and state.pending_card is not None and state.phase.current != "RESOLUTION_PHASE" else 0
-                assert hand_count + deck_count + board_count + discard_count + pending_count == 25
+                pending_count = (
+                    1
+                    if pid == state.player_ids[state.meta["main_player_index"]]
+                    and state.pending_card is not None
+                    and state.phase.current != "RESOLUTION_PHASE"
+                    else 0
+                )
+                assert (
+                    hand_count
+                    + deck_count
+                    + board_count
+                    + discard_count
+                    + pending_count
+                    == 25
+                )
