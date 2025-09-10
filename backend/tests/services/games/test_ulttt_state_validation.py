@@ -1,7 +1,6 @@
 import pytest
-from pydantic import ValidationError
-
 from app.services.games.ulttt.ulttt_interface import UltimateTicTacToeState
+from pydantic import ValidationError
 
 
 @pytest.fixture

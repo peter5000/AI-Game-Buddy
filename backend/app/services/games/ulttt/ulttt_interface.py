@@ -1,6 +1,8 @@
-from ..game_interface import Action, GameState
-from typing import List, Literal, Tuple
+from typing import Literal
+
 from pydantic import BaseModel, Field, model_validator
+
+from ..game_interface import Action, GameState
 
 # A type alias for clarity
 SmallBoard = list[list[str | None]]  # Represents a single 3x3 board
@@ -21,7 +23,7 @@ class UltimateTicTacToeState(GameState):
 
     # Determines which small board the next player must play in.
     # None indicates the player can choose any board.
-    active_board: Tuple[int, int] | None = None
+    active_board: tuple[int, int] | None = None
 
     @model_validator(mode="after")
     def check_legal_state(self) -> "UltimateTicTacToeState":
