@@ -18,12 +18,14 @@ class LandsPrivateState(BaseModel):
     """
     hand: hand
     deck: deck
+    top_card: int | None = None  # The card revealed by playing a water card
 
 class LandsState(GameState):
     """
     Represents the complete state of a Lands game at any point in time.
     """
     # Public game areas
+    turn: int = 1  # Current turn number
     boards: Dict[str, board]
     discard: Dict[str, discard]
     phase: Phase = Field(default_factory=lambda: Phase(current="MAIN_PHASE", available_phases=["DRAW_PHASE", "MAIN_PHASE", "COUNTER_PHASE", "RESOLUTION_PHASE"]))
@@ -36,10 +38,10 @@ class LandsState(GameState):
 
     # A place to hold selections for resolution of the effects of cards
     # 0 (keep it top), 1 (put it on bottom) when a water is successfully played
-    # hand when a darkness is successfully played
-    # selection of card(s) if darkness is successfully played and opponent has cards
-    # board when a fire is successfully played
-    # discard when a grass is successfully played
+    # non-main player's hand when a darkness is successfully played
+    # selection of card(s) picked by non-main player if darkness is successfully played and opponent has cards
+    # cards on opponent's board when a fire is successfully played
+    # cards in player's discard when a grass is successfully played
     selection: List[int] | None = None
 
 class LandsPayload(BaseModel):
@@ -47,7 +49,7 @@ class LandsPayload(BaseModel):
     Defines the data needed for a player's move.
     """
     # The card being played from the hand
-    target: int | List[int]
+    target: int | List[int] | None
 
 class LandsAction(Action):
     """
