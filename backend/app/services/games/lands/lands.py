@@ -308,8 +308,9 @@ class LandsSystem(GameSystem[LandsState, LandsAction]):
             case lv.WATER:
                 if target is not None:
                     # target is either 0 (keep it top) or 1 (move to bottom)
-                    top_card = state.private_state.states[active_player_id].deck.pop(0)
                     if target == 1: # Move to bottom
+                        top_card = state.private_state.states[active_player_id].deck.pop(0)
+
                         state.private_state.states[active_player_id].deck.append(top_card)
                     # Hide top card
                     state.private_state.states[active_player_id].top_card = None
