@@ -15,7 +15,6 @@ azure-identity==1.23.0
 azure-monitor-opentelemetry==1.6.10
 azure-monitor-opentelemetry-exporter==1.0.0b39
 azure-storage-blob==12.25.1
-backports.asyncio.runner==1.2.0
 certifi==2025.7.9
 cffi==1.17.1
 charset-normalizer==3.4.2
