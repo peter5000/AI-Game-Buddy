@@ -6,7 +6,7 @@ from ..game_interface import GameSystem, PrivateStates
 from .lands_interface import LandsPrivateState, LandsState, LandsAction, LandsPayload
 from . import lands_vars as lv
 
-logger = logging.getLogger("__name__")
+logger = logging.getLogger(__name__)
 
 
 class LandsSystem(GameSystem[LandsState, LandsAction]):
