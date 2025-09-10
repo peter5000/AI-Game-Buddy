@@ -34,12 +34,10 @@ class LandsSystem(GameSystem[LandsState, LandsAction]):
         for pid in player_ids:
             new_state = self._draw_cards(new_state, pid, 5)
 
-        new_state = self._start_turn(new_state)
         return new_state
 
     @validate_call
     def make_action(self, state: LandsState, player_id: str, action: LandsAction) -> LandsState:
-        # TODO
         if not self.is_action_valid(state, player_id, action):
             raise ValueError("Invalid action.")
 
