@@ -48,8 +48,7 @@ class LandsSystem(GameSystem[LandsState, LandsAction]):
     def make_action(
         self, state: LandsState, player_id: str, action: LandsAction
     ) -> LandsState:
-        if not self.is_action_valid(state, player_id, action):
-            raise ValueError("Invalid action.")
+        self.is_action_valid(state, player_id, action)
 
         new_state = state.model_copy(deep=True)
         match action.type:
@@ -260,7 +259,9 @@ class LandsSystem(GameSystem[LandsState, LandsAction]):
         self, state: LandsState, player_id: str, action: LandsAction
     ) -> bool:
         valid_actions = self.get_valid_actions(state, player_id)
-        return action in valid_actions
+        if action not in valid_actions:
+            raise ValueError("Invalid action.")
+        return True
 
     # --- Helper methods ---
 
