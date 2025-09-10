@@ -4,7 +4,6 @@ from pydantic import validate_call
 
 from ..game_interface import GameSystem
 from .ulttt_interface import (
-    SmallBoard,
     UltimateTicTacToeAction,
     UltimateTicTacToePayload,
     UltimateTicTacToeState,
@@ -54,13 +53,17 @@ class UltimateTicTacToeSystem(
 
         # Check if this move won the small board.
         small_board = new_state.large_board[p.board_row][p.board_col]
-        board_status = self._check_board_status(small_board)  # 'X', 'O', '-', or None
+        board_status = UltimateTicTacToeState._check_board_status(
+            small_board
+        )  # 'X', 'O', '-', or None
 
         if board_status:
             new_state.meta_board[p.board_row][p.board_col] = board_status
 
             # If a small board was won, check if that wins the whole game.
-            game_status = self._check_board_status(new_state.meta_board)
+            game_status = UltimateTicTacToeState._check_board_status(
+                new_state.meta_board
+            )
             if game_status:
                 new_state.meta["winner"] = player_id if game_status != "-" else "Draw"
                 new_state.finished = True
@@ -156,45 +159,3 @@ class UltimateTicTacToeSystem(
                 raise ValueError("This cell is already occupied.")
 
         return True
-
-    # --- Helper Method ---
-    @validate_call
-    def _check_board_status(self, board: SmallBoard) -> str | None:
-        """
-        Checks a 3x3 board for a winner or a draw.
-        Returns 'X', 'O', '-', or None if the game is ongoing.
-        """
-        # Check rows and columns
-        for i in range(3):
-            if (
-                board[i][0] == board[i][1] == board[i][2]
-                and board[i][0] is not None
-                and board[i][0] != "-"
-            ):
-                return board[i][0]
-            if (
-                board[0][i] == board[1][i] == board[2][i]
-                and board[0][i] is not None
-                and board[0][i] != "-"
-            ):
-                return board[0][i]
-
-        # Check diagonals
-        if (
-            board[0][0] == board[1][1] == board[2][2]
-            and board[0][0] is not None
-            and board[0][0] != "-"
-        ):
-            return board[0][0]
-        if (
-            board[0][2] == board[1][1] == board[2][0]
-            and board[0][2] is not None
-            and board[0][2] != "-"
-        ):
-            return board[0][2]
-
-        # Check for a draw (all cells filled, no winner)
-        if all(cell for row in board for cell in row):
-            return "-"
-
-        return None
