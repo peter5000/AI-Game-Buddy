@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from azure.cosmos.aio import CosmosClient
 from azure.cosmos.exceptions import CosmosHttpResponseError, CosmosResourceNotFoundError
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class CosmosService:
     def __init__(self):
-        self.client: Optional[CosmosClient] = None
+        self.client: CosmosClient | None = None
 
         if settings.COSMOS_CONNECTION_STRING:
             logger.info("Initializing Cosmos Service Client with Connection String")
@@ -65,7 +65,7 @@ class CosmosService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="A database error occurred during the patch operation",
-            )
+            ) from e
         except Exception as e:
             logger.error(
                 f"Failed to add item '{item.get('id')}' to '{container.id}': {e}"
@@ -93,7 +93,7 @@ class CosmosService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="A database error occurred during the get operation",
-            )
+            ) from e
         except Exception as e:
             logger.error(
                 f"Failed to get item '{item_id}' with partition key '{partition_key}' from '{container.id}': {e}"
@@ -105,7 +105,7 @@ class CosmosService:
         self,
         query: str,
         container_type: str,
-        parameters: Optional[list[dict[str, Any]]] = None,
+        parameters: list[dict[str, Any]] | None = None,
     ) -> list[dict[str, Any]]:
         if not query:
             raise ValueError("Query string cannot be empty")
@@ -129,12 +129,12 @@ class CosmosService:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=f"Invalid query syntax: {e.message}",
-                )
+                ) from e
             else:
                 raise HTTPException(
                     status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     detail=f"A database error occurred while executing the query: {query}",
-                )
+                ) from e
         except Exception as e:
             logger.error(f"Failed to execute query {query}: {e}")
             raise
@@ -147,14 +147,14 @@ class CosmosService:
         logger.info(f"Updating item to container '{container.id}': '{item.get('id')}'")
         try:
             await container.upsert_item(body=item)
-        except CosmosResourceNotFoundError:
+        except CosmosResourceNotFoundError as e:
             logger.warning(
                 f"Item '{item.get('id')}' not found in container '{container.id}' for patching"
             )
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Item with id '{item.get('id')}' not found",
-            )
+            ) from e
         except CosmosHttpResponseError as e:
             logger.error(
                 f"Cosmos DB error updating item '{item.get('id')}': {e.message}"
@@ -162,7 +162,7 @@ class CosmosService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="A database error occurred during the patch operation",
-            )
+            ) from e
         except Exception as e:
             logger.error(
                 f"Failed to update item '{item.get('id')}' to '{container.id}': {e}"
@@ -187,20 +187,20 @@ class CosmosService:
                 partition_key=partition_key,
                 patch_operations=patch_operations,
             )
-        except CosmosResourceNotFoundError:
+        except CosmosResourceNotFoundError as e:
             logger.warning(
                 f"Item '{item_id}' not found in container '{container.id}' for patching"
             )
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Item with id '{item_id}' not found",
-            )
+            ) from e
         except CosmosHttpResponseError as e:
             logger.error(f"Cosmos DB error patching item '{item_id}': {e.message}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="A database error occurred during the patch operation",
-            )
+            ) from e
         except Exception as e:
             logger.critical(
                 f"An unexpected error occurred while patching item '{item_id}': {e}"
@@ -208,7 +208,7 @@ class CosmosService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="An unexpected internal error occurred",
-            )
+            ) from e
 
     async def delete_item(self, item_id: str, partition_key: str, container_type: str):
         if not item_id or not partition_key:
@@ -220,20 +220,20 @@ class CosmosService:
         )
         try:
             await container.delete_item(item=item_id, partition_key=partition_key)
-        except CosmosResourceNotFoundError:
+        except CosmosResourceNotFoundError as e:
             logger.warning(
                 f"Item '{item_id}' not found in container '{container.id}' for deleting"
             )
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"Item with id '{item_id}' not found",
-            )
+            ) from e
         except CosmosHttpResponseError as e:
             logger.error(f"Cosmos DB error deleting item '{item_id}': {e.message}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="A database error occurred during the delete operation",
-            )
+            ) from e
         except Exception as e:
             logger.critical(
                 f"An unexpected error occurred while patching item '{item_id}': {e}"
@@ -241,4 +241,4 @@ class CosmosService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="An unexpected internal error occurred",
-            )
+            ) from e

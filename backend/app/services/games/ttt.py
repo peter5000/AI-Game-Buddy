@@ -1,10 +1,12 @@
-from app.services.games.game_interface import GameSystem, GameState, Action
+from typing import Literal
+
 from pydantic import BaseModel, Field
-from typing import List, Literal
+
+from app.services.games.game_interface import Action, GameState, GameSystem
 
 
 class TicTacToeState(GameState):
-    board: List[List[str | None]] = Field(
+    board: list[list[str | None]] = Field(
         default_factory=lambda: [[None, None, None] for _ in range(3)]
     )
 
@@ -21,7 +23,7 @@ class TicTacToeAction(Action):
 
 # --- TicTacToe Specific GameSystem ---
 class TicTacToeSystem(GameSystem):
-    def initialize_game(self, player_ids: List[str]) -> TicTacToeState:
+    def initialize_game(self, player_ids: list[str]) -> TicTacToeState:
         if len(player_ids) != 2:
             raise ValueError("TicTacToe requires exactly 2 players.")
         return TicTacToeState(
@@ -56,7 +58,7 @@ class TicTacToeSystem(GameSystem):
 
     def get_valid_actions(
         self, state: TicTacToeState, player_id: str
-    ) -> List[TicTacToeAction]:
+    ) -> list[TicTacToeAction]:
         actions = []
         for row in range(3):
             for col in range(3):

@@ -1,7 +1,7 @@
 from app.services.games.chess.chess_game import ChessSystem
 from app.services.games.game_interface import GameSystem
-from app.services.games.ulttt.ultimate_tic_tac_toe import UltimateTicTacToeSystem
 from app.services.games.lands.lands import LandsSystem
+from app.services.games.ulttt.ultimate_tic_tac_toe import UltimateTicTacToeSystem
 
 
 class GameServiceFactory:

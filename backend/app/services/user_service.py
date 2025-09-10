@@ -105,7 +105,7 @@ class UserService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=f"Database error during ID check: {e}",
-            )
+            ) from e
 
         if len(user) == 0:
             logger.info(f"Username '{username}' not found")

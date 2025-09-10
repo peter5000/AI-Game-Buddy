@@ -1,5 +1,5 @@
 import random
-from typing import Any, Dict, List
+from typing import Any
 
 import chess
 from chess import InvalidMoveError
@@ -15,7 +15,7 @@ from .chess_interface import (
 
 class ChessSystem(GameSystem[ChessState, ChessAction]):
     @validate_call
-    def initialize_game(self, player_ids: List[str]) -> ChessState:
+    def initialize_game(self, player_ids: list[str]) -> ChessState:
         if len(player_ids) < 2:
             raise ValueError("Chess requires 2 players.")
 
@@ -94,7 +94,7 @@ class ChessSystem(GameSystem[ChessState, ChessAction]):
         return new_state
 
     @validate_call  # validate ChessState
-    def get_valid_actions(self, state: ChessState, player_id: str) -> List[ChessAction]:
+    def get_valid_actions(self, state: ChessState, player_id: str) -> list[ChessAction]:
         board = self._create_board_from_state(state=state)
 
         if state.finished:
@@ -130,13 +130,13 @@ class ChessSystem(GameSystem[ChessState, ChessAction]):
                 move = chess.Move.from_uci(action.payload.move)
                 if move not in board.legal_moves:
                     raise ValueError("Move is invalid.")
-            except InvalidMoveError:
-                raise ValueError("Move is invalid.")
+            except InvalidMoveError as e:
+                raise ValueError("Move is invalid.") from e
 
         return True
 
     @validate_call
-    def get_board_representation(self, state: ChessState) -> Dict[str, Any]:
+    def get_board_representation(self, state: ChessState) -> dict[str, Any]:
         """Returns a dictionary representation of the current board state"""
         board = self._create_board_from_state(state=state)
         return {

@@ -23,10 +23,12 @@ async def create_room(
             room_name=room_name, game_type=game_type, user_id=user_id
         )
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:
         logger.error(f"An unexpected error occurred in create_room: {e}")
-        raise HTTPException(status_code=500, detail="An internal error occurred.")
+        raise HTTPException(
+            status_code=500, detail="An internal error occurred."
+        ) from e
 
     if not room:
         raise HTTPException(status_code=500, detail="Failed to create room")
@@ -45,10 +47,12 @@ async def join_room(
 
         return {"message": f"Successfully joined the room '{room_id}'"}
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:
         logger.error(f"An unexpected error occurred in join_room: {e}")
-        raise HTTPException(status_code=500, detail="An internal error occurred.")
+        raise HTTPException(
+            status_code=500, detail="An internal error occurred."
+        ) from e
 
 
 @router.post("/leave")
@@ -67,10 +71,12 @@ async def leave_room(
         return {"message": f"Successfully left the room '{room_id}'"}
 
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:
         logger.error(f"An unexpected error occurred in leave_room: {e}")
-        raise HTTPException(status_code=500, detail="An internal error occurred.")
+        raise HTTPException(
+            status_code=500, detail="An internal error occurred."
+        ) from e
 
 
 @router.delete("/delete")
@@ -86,10 +92,12 @@ async def delete_room(
 
         await room_service.delete_room(room_id=room_id)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:
         logger.error(f"An unexpected error occurred in delete_room: {e}")
-        raise HTTPException(status_code=500, detail="An internal error occurred.")
+        raise HTTPException(
+            status_code=500, detail="An internal error occurred."
+        ) from e
 
     return {"message": "Room deleted successfully", "room_id": room_id}
 
@@ -107,10 +115,12 @@ async def get_room(
 
         room = await room_service.get_room(room_id=room_id)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:
         logger.error(f"An unexpected error occurred in get_room: {e}")
-        raise HTTPException(status_code=500, detail="An internal error occurred.")
+        raise HTTPException(
+            status_code=500, detail="An internal error occurred."
+        ) from e
 
     return {"message": "success", "room": room}
 
@@ -145,10 +155,12 @@ async def create_game(
             room_id=room_id, game_state=game_state.model_dump()
         )
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:
         logger.error(f"An unexpected error occurred in create_game: {e}")
-        raise HTTPException(status_code=500, detail="An internal error occurred.")
+        raise HTTPException(
+            status_code=500, detail="An internal error occurred."
+        ) from e
 
     return {"message": "Game started successfully", "game_state": game_state}
 
@@ -166,10 +178,12 @@ async def end_game(
 
         await room_service.delete_game_state(room_id=room_id)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:
         logger.error(f"An unexpected error occurred in end_game: {e}")
-        raise HTTPException(status_code=500, detail="An internal error occurred.")
+        raise HTTPException(
+            status_code=500, detail="An internal error occurred."
+        ) from e
 
     return {"message": "Game state deleted successfully", "room_id": room_id}
 
@@ -187,8 +201,10 @@ async def get_game_state(
 
         game_state = await room_service.get_game_state(room_id=room_id)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:
         logger.error(f"An unexpected error occurred in end_game: {e}")
-        raise HTTPException(status_code=500, detail="An internal error occurred.")
+        raise HTTPException(
+            status_code=500, detail="An internal error occurred."
+        ) from e
     return {"message": "success", "game_state": game_state}

@@ -6,7 +6,7 @@ and WebSocket connections.
 
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any
 
 from fastapi import Cookie, HTTPException, WebSocket, status
 from jose import JWTError, jwt
@@ -89,9 +89,9 @@ def verify_access_token(access_token: str) -> dict[str, Any]:
             access_token, settings.ACCESS_TOKEN_SECRET, algorithms=[settings.ALGORITHM]
         )
         return payload
-    except JWTError:
+    except JWTError as e:
         logger.error("Invalid or expired JWT")
-        raise credentials_exception
+        raise credentials_exception from e
 
 
 def verify_refresh_token(refresh_token: str) -> dict[str, Any]:
@@ -107,9 +107,9 @@ def verify_refresh_token(refresh_token: str) -> dict[str, Any]:
             algorithms=[settings.ALGORITHM],
         )
         return payload
-    except JWTError:
+    except JWTError as e:
         logger.error("Invalid or expired refresh token")
-        raise credentials_exception
+        raise credentials_exception from e
 
 
 def create_refresh_token(data: dict, expires_delta: timedelta | None = None):
@@ -179,7 +179,7 @@ async def authenticate_user(
 
 
 async def get_user_id_http(
-    access_token: Annotated[Optional[str], Cookie()] = None,
+    access_token: Annotated[str | None, Cookie()] = None,
 ) -> str | None:
     """Extract user ID from JWT access token in HTTP requests.
 
