@@ -4,7 +4,7 @@ on:
   push:
 
 jobs:
-  eslint:
+  frontend-linter:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
@@ -28,19 +28,26 @@ jobs:
 
       - name: Run ESLint
         working-directory: ./frontend
-        run: npm run lint
+        run: npm run lint:fix
 
-  lint:
+      - name: Run Prettier
+        working-directory: ./frontend
+        run: npm run format
+
+  backend-linter:
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
         uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.10"
+
       - name: Install Ruff
         run: pip install ruff
+
       - name: Run Ruff Checks
         working-directory: ./backend
         run: |
