@@ -65,7 +65,7 @@ class LandsPayload(BaseModel):
     """
 
     # The card being played from the hand
-    target: int | List[int] | None
+    target: int | List[int] | None = None
 
 
 class LandsAction(Action):
@@ -78,4 +78,4 @@ class LandsAction(Action):
     # If type is "PLAY_ENERGY", payload.target is the card being played from the hand
     # If type is "COUNTER", payload.target[0] is either 0 (don't counter) or 1 (counter)
     # If type is "CHOOSE_TARGET", it must be a legal target from the selection
-    payload: LandsPayload | None
+    payload: LandsPayload | None = None
