@@ -1,8 +1,7 @@
 import uuid
 from abc import ABC, abstractmethod
-from typing import Annotated, Any, Generic, TypeVar
-
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, computed_field, model_validator
+from typing import Any, Dict, List, Annotated, TypeVar, Generic
 
 
 # --- Generic Phase ---
@@ -12,31 +11,50 @@ class Phase(BaseModel):
         list[str], Field(min_length=1)
     ]  # List of all available phases
 
-    def __init__(self, available_phases: list[str]):
-        super().__init__(available_phases=available_phases)
-        self.current = available_phases[0] if available_phases else None
-        self.available_phases = available_phases
+    @model_validator(mode="before")
+    @classmethod
+    def set_current_if_missing(cls, values: dict) -> dict:
+        if "current" not in values or not values["current"]:
+            if "available_phases" in values and values["available_phases"]:
+                # Set 'current' to the first available phase
+                values["current"] = values["available_phases"][0]
+            else:
+                raise ValueError(
+                    "'current' is missing and cannot be defaulted from 'available_phases'"
+                )
+        return values
+
+    @model_validator(mode="after")
+    def validate_current_index(self):
+        if self.current not in self.available_phases:
+            raise ValueError(
+                f"Current phase '{self.current}' is not in available phases {self.available_phases}"
+            )
+        return self
+
+    # Index of the current phase in available_phases
+    @computed_field
+    def _current_index(self) -> int:
+        return self.available_phases.index(self.current)
 
     def next_phase(self):
-        """Calculates and returns the next phase, looping back to the start."""
-        try:
-            # Find the index of the current phase
-            current_index = self.available_phases.index(self.current)
-        except ValueError:
-            # If current phase isn't in the list, default to the first one
-            return self.model_copy(
-                update={"current": self.available_phases[0]}, deep=True
-            )
-
         # Calculate the next index, looping back to 0 if at the end
-        next_index = (current_index + 1) % len(self.available_phases)
+        next_index = (self._current_index + 1) % len(self.available_phases)
 
-        return self.model_copy(update={"current": self.available_phases[next_index]})
+        return self.model_copy(
+            update={"current": self.available_phases[next_index]}, deep=True
+        )
+
+
+# --- Type Variables for Components ---
+PrivateStateT = TypeVar("PrivateStateT")
 
 
 # --- Generic Components ---
-class PrivateStateComponent(BaseModel):
-    states: dict[str, Any]
+class PrivateStates(BaseModel, Generic[PrivateStateT]):
+    """Represents the private state of a player or group of players in a game."""
+
+    states: Dict[str, PrivateStateT]
 
 
 # --- Generic GameState ---
@@ -50,9 +68,10 @@ class GameState(BaseModel):
 
     # Simple Optional Features
     turn: int | None = None
+    phase: Phase | None = None
 
     # Complex Optional Features
-    private_state: PrivateStateComponent | None = None
+    private_state: PrivateStates | None = None
 
 
 # --- Generic Action ---
@@ -61,7 +80,7 @@ class Action(BaseModel):
     payload: dict[str, Any] | None
 
 
-# --- Type Variables ---
+# --- Type Variables for GameSystem ---
 StateType = TypeVar("StateType", bound=GameState)
 ActionType = TypeVar("ActionType", bound=Action)
 
