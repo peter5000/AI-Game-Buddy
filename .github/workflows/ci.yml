@@ -15,9 +15,8 @@ jobs:
         with:
           python-version: "3.10"
 
-      # Install dependencies from pyproject.toml
       - name: Install dependencies
-        run: pip install .
+        run: pip install ruff
 
       # Run checks from the root directory
       - name: Run Ruff Checks
