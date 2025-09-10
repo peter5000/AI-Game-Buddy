@@ -1,6 +1,7 @@
 from app.services.games.chess.chess_game import ChessSystem
 from app.services.games.game_interface import GameSystem
 from app.services.games.ulttt.ultimate_tic_tac_toe import UltimateTicTacToeSystem
+from app.services.games.lands.lands import LandsSystem
 
 
 class GameServiceFactory:
@@ -8,6 +9,7 @@ class GameServiceFactory:
         self._service_map = {
             "chess": ChessSystem,
             "ultimate_tic_tac_toe": UltimateTicTacToeSystem,
+            "lands": LandsSystem,
         }
         self._instances = {}
 

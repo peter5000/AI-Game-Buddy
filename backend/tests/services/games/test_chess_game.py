@@ -153,3 +153,68 @@ class TestValidActions:
         action = ChessAction(payload=ChessMovePayload(move="e7e5"))
         with pytest.raises(ValueError, match="It's not your turn."):
             chess_system.is_action_valid(initial_state, "player2", action)
+
+
+class TestChessStateValidation:
+    @pytest.mark.parametrize(
+        "invalid_fen, error_msg",
+        [
+            ("invalid fen", "Invalid FEN string"),
+            (
+                "rnbqkbnr/pppppppp/9/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+                "Invalid FEN string",
+            ),  # Invalid piece count
+        ],
+    )
+    def test_invalid_fen_string_raises_error(self, invalid_fen: str, error_msg: str):
+        with pytest.raises(ValueError, match=error_msg):
+            ChessState(
+                player_ids=["p1", "p2"],
+                board_fen=invalid_fen,
+                meta={"current_player_index": 0},
+            )
+
+    def test_illegal_position_raises_error(self):
+        # This FEN has a pawn on the 1st rank, which is illegal.
+        illegal_fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNP w KQkq - 0 1"
+        with pytest.raises(ValueError, match="Invalid board position"):
+            ChessState(
+                player_ids=["p1", "p2"],
+                board_fen=illegal_fen,
+                meta={"current_player_index": 0},
+            )
+
+    def test_inconsistent_finished_flag_raises_error(self):
+        with pytest.raises(
+            ValueError, match="If game_result is set, finished must be True"
+        ):
+            ChessState(
+                player_ids=["p1", "p2"],
+                game_result="white_wins",
+                finished=False,
+                meta={"current_player_index": 0},
+            )
+
+    def test_inconsistent_turn_white_raises_error(self):
+        # FEN is white's turn, but index is 1 (black)
+        with pytest.raises(
+            ValueError,
+            match="FEN indicates white's turn, but current_player_index is not 0",
+        ):
+            ChessState(
+                player_ids=["p1", "p2"],
+                board_fen="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+                meta={"current_player_index": 1},
+            )
+
+    def test_inconsistent_turn_black_raises_error(self):
+        # FEN is black's turn, but index is 0 (white)
+        with pytest.raises(
+            ValueError,
+            match="FEN indicates black's turn, but current_player_index is not 1",
+        ):
+            ChessState(
+                player_ids=["p1", "p2"],
+                board_fen="rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
+                meta={"current_player_index": 0},
+            )
