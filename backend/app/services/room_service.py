@@ -7,7 +7,7 @@ the business logic and state of game rooms.
 import json
 import logging
 import uuid
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import HTTPException
 
@@ -260,7 +260,7 @@ class RoomService:
             container_type="users",
         )
 
-    async def get_room(self, room_id: str) -> Optional[Room]:
+    async def get_room(self, room_id: str) -> Room | None:
         """Gets room data from database.
 
         Args:
@@ -405,7 +405,7 @@ class RoomService:
             container_type="rooms",
         )
 
-    async def get_game_state(self, room_id: str) -> Optional[dict]:
+    async def get_game_state(self, room_id: str) -> dict | None:
         """Gets the game state from redis or cosmos database.
 
         Args:
@@ -477,7 +477,7 @@ class RoomService:
             container_type="rooms",
         )
 
-    async def send_game_state(self, room_id: str, game_state: Optional[dict]):
+    async def send_game_state(self, room_id: str, game_state: dict | None):
         """Sends the game state to all local user connections.
 
         Args:
@@ -511,7 +511,7 @@ class RoomService:
         payload = BroadcastPayload(user_list=user_list, message=game_state)
         await self._connection_service.broadcast(payload=payload)
 
-    async def get_user_room(self, user_id: str) -> Optional[str]:
+    async def get_user_room(self, user_id: str) -> str | None:
         """Gets the room ID of the room that the user is in.
 
         Args:
@@ -558,7 +558,7 @@ class RoomService:
         )
         return None
 
-    async def get_user_list(self, room_id: str) -> Optional[set]:
+    async def get_user_list(self, room_id: str) -> set | None:
         """Gets the list of users in the room.
 
         Args:

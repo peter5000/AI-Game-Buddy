@@ -5,8 +5,8 @@ and WebSocket connections.
 """
 
 import logging
-from datetime import datetime, timedelta, timezone
-from typing import Annotated, Any, Optional
+from datetime import UTC, datetime, timedelta
+from typing import Annotated, Any
 
 from fastapi import Cookie, HTTPException, WebSocket, status
 from jose import JWTError, jwt
@@ -66,11 +66,9 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     """
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = datetime.now(UTC) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(
-            minutes=30
-        )  # Default 30 minutes
+        expire = datetime.now(UTC) + timedelta(minutes=30)  # Default 30 minutes
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(
         to_encode, settings.ACCESS_TOKEN_SECRET, algorithm=settings.ALGORITHM
@@ -128,9 +126,9 @@ def create_refresh_token(data: dict, expires_delta: timedelta | None = None):
     """
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = datetime.now(UTC) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(days=14)  # Default 14 days
+        expire = datetime.now(UTC) + timedelta(days=14)  # Default 14 days
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(
         to_encode, settings.REFRESH_TOKEN_SECRET, algorithm=settings.ALGORITHM
@@ -179,7 +177,7 @@ async def authenticate_user(
 
 
 async def get_user_id_http(
-    access_token: Annotated[Optional[str], Cookie()] = None,
+    access_token: Annotated[str | None, Cookie()] = None,
 ) -> str | None:
     """Extract user ID from JWT access token in HTTP requests.
 

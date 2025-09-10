@@ -8,7 +8,7 @@ All operations are asynchronous and include proper error handling and logging.
 
 import json
 import logging
-from typing import Any, Optional
+from typing import Any
 
 import redis.asyncio as aioredis
 from fastapi import HTTPException
@@ -142,7 +142,7 @@ class RedisService:
             logger.error(f"Redis Error writing dict using key '{key}': {e}")
             raise
 
-    async def dict_get_all(self, key: str) -> Optional[dict]:
+    async def dict_get_all(self, key: str) -> dict | None:
         """Retrieve all fields and values from a Redis hash.
 
         Args:

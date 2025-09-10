@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
@@ -61,7 +61,7 @@ async def query_items(
 async def upload_blob(
     container_name: str,
     file: UploadFile = File(...),
-    filename: Optional[str] = None,
+    filename: str | None = None,
     blob_service: BlobService = Depends(get_blob_service),
 ):
     filename = filename or file.filename

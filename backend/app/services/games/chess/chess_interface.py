@@ -1,4 +1,4 @@
-from typing import List, Literal, Optional
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
@@ -9,8 +9,8 @@ class ChessState(GameState):
     board_fen: str = Field(
         default="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
     )
-    game_result: Optional[str] = None
-    move_history: List[str] = Field(default_factory=list)
+    game_result: str | None = None
+    move_history: list[str] = Field(default_factory=list)
 
 
 class ChessMovePayload(BaseModel):

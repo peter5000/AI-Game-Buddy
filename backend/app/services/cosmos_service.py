@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Optional
+from typing import Any
 
 from azure.cosmos.aio import CosmosClient
 from azure.cosmos.exceptions import CosmosHttpResponseError, CosmosResourceNotFoundError
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class CosmosService:
     def __init__(self):
-        self.client: Optional[CosmosClient] = None
+        self.client: CosmosClient | None = None
 
         if settings.COSMOS_CONNECTION_STRING:
             logger.info("Initializing Cosmos Service Client with Connection String")
@@ -105,7 +105,7 @@ class CosmosService:
         self,
         query: str,
         container_type: str,
-        parameters: Optional[list[dict[str, Any]]] = None,
+        parameters: list[dict[str, Any]] | None = None,
     ) -> list[dict[str, Any]]:
         if not query:
             raise ValueError("Query string cannot be empty")
