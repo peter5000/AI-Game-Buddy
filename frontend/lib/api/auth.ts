@@ -44,13 +44,3 @@ export async function checkAuth(): Promise<ApiResponse<void>> {
     method: 'GET',
   });
 }
-
-// Helper function to check if user is authenticated
-export async function checkAuthStatus(): Promise<boolean> {
-  try {
-    await checkAuth();
-    return true;
-  } catch (error) {
-    return false;
-  }
-}
