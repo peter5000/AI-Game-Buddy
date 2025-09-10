@@ -1,7 +1,8 @@
 import uuid
 from abc import ABC, abstractmethod
+from typing import Annotated, Any, Dict, Generic, List, TypeVar
+
 from pydantic import BaseModel, Field
-from typing import Any, Dict, List, Annotated, TypeVar, Generic
 
 
 # --- Generic Phase ---

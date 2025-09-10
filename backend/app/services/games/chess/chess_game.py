@@ -130,8 +130,8 @@ class ChessSystem(GameSystem[ChessState, ChessAction]):
                 move = chess.Move.from_uci(action.payload.move)
                 if move not in board.legal_moves:
                     raise ValueError("Move is invalid.")
-            except InvalidMoveError:
-                raise ValueError("Move is invalid.")
+            except InvalidMoveError as e:
+                raise ValueError("Move is invalid.") from e
 
         return True
 

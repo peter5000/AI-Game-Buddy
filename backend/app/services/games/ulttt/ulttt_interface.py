@@ -1,6 +1,8 @@
-from ..game_interface import Action, GameState
 from typing import List, Literal, Tuple
+
 from pydantic import BaseModel, Field
+
+from ..game_interface import Action, GameState
 
 # A type alias for clarity
 SmallBoard = List[List[str | None]]  # Represents a single 3x3 board

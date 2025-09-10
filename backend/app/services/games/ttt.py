@@ -1,6 +1,8 @@
-from app.services.games.game_interface import GameSystem, GameState, Action
-from pydantic import BaseModel, Field
 from typing import List, Literal
+
+from pydantic import BaseModel, Field
+
+from app.services.games.game_interface import Action, GameState, GameSystem
 
 
 class TicTacToeState(GameState):

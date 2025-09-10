@@ -9,9 +9,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "."))
 
 from games.ulttt.ultimate_tic_tac_toe import UltimateTicTacToeSystem
 from games.ulttt.ulttt_interface import (
-    UltimateTicTacToeState,
     UltimateTicTacToeAction,
     UltimateTicTacToePayload,
+    UltimateTicTacToeState,
 )
 
 

@@ -1,7 +1,8 @@
-from openai import AzureOpenAI
-from app.config import settings
 import logging
 
+from openai import AzureOpenAI
+
+from app.config import settings
 
 logger = logging.getLogger("AIService")
 

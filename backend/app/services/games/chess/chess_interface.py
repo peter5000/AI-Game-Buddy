@@ -1,6 +1,8 @@
-from pydantic import Field, BaseModel
 from typing import List, Literal, Optional
-from ..game_interface import GameState, Action
+
+from pydantic import BaseModel, Field
+
+from ..game_interface import Action, GameState
 
 
 class ChessState(GameState):
