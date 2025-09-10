@@ -9,6 +9,7 @@ import React, {
   ReactNode,
   useMemo
 } from 'react';
+import { useAuth } from '@/hooks/use-auth';
 
 // Define the shape of the context value
 type ConnectionStatus = 'connecting' | 'connected' | 'disconnected';
@@ -37,15 +38,13 @@ interface WebSocketProviderProps {
 }
 
 export const WebSocketProvider = ({ children }: WebSocketProviderProps) => {
+  const { isAuthenticated } = useAuth();
   const ws = useRef<WebSocket | null>(null);
   const reconnectAttempts = useRef(0);
   const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
-  
-  // Add state to track connection status for the UI
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('disconnected');
 
   useEffect(() => {
-    // This function handles the connection logic
     const connect = () => {
       setConnectionStatus('connecting');
       ws.current = new WebSocket(WEBSOCKET_URL);
@@ -53,12 +52,11 @@ export const WebSocketProvider = ({ children }: WebSocketProviderProps) => {
       ws.current.onopen = () => {
         console.log('WebSocket Connected');
         setConnectionStatus('connected');
-        reconnectAttempts.current = 0; // Reset attempts on success
+        reconnectAttempts.current = 0;
       };
 
       ws.current.onmessage = (event: MessageEvent) => {
         const message = JSON.parse(event.data);
-        // Dispatch a custom event that components can listen for
         window.dispatchEvent(new CustomEvent('websocket-message', { detail: message }));
       };
 
@@ -66,37 +64,41 @@ export const WebSocketProvider = ({ children }: WebSocketProviderProps) => {
         console.log('WebSocket Disconnected. Attempting to reconnect...');
         setConnectionStatus('disconnected');
         
-        if (ws.current) { // Prevent reconnection if cleanup was initiated
+        if (ws.current) {
           const delay = Math.pow(2, reconnectAttempts.current) * 1000 + (Math.random() * 1000);
           reconnectAttempts.current++;
           
-          reconnectTimeout.current = setTimeout(() => {
-            connect();
-          }, delay);
+          reconnectTimeout.current = setTimeout(connect, delay);
         }
       };
 
       ws.current.onerror = (err: Event) => {
         console.error("WebSocket error: ", err);
-        // onclose will be triggered automatically after an error
       };
     };
 
-    connect(); // Initial connection attempt
-
-    // Cleanup function when the provider unmounts
-    return () => {
+    const disconnect = () => {
       if (reconnectTimeout.current) {
         clearTimeout(reconnectTimeout.current);
       }
       if (ws.current) {
-        // Clear the onclose handler before closing to prevent reconnection attempts
-        ws.current.onclose = null; 
+        ws.current.onclose = null;
         ws.current.close();
         ws.current = null;
+        setConnectionStatus('disconnected');
       }
     };
-  }, []); // Empty dependency array ensures this runs only once on mount
+
+    if (isAuthenticated) {
+      connect();
+    } else {
+      disconnect();
+    }
+
+    return () => {
+      disconnect();
+    };
+  }, [isAuthenticated]);
 
   // Function to send messages
   const sendMessage = (message: Record<string, unknown>) => {

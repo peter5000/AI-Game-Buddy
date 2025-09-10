@@ -22,15 +22,15 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <WebSocketProvider>
-          <QueryProvider>
+        <QueryProvider>
+          <WebSocketProvider>
             <ThemeProvider>
               <Navbar />
               <main>{children}</main>
               <Toaster />
             </ThemeProvider>
-          </QueryProvider>
-        </WebSocketProvider>
+          </WebSocketProvider>
+        </QueryProvider>
       </body>
     </html>
   );
