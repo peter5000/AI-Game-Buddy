@@ -199,7 +199,6 @@ def test_counter_a_counter(lands_system: LandsSystem, initial_state: LandsState)
     # Opponent does not counter back
     action = LandsAction(type="COUNTER", payload=LandsPayload(target=0))
     final_state = lands_system.make_action(state, opponent_id, action)
-
     # Original card should be on the board
     assert final_state.boards[player_id][lv.FIRE] == 1
 

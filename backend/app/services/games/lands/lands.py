@@ -26,7 +26,7 @@ class LandsSystem(GameSystem[LandsState, LandsAction]):
             meta={
                 "winner": None,
                 "main_player_index": 0,
-                "countered": False,
+                "countered": 0,
                 "curr_player_index": 0,
             },
             private_state=PrivateStates(
@@ -71,7 +71,7 @@ class LandsSystem(GameSystem[LandsState, LandsAction]):
                 if action.payload.target == 0:
                     # Move to resolution phase
                     new_state.phase = new_state.phase.next_phase()
-                    if not new_state.meta["countered"]:  # Not countered
+                    if new_state.meta["countered"] % 2 == 0:  # Not countered or countered the counter
                         # Card goes to the board
                         main_player_id = state.player_ids[
                             state.meta["main_player_index"]
@@ -98,7 +98,7 @@ class LandsSystem(GameSystem[LandsState, LandsAction]):
                         new_state = self._start_turn(new_state)
                 else:  # Countering
                     # If it is an initial counter
-                    if not new_state.meta["countered"]:
+                    if new_state.meta["countered"] == 0:
                         pending_card = state.pending_card
                         if pending_card is not None:
                             new_state.private_state.states[player_id].hand[
@@ -109,10 +109,11 @@ class LandsSystem(GameSystem[LandsState, LandsAction]):
                                 pending_card
                             ] -= 1
                             new_state.discard[player_id][pending_card] += 1
-                            new_state.meta["countered"] = True
+                            new_state.meta["countered"] += 1
                     else:  # If it is a counter to a counter
                         new_state.private_state.states[player_id].hand[lv.WATER] -= 2
                         new_state.discard[player_id][lv.WATER] += 2
+                        new_state.meta["countered"] += 1
                     # Switch the turn. The other player can counter again
                     new_state.meta["curr_player_index"] = (
                         1 - new_state.meta["curr_player_index"]
@@ -161,7 +162,7 @@ class LandsSystem(GameSystem[LandsState, LandsAction]):
                 if pending_card is not None:
                     hand = state.private_state.states[player_id].hand
                     # If it is the first counter
-                    if not state.meta["countered"]:
+                    if state.meta["countered"] == 0:
                         # Need 1 water and 1 matching card
                         if hand[lv.WATER] > 0 and hand[pending_card] > 0:
                             # Special case: if pending card is water, need 2 water cards
@@ -334,7 +335,7 @@ class LandsSystem(GameSystem[LandsState, LandsAction]):
         state.meta["curr_player_index"] = state.meta["main_player_index"]
 
         # Reset turn-specific variables
-        state.meta["countered"] = False
+        state.meta["countered"] = 0
         state.pending_card = None
         state.selection = None
         state.phase = state.phase.next_phase()  # Back to draw phase
