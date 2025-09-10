@@ -32,9 +32,9 @@ export function Navbar() {
 
   const handleSignOut = async () => {
     await signoutUser()
-    queryClient.invalidateQueries({ queryKey: ['authStatus'] })
-    queryClient.invalidateQueries({ queryKey: ['user'] })
-    router.push("/auth/signin")
+    queryClient.invalidateQueries({ queryKey: ["authStatus"] })
+    queryClient.invalidateQueries({ queryKey: ["user"] })
+    router.push("/")
   }
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen)
@@ -105,10 +105,10 @@ export function Navbar() {
               </div>
             ) : (
               <div className="flex items-center space-x-3">
-                <Link href="/auth/signin">
+                <Link href="/accounts/signin">
                   <Button variant="ghost">Sign In</Button>
                 </Link>
-                <Link href="/auth/signup">
+                <Link href="/accounts/signup">
                   <Button>Sign Up</Button>
                 </Link>
               </div>
@@ -146,12 +146,12 @@ export function Navbar() {
                 <div className="h-8 w-full bg-gray-200 rounded-md animate-pulse mt-3 pt-3 border-t" />
               ) : !user ? (
                 <div className="flex flex-col space-y-2 pt-3 border-t">
-                  <Link href="/auth/signin">
+                  <Link href="/accounts/signin">
                     <Button variant="ghost" className="w-full justify-start">
                       Sign In
                     </Button>
                   </Link>
-                  <Link href="/auth/signup">
+                  <Link href="/accounts/signup">
                     <Button className="w-full">Sign Up</Button>
                   </Link>
                 </div>

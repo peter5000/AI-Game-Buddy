@@ -101,7 +101,7 @@ export default function SignInPage() {
           </form>
 
           <div className="text-center">
-            <Link href="/auth/forgot-password" className="text-sm text-purple-600 hover:underline">
+            <Link href="/accounts/forgot-password" className="text-sm text-purple-600 hover:underline">
               Forgot your password?
             </Link>
           </div>
@@ -121,7 +121,7 @@ export default function SignInPage() {
 
           <div className="text-center text-sm">
             {"Don't have an account? "}
-            <Link href="/auth/signup" className="text-purple-600 hover:underline">
+            <Link href="/accounts/signup" className="text-purple-600 hover:underline">
               Sign up
             </Link>
           </div>

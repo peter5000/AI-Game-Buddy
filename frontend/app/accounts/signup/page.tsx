@@ -52,7 +52,7 @@ export default function SignUpPage() {
         email: formData.email,
         password: formData.password,
       })
-      router.push("/auth/signin")
+      router.push("/accounts/signin")
     } catch (error: unknown) {
       if (error instanceof ApiError) {
         setError(error.message)
@@ -165,7 +165,7 @@ export default function SignUpPage() {
 
           <div className="text-center text-sm">
             Already have an account?{" "}
-            <Link href="/auth/signin" className="text-purple-600 hover:underline">
+            <Link href="/accounts/signin" className="text-purple-600 hover:underline">
               Sign in
             </Link>
           </div>

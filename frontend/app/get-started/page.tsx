@@ -209,7 +209,7 @@ export default function GetStartedPage() {
                 Join thousands of gamers who have found their perfect AI companions
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/auth/signup">
+                <Link href="/accounts/signup">
                   <Button size="lg" variant="secondary" className="bg-white text-purple-600 hover:bg-gray-100">
                     Create Your Account
                     <ArrowRight className="ml-2 h-4 w-4" suppressHydrationWarning />

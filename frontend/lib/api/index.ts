@@ -47,7 +47,7 @@ export async function apiRequest<T>(
     } catch (refreshError) {
       // Refresh failed, redirect to login
       if (typeof window !== 'undefined') {
-        window.location.href = '/auth/signin';
+        window.location.href = '/accounts/signin';
       }
       throw new ApiError('Session expired. Please sign in again.', 401);
     }

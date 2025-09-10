@@ -222,7 +222,7 @@ export default function LandingPage() {
           <p className="text-xl mb-8 text-purple-100">
             Join thousands of gamers who have enhanced their experience with AI companions.
           </p>
-          <Link href="/auth/signup">
+          <Link href="/accounts/signup">
             <Button size="lg" variant="secondary" className="bg-white text-purple-600 hover:bg-gray-100">
               Sign Up Free Today
               <ArrowRight className="ml-2 h-4 w-4" suppressHydrationWarning />
