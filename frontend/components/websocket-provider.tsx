@@ -47,13 +47,6 @@ export const WebSocketProvider = ({ children }: WebSocketProviderProps) => {
   useEffect(() => {
     // This function handles the connection logic
     const connect = () => {
-      // In a real app, get the token from your auth context/state management
-      const authToken = localStorage.getItem('authToken');
-      if (!authToken) {
-        console.log("No auth token, WebSocket connection not started.");
-        return;
-      }
-      
       setConnectionStatus('connecting');
       ws.current = new WebSocket(WEBSOCKET_URL);
 
