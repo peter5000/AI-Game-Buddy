@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 
 from azure.monitor.opentelemetry import configure_azure_monitor
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from opentelemetry import _logs, trace
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
@@ -55,6 +56,20 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+origins = [
+    "http://localhost",
+    "http://localhost:3000",
+    "https://thankful-bay-09ec9cf1e.2.azurestaticapps.net", # Frontend URL
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
