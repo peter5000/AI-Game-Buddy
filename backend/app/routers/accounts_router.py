@@ -52,7 +52,7 @@ async def login_account(
         value=access_token,
         httponly=True,
         secure=True,
-        samesite="lax",
+        samesite="none",
         max_age=int(access_token_expires.total_seconds()),
     )
 
@@ -67,7 +67,7 @@ async def login_account(
         value=refresh_token,
         httponly=True,
         secure=True,
-        samesite="lax",
+        samesite="none",
         max_age=int(refresh_token_expires.total_seconds()),
     )
 
@@ -84,11 +84,11 @@ async def logout_account(
         raise HTTPException(status_code=404, detail="User not found")
 
     response.delete_cookie(
-        key="access_token", httponly=True, secure=True, samesite="lax"
+        key="access_token", httponly=True, secure=True, samesite="none"
     )
 
     response.delete_cookie(
-        key="refresh_token", httponly=True, secure=True, samesite="lax"
+        key="refresh_token", httponly=True, secure=True, samesite="none"
     )
 
     return {"status": "success", "message": "User logged out"}
@@ -121,7 +121,7 @@ async def refresh_access_token(
             value=access_token,
             httponly=True,
             secure=True,
-            samesite="lax",
+            samesite="none",
             max_age=int(access_token_expires.total_seconds()),
         )
         return {"status": "success", "message": "Access token refreshed"}
@@ -144,11 +144,11 @@ async def delete_account(
     # TODO: Check if user is in any rooms before deleting, don't want any stale data
 
     response.delete_cookie(
-        key="access_token", httponly=True, secure=True, samesite="lax"
+        key="access_token", httponly=True, secure=True, samesite="none"
     )
 
     response.delete_cookie(
-        key="refresh_token", httponly=True, secure=True, samesite="lax"
+        key="refresh_token", httponly=True, secure=True, samesite="none"
     )
 
     return {"status": "success", "message": "Account deleted"}
