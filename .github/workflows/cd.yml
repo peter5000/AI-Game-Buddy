@@ -105,10 +105,7 @@ jobs:
           output_location: ""
           # Skip building if we already have a cached build
           skip_app_build: false
-        env:
-          NEXT_PUBLIC_API_URL: https://myaigamingfriendcontainerjj.bravebay-621a33e9.westus3.azurecontainerapps.io
-          NODE_ENV: production
-          NEXT_PUBLIC_WEBSOCKET_URL: wss://myaigamingfriendcontainerjj.bravebay-621a33e9.westus3.azurecontainerapps.io/ws
+
   # Deploy built image from ACR to Azure Container App
   deploy-backend:
     needs: build-backend
