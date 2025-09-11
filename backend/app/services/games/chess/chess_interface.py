@@ -1,7 +1,9 @@
-from pydantic import Field, BaseModel, model_validator
-from typing import List, Literal, Optional
-from ..game_interface import GameState, Action
+from typing import Literal
+
 import chess
+from pydantic import BaseModel, Field, model_validator
+
+from ..game_interface import Action, GameState
 
 
 class ChessState(GameState):
@@ -15,15 +17,15 @@ class ChessState(GameState):
     board_fen: str = Field(
         default="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
     )
-    game_result: Optional[str] = None
-    move_history: List[str] = Field(default_factory=list)
+    game_result: str | None = None
+    move_history: list[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validate_chess_state(self) -> "ChessState":
         try:
             board = chess.Board(self.board_fen)
-        except ValueError:
-            raise ValueError("Invalid FEN string")
+        except ValueError as e:
+            raise ValueError("Invalid FEN string") from e
 
         if not board.is_valid():
             raise ValueError("Invalid board position")

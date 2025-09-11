@@ -1,10 +1,11 @@
-from typing import List
 import logging
 import random
+
 from pydantic import validate_call
+
 from ..game_interface import GameSystem, PrivateStates
-from .lands_interface import LandsPrivateState, LandsState, LandsAction, LandsPayload
 from . import lands_vars as lv
+from .lands_interface import LandsAction, LandsPayload, LandsPrivateState, LandsState
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +16,7 @@ class LandsSystem(GameSystem[LandsState, LandsAction]):
     """
 
     @validate_call  # Check type constraints for parameters
-    def initialize_game(self, player_ids: List[str]) -> LandsState:
+    def initialize_game(self, player_ids: list[str]) -> LandsState:
         if len(player_ids) != 2:
             raise ValueError("Lands requires exactly 2 players.")
 
@@ -129,7 +130,7 @@ class LandsSystem(GameSystem[LandsState, LandsAction]):
         return new_state
 
     @validate_call
-    def get_valid_actions(self, state: LandsState, player_id: str) -> List[LandsAction]:
+    def get_valid_actions(self, state: LandsState, player_id: str) -> list[LandsAction]:
         valid_actions = []
         # If the game is finished or it's not the player's turn, they cannot act
         if (
@@ -292,9 +293,7 @@ class LandsSystem(GameSystem[LandsState, LandsAction]):
                 # Opponent has to choose a card from their hand if they have any
                 state.meta["curr_player_index"] = 1 - state.meta["main_player_index"]
                 # Put copy of opponent's hand into selection
-                state.selection = [
-                    cards for cards in state.private_state.states[opponent_id].hand
-                ]
+                state.selection = list(state.private_state.states[opponent_id].hand)
             case lv.WATER:
                 state.meta["curr_player_index"] = state.meta["main_player_index"]
                 state.selection = [0, 1]  # 0: keep on top, 1: move to bottom
@@ -372,7 +371,7 @@ class LandsSystem(GameSystem[LandsState, LandsAction]):
                     state.meta["curr_player_index"]
                     == 1 - state.meta["main_player_index"]
                 ):
-                    state.selection = [card for card in target]
+                    state.selection = list(target)
                     state.meta["curr_player_index"] = state.meta["main_player_index"]
                 else:  # If it is main player's turn, target is a card to discard from opponent's hand
                     if target is not None:
@@ -398,7 +397,7 @@ class LandsSystem(GameSystem[LandsState, LandsAction]):
         return state
 
     # Create a deck with 5 of each type of card (0-4)
-    def _initialize_deck(self) -> List[int]:
+    def _initialize_deck(self) -> list[int]:
         deck = [i for i in range(5) for _ in range(5)]
         random.shuffle(deck)
         return deck

@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Annotated, Any, Optional
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
 from jose import JWTError
@@ -97,7 +97,7 @@ async def logout_account(
 # Call refresh endpoint if jwt/cookie is expired
 @router.post("/refresh")
 async def refresh_access_token(
-    response: Response, refresh_token: Annotated[Optional[str], Cookie()] = None
+    response: Response, refresh_token: Annotated[str | None, Cookie()] = None
 ):
     if refresh_token is None:
         raise HTTPException(
@@ -125,8 +125,10 @@ async def refresh_access_token(
             max_age=int(access_token_expires.total_seconds()),
         )
         return {"status": "success", "message": "Access token refreshed"}
-    except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+    except JWTError as e:
+        raise HTTPException(
+            status_code=401, detail="Invalid or expired refresh token"
+        ) from e
 
 
 @router.delete("/delete")

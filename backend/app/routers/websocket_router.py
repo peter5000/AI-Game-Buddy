@@ -94,19 +94,17 @@ class ConnectionEndpoint(WebSocketEndpoint):
             logger.info(f"User '{self.user_id}' connected to websocket endpoint")
 
             # Send connection acceptance message
-            await websocket.send_json(
-                {"message": "Successfully connected to websocket endpoint"}
-            )
+            await websocket.send_json({
+                "message": "Successfully connected to websocket endpoint"
+            })
         except Exception as e:
             logger.error(f"WebSocket connection failed: {e}")
             # Send error message to client before closing
             try:
-                await websocket.send_json(
-                    {
-                        "error": str(e),
-                        "message": "Unable to establish connection",
-                    }
-                )
+                await websocket.send_json({
+                    "error": str(e),
+                    "message": "Unable to establish connection",
+                })
             except Exception:
                 pass
 
@@ -137,12 +135,10 @@ class ConnectionEndpoint(WebSocketEndpoint):
             All errors are caught and handled gracefully, sending error responses to the client rather than terminating the connection.
         """
         if not self.is_authenticated or not self.user_id:
-            await websocket.send_json(
-                {
-                    "error": "Not authenticated",
-                    "message": "Please establish a valid connection first",
-                }
-            )
+            await websocket.send_json({
+                "error": "Not authenticated",
+                "message": "Please establish a valid connection first",
+            })
             return
 
         try:
@@ -158,14 +154,16 @@ class ConnectionEndpoint(WebSocketEndpoint):
         except ValidationError as e:
             logger.error(f"Invalid message format from '{self.user_id}': {e}")
             error_details = json.loads(e.json())
-            await websocket.send_json(
-                {"error": "Invalid message format", "details": error_details}
-            )
+            await websocket.send_json({
+                "error": "Invalid message format",
+                "details": error_details,
+            })
         except Exception as e:
             logger.exception(f"Error processing message from '{self.user_id}': {e}")
-            await websocket.send_json(
-                {"error": "Failed to process message.", "details": e}
-            )
+            await websocket.send_json({
+                "error": "Failed to process message.",
+                "details": e,
+            })
 
     async def on_disconnect(self, websocket: WebSocket, close_code: int):
         """Handle WebSocket connection termination.

@@ -1,14 +1,15 @@
 import uuid
 from abc import ABC, abstractmethod
+from typing import Annotated, Any, Generic, TypeVar
+
 from pydantic import BaseModel, Field, computed_field, model_validator
-from typing import Any, Dict, List, Annotated, TypeVar, Generic
 
 
 # --- Generic Phase ---
 class Phase(BaseModel):
     current: str  # Current phase of the game
     available_phases: Annotated[
-        List[str], Field(min_length=1)
+        list[str], Field(min_length=1)
     ]  # List of all available phases
 
     @model_validator(mode="before")
@@ -54,7 +55,7 @@ PrivateStateT = TypeVar("PrivateStateT")
 class PrivateStates(BaseModel, Generic[PrivateStateT]):
     """Represents the private state of a player or group of players in a game."""
 
-    states: Dict[str, PrivateStateT]
+    states: dict[str, PrivateStateT]
 
 
 # --- Generic GameState ---
@@ -62,9 +63,9 @@ class GameState(BaseModel):
     game_id: str = Field(
         default_factory=lambda: str(uuid.uuid4())
     )  # Unique identifier for each game
-    player_ids: List[str]  # Player identifications
+    player_ids: list[str]  # Player identifications
     finished: bool = False  # Set True when game is finished
-    meta: Dict[str, Any]  # Any Game Specific Data
+    meta: dict[str, Any]  # Any Game Specific Data
 
     # Simple Optional Features
     turn: int | None = None
@@ -77,7 +78,7 @@ class GameState(BaseModel):
 # --- Generic Action ---
 class Action(BaseModel):
     type: str  # Type
-    payload: Dict[str, Any] | None
+    payload: dict[str, Any] | None
 
 
 # --- Type Variables for GameSystem ---
@@ -88,7 +89,7 @@ ActionType = TypeVar("ActionType", bound=Action)
 # --- Generic GameSystem ---
 class GameSystem(ABC, Generic[StateType, ActionType]):
     @abstractmethod
-    def initialize_game(self, player_ids: List[str]) -> StateType:
+    def initialize_game(self, player_ids: list[str]) -> StateType:
         """Returns the starting state for a new game."""
         pass
 
@@ -100,7 +101,7 @@ class GameSystem(ABC, Generic[StateType, ActionType]):
         pass
 
     @abstractmethod
-    def get_valid_actions(self, state: StateType, player_id: str) -> List[ActionType]:
+    def get_valid_actions(self, state: StateType, player_id: str) -> list[ActionType]:
         """Returns all valid actions for a given player"""
         pass
 

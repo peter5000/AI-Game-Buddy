@@ -1,7 +1,6 @@
 # main.py
 import os
 import sys
-from typing import Tuple
 
 # Add the game directory to the Python path to find the modules
 # This might not be necessary depending on your setup, but it's robust.
@@ -9,9 +8,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "."))
 
 from games.ulttt.ultimate_tic_tac_toe import UltimateTicTacToeSystem
 from games.ulttt.ulttt_interface import (
-    UltimateTicTacToeState,
     UltimateTicTacToeAction,
     UltimateTicTacToePayload,
+    UltimateTicTacToeState,
 )
 
 
@@ -50,7 +49,7 @@ def print_board(state: UltimateTicTacToeState):
     print("\n" + "=" * 30 + "\n")
 
 
-def get_player_input(player_marker: str) -> Tuple[int, int, int, int]:
+def get_player_input(player_marker: str) -> tuple[int, int, int, int]:
     """Gets and validates move input from the command line."""
     while True:
         try:

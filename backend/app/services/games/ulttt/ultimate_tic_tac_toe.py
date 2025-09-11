@@ -1,5 +1,4 @@
 import logging
-from typing import List
 
 from pydantic import validate_call
 
@@ -21,7 +20,7 @@ class UltimateTicTacToeSystem(
     """
 
     @validate_call  # Check type constraints for parameters
-    def initialize_game(self, player_ids: List[str]) -> UltimateTicTacToeState:
+    def initialize_game(self, player_ids: list[str]) -> UltimateTicTacToeState:
         if len(player_ids) != 2:
             raise ValueError("Ultimate Tic-Tac-Toe requires exactly 2 players.")
         return UltimateTicTacToeState(
@@ -86,7 +85,7 @@ class UltimateTicTacToeSystem(
     @validate_call
     def get_valid_actions(
         self, state: UltimateTicTacToeState, player_id: str
-    ) -> List[UltimateTicTacToeAction]:
+    ) -> list[UltimateTicTacToeAction]:
         if (
             state.finished
             or state.player_ids[state.meta["curr_player_index"]] != player_id

@@ -28,6 +28,7 @@ next-env.d.ts
 **/.venv
 **/.vscode
 **/__pycache__
+**/.*cache
 .env
 **/node_modules
 
