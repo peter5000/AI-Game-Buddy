@@ -47,13 +47,12 @@ async def lifespan(app: FastAPI):
     await get_redis_service().close()
 
     # OpenTelemetry
-    if AZURE_AVAILABLE:
-        tracer_provider = trace.get_tracer_provider()
-        if hasattr(tracer_provider, 'shutdown'):
-            tracer_provider.shutdown()
-        logger_provider = _logs.get_logger_provider()
-        if hasattr(logger_provider, 'shutdown'):
-            logger_provider.shutdown()
+    tracer_provider = trace.get_tracer_provider()
+    if hasattr(tracer_provider, 'shutdown'):
+        tracer_provider.shutdown()
+    logger_provider = _logs.get_logger_provider()
+    if hasattr(logger_provider, 'shutdown'):
+        logger_provider.shutdown()
 
 
 app = FastAPI(lifespan=lifespan)
