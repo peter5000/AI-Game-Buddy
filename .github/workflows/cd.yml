@@ -75,36 +75,30 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
 
-      # Cache Next.js build output
-      - name: Cache Next.js build
-        uses: actions/cache@v4
-        with:
-          path: |
-            frontend/.next/cache
-            frontend/.next/static
-          key: ${{ runner.os }}-nextjs-${{ hashFiles('frontend/package-lock.json') }}-${{ hashFiles('frontend/**/*.js', 'frontend/**/*.jsx', 'frontend/**/*.ts', 'frontend/**/*.tsx') }}
-          restore-keys: |
-            ${{ runner.os }}-nextjs-${{ hashFiles('frontend/package-lock.json') }}-
-            ${{ runner.os }}-nextjs-
-
-      # Install dependencies if not cached
+      # Install dependencies
       - name: Install dependencies
         working-directory: frontend
         run: npm ci
 
-      # Build and Deploy to Azure Static Web Apps
-      - name: Build And Deploy
-        id: builddeploy
+      # Build frontend with env vars baked in
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: https://myaigamingfriendcontainerjj.bravebay-621a33e9.westus3.azurecontainerapps.io
+          NEXT_PUBLIC_WEBSOCKET_URL: wss://myaigamingfriendcontainerjj.bravebay-621a33e9.westus3.azurecontainerapps.io/ws
+          NODE_ENV: production
+
+      # Deploy prebuilt app to Azure Static Web Apps
+      - name: Deploy to Azure SWA
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_THANKFUL_BAY_09EC9CF1E }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
           app_location: "/frontend"
-          api_location: ""
-          output_location: ""
-          # Skip building if we already have a cached build
-          skip_app_build: false
+          output_location: ".next"
+          skip_app_build: true
 
   # Deploy built image from ACR to Azure Container App
   deploy-backend:
