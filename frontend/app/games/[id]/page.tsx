@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,15 +32,26 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 
-export default function GameRoomPage({ params }: { params: { id: string } }) {
+interface PageProps {
+    params: Promise<{ id: string }>;
+}
+
+export default function GameRoomPage({ params }: PageProps) {
+    const [gameId, setGameId] = useState<string>("");
     const [roomType, setRoomType] = useState("public");
-    // const [aiPersonality, setAiPersonality] = useState("friendly")
     const [maxPlayers, setMaxPlayers] = useState("2");
     const [selectedAIFriend, setSelectedAIFriend] = useState("");
 
-    // Mock game data - in real app, fetch based on params.id
+    // Resolve params Promise
+    useEffect(() => {
+        params.then((resolvedParams) => {
+            setGameId(resolvedParams.id);
+        });
+    }, [params]);
+
+    // Mock game data - now using gameId from state
     const game = {
-        id: params.id,
+        id: gameId,
         name: "Ultimate Tic-Tac-Toe",
         description:
             "A strategic twist on the classic game with 9 interconnected boards",
@@ -61,6 +72,18 @@ export default function GameRoomPage({ params }: { params: { id: string } }) {
         // Handle room creation logic
     };
 
+    // Show loading state while params are being resolved
+    if (!gameId) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                    <p className="mt-2 text-gray-600">Loading game...</p>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen bg-gray-50 py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -72,6 +95,8 @@ export default function GameRoomPage({ params }: { params: { id: string } }) {
                                 <Image
                                     src={game.image || "/placeholder.svg"}
                                     alt={game.name}
+                                    width={400}
+                                    height={300}
                                     className="w-full h-64 object-cover rounded-lg mb-4"
                                 />
                                 <div className="flex justify-between items-start">
