@@ -152,6 +152,8 @@ export default function GamesPage() {
                                 <Image
                                     src={game.image || "/placeholder.svg"}
                                     alt={game.name}
+                                    width={300}
+                                    height={200}
                                     className="w-full h-48 object-cover rounded-t-lg"
                                 />
                             </CardHeader>
