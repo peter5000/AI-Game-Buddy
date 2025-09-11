@@ -1,8 +1,8 @@
 "use client";
 
-import { ArrowLeft, MessageCircle, Sparkles, User, Wand2 } from "lucide-react";
-import Link from "next/link";
 import { useState } from "react";
+import Link from "next/link";
+import { ArrowLeft, MessageCircle, Sparkles, User, Wand2 } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";

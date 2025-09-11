@@ -1,6 +1,6 @@
-import { Clock, Filter, Search, Star, Users } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { Clock, Filter, Search, Star, Users } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

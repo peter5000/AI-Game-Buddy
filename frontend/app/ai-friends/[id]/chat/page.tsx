@@ -1,5 +1,8 @@
 "use client";
 
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import {
     ArrowLeft,
     Gamepad2,
@@ -7,9 +10,6 @@ import {
     Send,
     Settings,
 } from "lucide-react";
-import Link from "next/link";
-import type React from "react";
-import { useEffect, useRef, useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";

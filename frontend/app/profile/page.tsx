@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
     Calendar,
     Clock,
@@ -6,7 +7,6 @@ import {
     TrendingUp,
     Trophy,
 } from "lucide-react";
-import Link from "next/link";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";

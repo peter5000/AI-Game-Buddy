@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import Link from "next/link";
 import {
     Gamepad2,
     Heart,
@@ -9,8 +11,6 @@ import {
     Settings,
     Trash2,
 } from "lucide-react";
-import Link from "next/link";
-import { useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";

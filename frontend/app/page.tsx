@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
     ArrowRight,
     Gamepad2,
@@ -6,7 +7,6 @@ import {
     Star,
     Users,
 } from "lucide-react";
-import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

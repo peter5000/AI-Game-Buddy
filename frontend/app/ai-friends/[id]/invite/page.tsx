@@ -1,8 +1,8 @@
 "use client";
 
-import { ArrowLeft, Gamepad2, MessageCircle, Users } from "lucide-react";
-import Link from "next/link";
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { ArrowLeft, Gamepad2, MessageCircle, Users } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";

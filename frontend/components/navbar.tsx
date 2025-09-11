@@ -1,10 +1,10 @@
 "use client";
 
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Gamepad2, LogOut, Menu, Settings, User, X } from "lucide-react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Bell, Gamepad2, LogOut, Menu, Settings, User, X } from "lucide-react";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";

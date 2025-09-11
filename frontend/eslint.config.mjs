@@ -9,64 +9,113 @@ import prettierConfig from "eslint-config-prettier";
 import globals from "globals";
 
 export default [
-    // Global ignores
     {
-        ignores: ["node_modules/", ".next/", ".venv/", "next-env.d.ts"],
+        ignores: [
+            "node_modules/",
+            ".next/",
+            ".venv/",
+            "next-env.d.ts",
+            "out/",
+            "build/",
+            "dist/",
+        ],
     },
 
-    // Base configurations for all files
     eslint.configs.recommended,
     ...tseslint.configs.recommended,
 
-    // Configurations for React/Next files
+    // 👇 Explicit Next.js config block (this makes Next.js detection happy)
+    {
+        plugins: {
+            "@next/next": nextPlugin,
+        },
+        rules: {
+            ...nextPlugin.configs["core-web-vitals"].rules,
+        },
+    },
+
     {
         files: ["**/*.{js,jsx,ts,tsx}"],
         plugins: {
             react: reactPlugin,
             "react-hooks": hooksPlugin,
-            "@next/next": nextPlugin,
             "jsx-a11y": jsxA11yPlugin,
             "simple-import-sort": importSortPlugin,
+            // 👇 keep Next here too so rules work inside this block
+            "@next/next": nextPlugin,
         },
         languageOptions: {
+            parser: tseslint.parser,
             parserOptions: {
-                ecmaFeatures: {
-                    jsx: true,
-                },
+                ecmaVersion: "latest",
+                sourceType: "module",
+                ecmaFeatures: { jsx: true },
+                project: "./tsconfig.json",
             },
             globals: {
                 ...globals.browser,
                 ...globals.node,
+                ...globals.es2021,
             },
         },
         rules: {
-            // General rules
+            // your custom rules (no need to duplicate next/core-web-vitals here)
             "no-console": ["warn", { allow: ["warn", "error"] }],
+            "prefer-const": "error",
+            "no-unused-vars": "off",
+            "@typescript-eslint/no-unused-vars": [
+                "error",
+                { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+            ],
 
-            // React and Hooks rules
-            ...reactPlugin.configs.recommended.rules,
-            ...hooksPlugin.configs.recommended.rules,
-            "react/react-in-jsx-scope": "off", // Not needed with Next.js/new JSX transform
-            "react/prop-types": "off", // Not needed with TypeScript
+            "react/react-in-jsx-scope": "off",
+            "react/prop-types": "off",
+            "react/jsx-uses-react": "off",
+            "react/jsx-uses-vars": "error",
+            "react/jsx-key": "error",
+            "react/no-unescaped-entities": "error",
 
-            // Next.js specific rules
-            ...nextPlugin.configs.recommended.rules,
-            ...nextPlugin.configs["core-web-vitals"].rules,
+            "react-hooks/rules-of-hooks": "error",
+            "react-hooks/exhaustive-deps": "warn",
 
-            // Accessibility rules
-            ...jsxA11yPlugin.configs.recommended.rules,
-
-            // Import sorting
-            "simple-import-sort/imports": "error",
+            "simple-import-sort/imports": [
+                "error",
+                {
+                    groups: [
+                        ["^\\u0000"],
+                        ["^react", "^next", "^@?\\w"],
+                        ["^(@|components|lib|app)(/.*|$)"],
+                        ["^\\.\\.(?!/?$)", "^\\.\\./?$"],
+                        ["^\\./(?=.*/)(?!/?$)", "^\\.(?!/?$)", "^\\./?$"],
+                        ["^.+\\.s?css$"],
+                    ],
+                },
+            ],
             "simple-import-sort/exports": "error",
+
+            "@typescript-eslint/no-explicit-any": "warn",
+            "@typescript-eslint/explicit-function-return-type": "off",
+            "@typescript-eslint/explicit-module-boundary-types": "off",
+            "@typescript-eslint/no-non-null-assertion": "warn",
         },
         settings: {
-            react: {
-                version: "detect", // Automatically detect the React version
-            },
+            react: { version: "detect" },
         },
     },
 
-    // Prettier configuration must be last
+    {
+        files: ["**/*.config.{js,ts,mjs}"],
+        rules: {
+            "no-console": "off",
+            "@typescript-eslint/no-require-imports": "off",
+        },
+    },
+    {
+        files: ["**/*.d.ts"],
+        rules: {
+            "@typescript-eslint/no-unused-vars": "off",
+        },
+    },
+
     prettierConfig,
 ];

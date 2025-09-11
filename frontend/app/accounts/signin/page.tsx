@@ -1,11 +1,11 @@
 "use client";
 
-import { useQueryClient } from "@tanstack/react-query";
-import { Gamepad2 } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
 import type React from "react";
 import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
+import { Gamepad2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {

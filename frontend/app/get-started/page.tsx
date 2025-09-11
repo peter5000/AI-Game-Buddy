@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
     ArrowRight,
     BookOpen,
@@ -9,7 +10,6 @@ import {
     Users,
     Zap,
 } from "lucide-react";
-import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
