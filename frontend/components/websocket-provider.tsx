@@ -14,8 +14,7 @@ import { useAuth } from "@/hooks/use-auth";
 
 // Define the shape of the context value
 type ConnectionStatus = "connecting" | "connected" | "disconnected";
-const WEBSOCKET_URL =
-    process.env.NEXT_PUBLIC_WEBSOCKET_URL || "ws://localhost:8000/ws";
+const WEBSOCKET_URL = process.env.NEXT_PUBLIC_WEBSOCKET_URL;
 
 interface IWebSocketContext {
     sendMessage: (message: Record<string, unknown>) => void;
@@ -50,6 +49,11 @@ export const WebSocketProvider = ({ children }: WebSocketProviderProps) => {
     useEffect(() => {
         const connect = () => {
             setConnectionStatus("connecting");
+            if (!WEBSOCKET_URL) {
+                console.error("WebSocket URL is not defined.");
+                setConnectionStatus("disconnected");
+                return;
+            }
             ws.current = new WebSocket(WEBSOCKET_URL);
 
             ws.current.onopen = () => {

@@ -29,7 +29,6 @@ next-env.d.ts
 **/.vscode
 **/__pycache__
 **/.*cache
-.env
 **/node_modules
 
 # scripts
