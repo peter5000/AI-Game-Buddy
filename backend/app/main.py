@@ -60,6 +60,7 @@ app = FastAPI(lifespan=lifespan)
 origins = [
     "http://localhost",
     "http://localhost:3000",
+    "https://thankful-bay-09ec9cf1e.2.azurestaticapps.net", # Frontend URL
 ]
 
 app.add_middleware(
