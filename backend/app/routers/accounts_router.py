@@ -53,7 +53,6 @@ async def login_account(
         httponly=True,
         secure=True,
         samesite="none",
-        partitioned=True,
         max_age=int(access_token_expires.total_seconds()),
     )
 
@@ -69,7 +68,6 @@ async def login_account(
         httponly=True,
         secure=True,
         samesite="none",
-        partitioned=True,
         max_age=int(refresh_token_expires.total_seconds()),
     )
 
@@ -124,7 +122,6 @@ async def refresh_access_token(
             httponly=True,
             secure=True,
             samesite="none",
-            partitioned=True,
             max_age=int(access_token_expires.total_seconds()),
         )
         return {"status": "success", "message": "Access token refreshed"}
