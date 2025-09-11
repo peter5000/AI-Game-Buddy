@@ -14,13 +14,13 @@ RUN adduser --uid 5678 --disabled-password --gecos "" --no-create-home appuser
 WORKDIR /app
 
 # Copy and install Python dependencies first (better layer caching)
-COPY --chown=appuser:appuser requirements.txt .
+COPY --chown=appuser:appuser pyproject.toml .
 
 # Install Python dependencies
-RUN python -m pip install --no-cache-dir -r requirements.txt
+RUN python -m pip install --no-cache-dir .
 
 # Copy application code
-COPY --chown=appuser:appuser . .
+COPY --chown=appuser:appuser backend/ .
 
 # Switch to non-root user
 USER appuser
