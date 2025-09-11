@@ -11,7 +11,7 @@ import globals from "globals";
 export default [
     // Global ignores
     {
-        ignores: ["node_modules/", ".next/", ".venv/"],
+        ignores: ["node_modules/", ".next/", ".venv/", "next-env.d.ts"],
     },
 
     // Base configurations for all files
