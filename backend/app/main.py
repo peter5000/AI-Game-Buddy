@@ -48,10 +48,10 @@ async def lifespan(app: FastAPI):
 
     # OpenTelemetry
     tracer_provider = trace.get_tracer_provider()
-    if hasattr(tracer_provider, 'shutdown'):
+    if hasattr(tracer_provider, "shutdown"):
         tracer_provider.shutdown()
     logger_provider = _logs.get_logger_provider()
-    if hasattr(logger_provider, 'shutdown'):
+    if hasattr(logger_provider, "shutdown"):
         logger_provider.shutdown()
 
 
@@ -60,7 +60,7 @@ app = FastAPI(lifespan=lifespan)
 origins = [
     "http://localhost",
     "http://localhost:3000",
-    "https://thankful-bay-09ec9cf1e.2.azurestaticapps.net", # Frontend URL
+    "https://thankful-bay-09ec9cf1e.2.azurestaticapps.net",  # Frontend URL
 ]
 
 app.add_middleware(
