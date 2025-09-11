@@ -2,7 +2,7 @@
 
 import { ArrowLeft, Gamepad2, MessageCircle, Users } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -24,18 +24,26 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 
-export default function InviteAIFriendPage({
-    params,
-}: {
-    params: { id: string };
-}) {
+interface PageProps {
+    params: Promise<{ id: string }>;
+}
+
+export default function InviteAIFriendPage({ params }: PageProps) {
+    const [friendId, setFriendId] = useState<string>("");
     const [selectedGame, setSelectedGame] = useState("");
     const [gameMode, setGameMode] = useState("");
     const [roomType, setRoomType] = useState("private");
 
-    // Mock AI friend data
+    // Resolve params Promise
+    useEffect(() => {
+        params.then((resolvedParams) => {
+            setFriendId(resolvedParams.id);
+        });
+    }, [params]);
+
+    // Mock AI friend data - now using friendId from state
     const aiFriend = {
-        id: params.id,
+        id: friendId,
         name: "Chess Master Alex",
         personality:
             "Strategic and analytical, loves discussing chess theory and tactics",
@@ -117,6 +125,18 @@ export default function InviteAIFriendPage({
         // Handle game invitation logic
         // Redirect to game room or lobby
     };
+
+    // Show loading state while params are being resolved
+    if (!friendId) {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                    <p className="mt-2 text-gray-600">Loading...</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gray-50 py-8">
