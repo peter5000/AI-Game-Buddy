@@ -15,7 +15,7 @@ import { useAuth } from "@/hooks/use-auth";
 // Define the shape of the context value
 type ConnectionStatus = "connecting" | "connected" | "disconnected";
 const WEBSOCKET_URL =
-    process.env.PUBLIC_WEBSOCKET_URL || "ws://localhost:8000/ws";
+    process.env.NEXT_PUBLIC_WEBSOCKET_URL || "ws://localhost:8000/ws";
 
 interface IWebSocketContext {
     sendMessage: (message: Record<string, unknown>) => void;
