@@ -1,4 +1,4 @@
-"""app/auth.py
+"""auth.py
 
 This module provides user authentication, password hashing, JWT token management, and user identification for both HTTP
 and WebSocket connections.
@@ -6,7 +6,7 @@ and WebSocket connections.
 
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Annotated, Optional
+from typing import Annotated, Any
 
 from fastapi import Cookie, HTTPException, WebSocket, status
 from jose import JWTError, jwt
@@ -23,6 +23,8 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # security_scheme = OAuth2PasswordBearer(tokenUrl="accounts/token")
 # security_scheme = HTTPBearer()
+
+DUMMY_HASH = pwd_context.hash("dummy_password_for_timing_attack_mitigation")
 
 
 def verify_password(password: SecretStr, hashed_password: str) -> bool:
@@ -78,6 +80,40 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
     return encoded_jwt
 
 
+def verify_access_token(access_token: str) -> dict[str, Any]:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(
+            access_token, settings.ACCESS_TOKEN_SECRET, algorithms=[settings.ALGORITHM]
+        )
+        return payload
+    except JWTError as e:
+        logger.error("Invalid or expired JWT")
+        raise credentials_exception from e
+
+
+def verify_refresh_token(refresh_token: str) -> dict[str, Any]:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(
+            refresh_token,
+            settings.REFRESH_TOKEN_SECRET,
+            algorithms=[settings.ALGORITHM],
+        )
+        return payload
+    except JWTError as e:
+        logger.error("Invalid or expired refresh token")
+        raise credentials_exception from e
+
+
 def create_refresh_token(data: dict, expires_delta: timedelta | None = None):
     """Create a JWT refresh token for token renewal.
 
@@ -96,9 +132,7 @@ def create_refresh_token(data: dict, expires_delta: timedelta | None = None):
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(
-            days=14
-        )  # Default 14 days
+        expire = datetime.now(timezone.utc) + timedelta(days=14)  # Default 14 days
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(
         to_encode, settings.REFRESH_TOKEN_SECRET, algorithm=settings.ALGORITHM
@@ -107,13 +141,13 @@ def create_refresh_token(data: dict, expires_delta: timedelta | None = None):
 
 
 async def authenticate_user(
-    identifier: str, password: str, cosmos_service: CosmosService
+    identifier: str, password: SecretStr, cosmos_service: CosmosService
 ) -> dict | None:
     """Authenticate a user using email/username and password.
 
     Args:
         identifier (str): The user's email address or username.
-        password (str): The plain text password to verify.
+        password (SecretStr): The plain text password to verify.
         cosmos_service (CosmosService): Service for database operations.
 
     Returns:
@@ -132,14 +166,17 @@ async def authenticate_user(
         query=query, container_type="users", parameters=parameters
     )
 
-    if not users:
-        logger.warning("User username or email not found")
-        return None
+    # By default, assume failure and set up for a dummy check.
+    user_hash = DUMMY_HASH
+    user = None
 
-    user = users[0]
+    if users:
+        user = users[0]
+        user_hash = user["password"]
 
-    if not verify_password(password, user["password"]):
-        logger.warning("User password is incorrect")
+    # Always run the verification to prevent timing attacks
+    if not verify_password(password, user_hash):
+        logger.warning(f"Failed login attempt for identifier: {identifier}")
         return None
 
     logger.info(f"User '{user['username']}' authenticated")
@@ -147,7 +184,7 @@ async def authenticate_user(
 
 
 async def get_user_id_http(
-    access_token: Annotated[Optional[str], Cookie()] = None,
+    access_token: Annotated[str | None, Cookie()] = None,
 ) -> str | None:
     """Extract user ID from JWT access token in HTTP requests.
 
@@ -173,22 +210,17 @@ async def get_user_id_http(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated: Missing session cookie",
         )
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(
-            access_token, settings.ACCESS_TOKEN_SECRET, algorithms=[settings.ALGORITHM]
+
+    payload = verify_access_token(access_token=access_token)
+    user_id = payload.get("sub")
+
+    if user_id is None:
+        logger.error("User ID not found in JWT")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
         )
-        user_id: str = payload.get("sub")
-        if user_id is None:
-            logger.error("User ID not found in JWT")
-            raise credentials_exception
-    except JWTError:
-        logger.error("Invalid or expired JWT")
-        raise credentials_exception
 
     return user_id
 
@@ -219,21 +251,16 @@ async def get_user_id_websocket(websocket: WebSocket) -> str | None:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated: Missing session cookie",
         )
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(
-            access_token, settings.ACCESS_TOKEN_SECRET, algorithms=[settings.ALGORITHM]
+
+    payload = verify_access_token(access_token=access_token)
+    user_id = payload.get("sub")
+
+    if user_id is None:
+        logger.error("User ID not found in JWT")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
         )
-        user_id: str = payload.get("sub")
-        if user_id is None:
-            logger.error("User ID not found in JWT")
-            raise credentials_exception
-    except JWTError:
-        logger.error("Invalid or expired JWT")
-        raise credentials_exception
 
     return user_id

@@ -1,4 +1,4 @@
-"""app/routers/websocket_router.py
+"""routers/websocket_router.py
 
 This module provides WebSocket endpoints for real-time communication.
 It handles WebSocket connections, message routing, and manages real-time game interactions between clients.
@@ -14,7 +14,11 @@ from pydantic import ValidationError
 from starlette.endpoints import WebSocketEndpoint
 
 from app import auth
-from app.dependencies import get_connection_service, get_game_service, get_room_service
+from app.dependencies import (
+    get_connection_service,
+    get_game_service_factory,
+    get_room_service,
+)
 from app.schemas import GameUpdate
 from app.services.connection_service import ConnectionService
 
@@ -73,8 +77,14 @@ class ConnectionEndpoint(WebSocketEndpoint):
             # Initialize services
             self.connection_service: ConnectionService = get_connection_service()
             self.room_service = get_room_service()
-            self.game_service = get_game_service()
+            self.game_service_factory = get_game_service_factory()
             # self.chat_service = get_chat_service()
+
+            # Handler map for mapping message type to handler function
+            self.handler_map = {
+                "game_action": self.handle_game_action,
+                "chat_message": self.handle_chat_message,
+            }
 
             await self.connection_service.connect(
                 websocket=websocket, user_id=self.user_id
@@ -84,19 +94,17 @@ class ConnectionEndpoint(WebSocketEndpoint):
             logger.info(f"User '{self.user_id}' connected to websocket endpoint")
 
             # Send connection acceptance message
-            await websocket.send_json(
-                {"message": "Successfully connected to websocket endpoint"}
-            )
+            await websocket.send_json({
+                "message": "Successfully connected to websocket endpoint"
+            })
         except Exception as e:
             logger.error(f"WebSocket connection failed: {e}")
             # Send error message to client before closing
             try:
-                await websocket.send_json(
-                    {
-                        "error": str(e),
-                        "message": "Unable to establish connection",
-                    }
-                )
+                await websocket.send_json({
+                    "error": str(e),
+                    "message": "Unable to establish connection",
+                })
             except Exception:
                 pass
 
@@ -117,22 +125,7 @@ class ConnectionEndpoint(WebSocketEndpoint):
             websocket (WebSocket): The WebSocket connection object.
             data (dict): The received message data containing:
                 - type (str): Message type identifier
-                - room_id (str): Room identifier for the action
                 - payload (dict): Message-specific data
-
-            Payload example:
-            {
-                "type": "game_action",
-                "payload": {
-                    "room_id": "room_id",
-                    "action": {
-                        "type": "MAKE_MOVE",
-                        "payload": {
-                            "move": "e2e4"
-                        }
-                    }
-                }
-            }
 
         Raises:
             ValidationError: If the message format is invalid. Sends error response to client.
@@ -142,68 +135,35 @@ class ConnectionEndpoint(WebSocketEndpoint):
             All errors are caught and handled gracefully, sending error responses to the client rather than terminating the connection.
         """
         if not self.is_authenticated or not self.user_id:
-            await websocket.send_json(
-                {
-                    "error": "Not authenticated",
-                    "message": "Please establish a valid connection first",
-                }
-            )
+            await websocket.send_json({
+                "error": "Not authenticated",
+                "message": "Please establish a valid connection first",
+            })
             return
 
         try:
             message_type = data.get("type")
             payload = data.get("payload", {})
 
-            if message_type == "game_action":
-                room_id = payload.get("room_id")
-                # Verify room exists and user is in room
-                if room_id and await self.room_service.check_user_in_room(
-                    user_id=self.user_id, room_id=room_id
-                ):
-                    # Get current game state in database
-                    game_state = await self.room_service.get_game_state(room_id=room_id)
+            handler = self.handler_map.get(message_type, self.handle_unknown)
 
-                    action = payload.get("action")
-
-                    # Make action given from user to current game state
-                    new_game_state = self.game_service.make_action(
-                        current_state=game_state, player_id=self.user_id, action=action
-                    )
-
-                    # Set new game state after action is processed
-                    await self.room_service.set_game_state(
-                        room_id=room_id, game_state=new_game_state.model_dump()
-                    )
-
-                    user_list = await self.room_service.get_user_list(room_id=room_id)
-                    game_update = GameUpdate(
-                        room_id=room_id,
-                        game_state=new_game_state.model_dump(),
-                    )
-                    await self.connection_service.publish_event(
-                        channel="game_update",
-                        user_list=user_list,
-                        message_data=game_update.model_dump(),
-                    )
-            # elif message_type == "chat_message":
-            #     room_id = data.get("room_id")
-            # send_message, { types, room_id, message },
-            # Redis Pub/Sub -> channel chat messages -> publish chat message into room -> all servers broadcast into room to each user -> chat updates in frontend
+            await handler(payload)
         except ValueError as e:
             error_payload = {"type": "Error", "payload": {"message": str(e)}}
-
             await websocket.send_json(error_payload)
         except ValidationError as e:
             logger.error(f"Invalid message format from '{self.user_id}': {e}")
             error_details = json.loads(e.json())
-            await websocket.send_json(
-                {"error": "Invalid message format", "details": error_details}
-            )
+            await websocket.send_json({
+                "error": "Invalid message format",
+                "details": error_details,
+            })
         except Exception as e:
             logger.exception(f"Error processing message from '{self.user_id}': {e}")
-            await websocket.send_json(
-                {"error": "Failed to process message.", "details": e}
-            )
+            await websocket.send_json({
+                "error": "Failed to process message.",
+                "details": e,
+            })
 
     async def on_disconnect(self, websocket: WebSocket, close_code: int):
         """Handle WebSocket connection termination.
@@ -218,3 +178,66 @@ class ConnectionEndpoint(WebSocketEndpoint):
             logger.info(
                 f"User '{self.user_id}' disconnected from websocket endpoint: {close_code}"
             )
+
+    async def handle_game_action(self, payload: dict):
+        """Handler for game action.
+
+        Args:
+            payload (dict): Contains room_id and action for the game.
+
+        Payload example:
+        {
+            "type": "game_action",
+            "payload": {
+                "room_id": "room_id",
+                "game_type": "chess",
+                "action": {
+                    "type": "MAKE_MOVE",
+                    "payload": {
+                        "move": "e2e4"
+                    }
+                }
+            }
+        }
+
+        """
+        room_id = payload.get("room_id")
+        # Verify room exists and user is in room
+        if room_id and await self.room_service.check_user_in_room(
+            user_id=self.user_id, room_id=room_id
+        ):
+            # Get current game state in database
+            game_state = await self.room_service.get_game_state(room_id=room_id)
+
+            action = payload.get("action")
+
+            game_type = payload.get("game_type")
+            game_service = self.game_service_factory.get_service(game_type=game_type)
+
+            # Make action given from user to current game state
+            new_game_state = game_service.make_action(
+                state=game_state, player_id=self.user_id, action=action
+            )
+
+            # Set new game state after action is processed
+            await self.room_service.set_game_state(
+                room_id=room_id, game_state=new_game_state.model_dump()
+            )
+
+            user_list = await self.room_service.get_user_list(room_id=room_id)
+            game_update = GameUpdate(
+                room_id=room_id,
+                game_state=new_game_state.model_dump(),
+            )
+            await self.connection_service.publish_event(
+                channel="game_update",
+                user_list=user_list,
+                message_data=game_update.model_dump(),
+            )
+
+    async def handle_chat_message(self, payload: dict):
+        pass
+
+    async def handle_unknown(self, _payload: dict):
+        """Handler for unknown message type"""
+        logger.warning("Received unknown message type.")

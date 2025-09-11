@@ -1,12 +1,14 @@
-from fastapi import APIRouter, File, UploadFile, HTTPException, Depends
+from typing import Any
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
-from typing import Any, Optional
-from app.services.cosmos_service import CosmosService
-from app.services.blob_service import BlobService
-from app.dependencies import get_cosmos_service, get_blob_service
+
+from app.dependencies import get_blob_service, get_cosmos_service
 
 # temp PETER
-from app.services.ai_service import test
+from app.services.ai_service import model_test
+from app.services.blob_service import BlobService
+from app.services.cosmos_service import CosmosService
 
 router = APIRouter(prefix="/test", tags=["Testing"])
 
@@ -14,7 +16,7 @@ router = APIRouter(prefix="/test", tags=["Testing"])
 # temp PETER
 @router.post("/ai/{prompt}")
 def ask_ai(prompt: str):
-    return test(prompt)
+    return model_test(prompt)
 
 
 @router.get("/users/{document_id}")
@@ -40,7 +42,9 @@ async def delete_user(
         )
         return {"status": "success", "message": f"User {document_id} deleted"}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to delete user: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to delete user: {e}"
+        ) from e
 
 
 @router.post("/query", response_model=list[dict[str, Any]])
@@ -57,7 +61,7 @@ async def query_items(
 async def upload_blob(
     container_name: str,
     file: UploadFile = File(...),
-    filename: Optional[str] = None,
+    filename: str | None = None,
     blob_service: BlobService = Depends(get_blob_service),
 ):
     filename = filename or file.filename

@@ -1,23 +1,24 @@
 import asyncio
 import logging
 from contextlib import asynccontextmanager
-try:
-    from azure.monitor.opentelemetry import configure_azure_monitor
-    from opentelemetry import trace, _logs
-    AZURE_AVAILABLE = True
-except ImportError:
-    AZURE_AVAILABLE = False
 
-from app.routers import accounts_router, room_router, test_router, game_router
-try:
-    from app.dependencies import cosmos_service, blob_service
-    DEPS_AVAILABLE = True
-except ImportError:
-    cosmos_service = None
-    blob_service = None
-    DEPS_AVAILABLE = False
+from azure.monitor.opentelemetry import configure_azure_monitor
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from opentelemetry import _logs, trace
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 
-if AZURE_AVAILABLE and settings.APPLICATIONINSIGHTS_CONNECTION_STRING:
+from app.config import settings
+from app.dependencies import get_blob_service, get_cosmos_service, get_redis_service
+from app.redis_listener import RedisListener
+from app.routers import (
+    accounts_router,
+    room_router,
+    test_router,
+    websocket_router,
+)
+
+if settings.APPLICATIONINSIGHTS_CONNECTION_STRING:
     configure_azure_monitor()
 
 
@@ -29,7 +30,8 @@ async def lifespan(app: FastAPI):
     """
     # Start up
     # Start the Redis subscribe method as a background task
-    subscribe_task = asyncio.create_task(redis_listener())
+    listener = RedisListener()
+    subscribe_task = asyncio.create_task(listener.listen())
 
     yield
     # Shutdown
@@ -56,6 +58,20 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+origins = [
+    "http://localhost",
+    "http://localhost:3000",
+    "https://thankful-bay-09ec9cf1e.2.azurestaticapps.net", # Frontend URL
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
 )
@@ -66,7 +82,6 @@ FastAPIInstrumentor.instrument_app(app)
 app.include_router(accounts_router.router)
 app.include_router(room_router.router)
 app.include_router(test_router.router)
-app.include_router(game_router.router)
 app.include_router(websocket_router.router)
 
 # Then mount the static files at the root

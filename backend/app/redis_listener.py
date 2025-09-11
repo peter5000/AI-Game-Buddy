@@ -1,3 +1,9 @@
+"""redis_listener.py
+
+This module defines the RedisListener class, which subscribes to Redis pub/sub channels
+and dispatches incoming messages to appropriate handlers for real-time game and user events.
+"""
+
 import asyncio
 import logging
 
@@ -7,42 +13,81 @@ from app.schemas import BroadcastPayload, PubSubMessage
 logger = logging.getLogger(__name__)
 
 
-async def redis_listener():
-    connection_service = get_connection_service()
-    room_service = get_room_service()
-    redis_service = get_redis_service()
-    
-    pubsub = redis_service.r.pubsub()
-    await pubsub.subscribe(connection_service.pubsub_channel)
-    logger.info(
-        f"Redis listener has subscribed to channel {connection_service.pubsub_channel}"
-    )
+# handler map for redis pubsub channels
+class RedisListener:
+    """
+    RedisListener subscribes to a Redis pub/sub channel and routes incoming messages
+    to handler functions based on the channel type.
+    """
 
-    while True:
-        try:
-            message = await pubsub.get_message(
-                ignore_subscribe_messages=True, timeout=1.0
+    def __init__(self):
+        """Initializes the RedisListener instance."""
+        self._connection_service = get_connection_service()
+        self._room_service = get_room_service()
+        self._redis_service = get_redis_service()
+
+        self._handler_map = {
+            "game_update": self.handle_game_update,
+        }
+
+    async def listen(self):
+        """
+        Starts the Redis pub/sub listener loop.
+
+        Subscribes to the configured pub/sub channel and continuously listens for messages.
+        Upon receiving a message, it validates and dispatches the message to the appropriate handler
+        based on the channel type.
+        """
+        if not self._redis_service.r:
+            logger.error("Redis client is not available. Listener cannot start.")
+            return
+
+        pubsub = self._redis_service.r.pubsub()
+        await pubsub.subscribe(self._connection_service.pubsub_channel)
+        logger.info(
+            f"Redis listener has subscribed to channel {self._connection_service.pubsub_channel}"
+        )
+
+        while True:
+            try:
+                message = await pubsub.get_message(
+                    ignore_subscribe_messages=True, timeout=1.0
+                )
+                if message:
+                    # Get data from pubsub message
+                    envelope = PubSubMessage.model_validate_json(message["data"])
+                    channel = envelope.channel
+                    payload = BroadcastPayload.model_validate(envelope.payload)
+
+                    # Get handler based on channel name
+                    handler = self._handler_map.get(channel, self.handle_default)
+
+                    # Call handler function with message payload
+                    await handler(payload)
+            except asyncio.CancelledError:
+                logger.info("Redis listener is shutting down.")
+                break
+            except Exception:
+                logger.exception("Error in Redis listener.")
+                await asyncio.sleep(1)
+
+    async def handle_game_update(self, payload: BroadcastPayload):
+        """Game update handler, sends new game state to room.
+
+        Args:
+            payload (BroadcastPayload): Payload of list of users to send to and message to send.
+        """
+        room_id = payload.message.get("room_id")
+        game_state = payload.message.get("game_state")
+        if room_id is not None:
+            await self._room_service.send_game_state(
+                room_id=room_id, game_state=game_state
             )
-            if message:
-                envelope = PubSubMessage.model_validate_json(message["data"])
-                channel = envelope.channel
-                payload = BroadcastPayload.model_validate(envelope.payload)
 
-                # Custom handlers for different types of events
-                if channel == "game_update":
-                    # Game update: new game state to send
-                    room_id = payload.message.get("room_id")
-                    game_state = payload.message.get("game_state")
-                    if room_id is not None:
-                        await room_service.send_game_state(
-                            room_id=room_id, game_state=game_state
-                        )
-                else:
-                    # default handler: send message to all users in user list
-                    await connection_service.broadcast(payload)
-        except asyncio.CancelledError:
-            logger.info("Redis listener is shutting down.")
-            break
-        except Exception:
-            logger.exception("Error in Redis listener.")
-            await asyncio.sleep(1)
+    async def handle_default(self, payload: BroadcastPayload):
+        """Default handler, sends payload to all users in user list.
+
+        Args:
+            payload (BroadcastPayload): Payload of list of users to send to and message to send.
+        """
+        await self._connection_service.broadcast(payload)
