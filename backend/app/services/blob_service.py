@@ -34,6 +34,8 @@ class BlobService:
     async def write_blob(self, container_name: str, filename: str, blobstream: Any):
         if not container_name:
             raise ValueError("Container name cannot be empty")
+        if not filename:
+            raise ValueError("Filename cannot be empty")
         if not blobstream:
             raise ValueError("Blob content cannot be null")
         try:
