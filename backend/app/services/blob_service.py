@@ -13,12 +13,7 @@ logger = logging.getLogger(__name__)
 class BlobService:
     def __init__(self):
         self.client: BlobServiceClient
-        if settings.BLOB_CONNECTION_STRING:
-            logger.info("Initializing Blob Service Client with Connection String")
-            self.client = BlobServiceClient.from_connection_string(
-                conn_str=settings.BLOB_CONNECTION_STRING
-            )
-        elif settings.BLOB_ENDPOINT:
+        if settings.BLOB_ENDPOINT:
             logger.info("Initializing Blob Service Client with Azure Credentials")
             credential = DefaultAzureCredential()
             self.client = BlobServiceClient(
