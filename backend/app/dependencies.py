@@ -7,6 +7,7 @@ from app.services.game_service_factory import GameServiceFactory
 from app.services.redis_service import RedisService
 from app.services.room_service import RoomService
 from app.services.user_service import UserService
+from app.services.chat_service import ChatService
 
 
 @lru_cache
@@ -42,6 +43,15 @@ def get_user_service() -> UserService:
 @lru_cache
 def get_room_service() -> RoomService:
     return RoomService(
+        cosmos_service=get_cosmos_service(),
+        redis_service=get_redis_service(),
+        connection_service=get_connection_service(),
+    )
+
+
+@lru_cache
+def get_chat_service() -> ChatService:
+    return ChatService(
         cosmos_service=get_cosmos_service(),
         redis_service=get_redis_service(),
         connection_service=get_connection_service(),
