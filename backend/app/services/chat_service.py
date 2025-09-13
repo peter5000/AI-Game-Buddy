@@ -11,7 +11,7 @@ from typing import Any
 
 from fastapi import HTTPException
 
-from app.schemas import ChatMessage, ChatRoom, Entity
+from app.schemas import ChatMessage, ChatRoom
 from app.services.connection_service import ConnectionService
 from app.services.cosmos_service import CosmosService
 from app.services.redis_service import RedisService

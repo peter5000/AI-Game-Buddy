@@ -7,8 +7,8 @@ and dispatches incoming messages to appropriate handlers for real-time game and 
 import asyncio
 import logging
 
-from app.dependencies import get_connection_service, get_redis_service, get_room_service
-from app.schemas import BroadcastPayload, PubSubMessage
+from app.dependencies import get_chat_service, get_connection_service, get_redis_service, get_room_service
+from app.schemas import BroadcastPayload, PubSubMessage, ChatMessage
 
 logger = logging.getLogger(__name__)
 
@@ -25,9 +25,11 @@ class RedisListener:
         self._connection_service = get_connection_service()
         self._room_service = get_room_service()
         self._redis_service = get_redis_service()
+        self._chat_service = get_chat_service()
 
         self._handler_map = {
             "game_update": self.handle_game_update,
+            "chat_message": self.handle_chat_message,
         }
 
     async def listen(self):
@@ -83,6 +85,35 @@ class RedisListener:
             await self._room_service.send_game_state(
                 room_id=room_id, game_state=game_state
             )
+
+    async def handle_chat_message(self, payload: BroadcastPayload):
+        """Chat message handler, sends chat message to users in user list.
+
+        Args:
+            payload (BroadcastPayload): Payload of list of users to send to and message to send.
+        """
+        # Validation
+        if not payload:
+            raise ValueError("Payload missing on sending chat message")
+        if not payload.user_list:
+            raise ValueError("User list missing on sending chat message")
+        message_data = payload.message
+        if not message_data:
+            raise ValueError("Message missing on sending chat message")
+        if message_data.get("sender") is None:
+            raise ValueError("Sender missing on sending chat message")
+        if message_data.get("message") is None:
+            raise ValueError("Message content missing on sending chat message")
+        if message_data.get("timestamp") is None:
+            raise ValueError("Timestamp missing on sending chat message")
+
+        # Broadcast chat message to all users in the user list
+        active_user_list = self._connection_service.get_active_users_from_list(
+            list(payload.user_list)
+        )
+        await self._connection_service.broadcast(payload=BroadcastPayload(
+            user_list=set(active_user_list), message=message_data
+        ))
 
     async def handle_default(self, payload: BroadcastPayload):
         """Default handler, sends payload to all users in user list.
