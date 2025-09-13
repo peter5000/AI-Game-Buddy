@@ -617,7 +617,7 @@ class RoomService:
         return room_list
 
     async def check_user_in_room(self, user_id: str, room_id: str) -> bool:
-        """Check if user is in a room.
+        """Check if user is in the room.
 
         Args:
             room_id (str): The room ID of the room to check.
