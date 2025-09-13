@@ -77,12 +77,7 @@ class RedisListener:
         Args:
             payload (BroadcastPayload): Payload of list of users to send to and message to send.
         """
-        room_id = payload.message.get("room_id")
-        game_state = payload.message.get("game_state")
-        if room_id is not None:
-            await self._room_service.send_game_state(
-                room_id=room_id, game_state=game_state
-            )
+        await self._connection_service.broadcast(payload)
 
     async def handle_default(self, payload: BroadcastPayload):
         """Default handler, sends payload to all users in user list.
