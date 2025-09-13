@@ -63,9 +63,13 @@ class ChatMessage(BaseModel):
     timestamp: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
 
 
+class Entity(BaseModel):
+    id: str  # entity id
+    type: str  # e.g., "user", "bot"
+
+
 class ChatRoom(BaseModel):
-    id: str
+    id: str  # chat id
     room_id: str
-    chat_id: str
-    entities: Set[str]
+    entities: Set[Entity]
     chat_log: List[ChatMessage] = Field(default_factory=list)
