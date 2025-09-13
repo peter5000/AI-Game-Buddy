@@ -159,6 +159,8 @@ class RoomService:
             await self._redis_service.set_value(
                 key=f"user:{user_id}:room", value=room_id
             )
+            await self._redis_service.expire(f"room:{room_id}:users", 86400)
+            await self._redis_service.expire(f"user:{user_id}:room", 86400)
         except HTTPException as e:
             logger.warning(f"Redis unavailable for joining room: {e}")
 
@@ -316,6 +318,9 @@ class RoomService:
                         key=f"room:{room_id}:state",
                         value=json.dumps(room_object.game_state),
                     )
+                    await self._redis_service.expire(f"room:{room_id}", 86400)
+                    await self._redis_service.expire(f"room:{room_id}:users", 86400)
+                    await self._redis_service.expire(f"room:{room_id}:state", 86400)
                 except HTTPException as e:
                     logger.warning(f"Redis unavailable for writing new room: {e}")
 
@@ -445,6 +450,7 @@ class RoomService:
                     await self._redis_service.set_value(
                         key=f"room:{room_id}:state", value=json.dumps(game_state)
                     )
+                    await self._redis_service.expire(f"room:{room_id}:state", 86400)
                 except HTTPException as e:
                     logger.warning(f"Redis unavailable for setting game state: {e}")
 
@@ -548,6 +554,7 @@ class RoomService:
                     await self._redis_service.set_value(
                         key=f"user:{user_id}:room", value=room_id
                     )
+                    await self._redis_service.expire(f"user:{user_id}:room", 86400)
                 except HTTPException as e:
                     logger.warning(f"Redis unavailable for setting user room: {e}")
 
@@ -594,6 +601,7 @@ class RoomService:
                     await self._redis_service.set_add(
                         key=f"room:{room_id}:users", values=user_list
                     )
+                    await self._redis_service.expire(f"room:{room_id}:users", 86400)
                 except HTTPException as e:
                     logger.warning(f"Redis unavailable for setting user list: {e}")
 
