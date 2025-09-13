@@ -14,6 +14,8 @@ type ChessGameProps = {
 };
 
 const ChessGame: React.FC<ChessGameProps> = ({ fen = "start", onMove }) => {
+    // TODO: Have a set color for component
+    // user can only move their color ["w", "b", "none"] (none for spectators)
     const [game] = useState(() => new Chess(fen));
     const [boardPosition, setBoardPosition] = useState(fen);
     const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
@@ -46,7 +48,7 @@ const ChessGame: React.FC<ChessGameProps> = ({ fen = "start", onMove }) => {
         setHighlightedSquares(newHighlights);
         return true;
     };
-
+    // TODO: Make highlight and select none if user makes illegal move
     const handlePieceDrop = ({
         sourceSquare,
         targetSquare,
@@ -121,29 +123,23 @@ const ChessGame: React.FC<ChessGameProps> = ({ fen = "start", onMove }) => {
         }
     };
 
-    const handlePieceDrag = ({
-        piece,
-        square,
-        isSparePiece,
-    }: PieceHandlerArgs) => {
-        if (isSparePiece) return false; // ignore spare pieces
+    const handleCanDragPiece = ({ piece }: PieceHandlerArgs) => {
+        return piece.pieceType[0] === game.turn() ? true : false;
+    };
 
-        if (piece && square) {
-            const color = piece.pieceType[0] as "w" | "b";
-            if (color !== game.turn()) {
-                // Wrong color: cancel interaction immediately
-                setSelectedSquare(null);
-                setHighlightedSquares({});
-                setBoardPosition(game.fen());
-                return;
-            }
+    const handlePieceDrag = ({ square, isSparePiece }: PieceHandlerArgs) => {
+        if (isSparePiece) return; // ignore if dragging from spare pieces
 
-            // Right color: highlight immediately
-            setHighlightedSquares({});
-            setSelectedSquare(null);
-            highlightPieceAndMoves(square, color);
+        // Clear old highlights
+        setHighlightedSquares({});
+        setSelectedSquare(null);
+
+        // Verify piece belongs to current turn
+        const boardPiece = game.get(square as Square);
+        if (!boardPiece || boardPiece.color !== game.turn()) return;
+        if (square) {
+            highlightPieceAndMoves(square, boardPiece.color);
         }
-        return false;
     };
 
     return (
@@ -151,9 +147,10 @@ const ChessGame: React.FC<ChessGameProps> = ({ fen = "start", onMove }) => {
             <Chessboard
                 options={{
                     position: boardPosition,
-                    onPieceDrop: handlePieceDrop,
                     onSquareClick: handleSquareClick,
+                    canDragPiece: handleCanDragPiece,
                     onPieceDrag: handlePieceDrag,
+                    onPieceDrop: handlePieceDrop,
                     boardOrientation: "white",
                     darkSquareStyle: { backgroundColor: "#779556" },
                     lightSquareStyle: { backgroundColor: "#eeeed2" },
