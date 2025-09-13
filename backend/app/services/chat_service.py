@@ -487,7 +487,7 @@ class ChatService:
         if not message:
             raise ValueError("Message missing on adding message")
 
-        chat_message = ChatMessage(user_id=user_id, message=message)
+        chat_message = ChatMessage(sender=user_id, message=message)
 
         chat = await self.get_chat(chat_id=chat_id)
         if chat is None:
@@ -499,8 +499,10 @@ class ChatService:
 
         chat.chat_log.append(chat_message)
         try:
+            # Convert chat_log to a list of dictionaries for JSON serialization
+            chat_log_dict = [message.model_dump() for message in chat.chat_log]
             await self._redis_service.set_value(
-                key=f"chatroom:{chat_id}:log", value=json.dumps(chat.chat_log)
+                key=f"chatroom:{chat_id}:log", value=json.dumps(chat_log_dict, default=str)
             )
             await self._redis_service.expire(f"chatroom:{chat_id}:log", 86400)
         except HTTPException as e:
