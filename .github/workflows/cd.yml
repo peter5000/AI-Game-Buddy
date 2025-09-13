@@ -3,14 +3,15 @@ on:
   workflow_run:
     # Wait for CI Checks to complete before running
     workflows: ["CI Checks"]
+    branches: [main]
     types:
       - completed
 
 jobs:
   # Build Docker image and push to ACR
-  build:
+  build-backend:
     # Needs to have CI Checks succeed and be on main branch
-    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
@@ -46,9 +47,62 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
+  # Build and deploy frontend to Azure Static Web Apps
+  build-and-deploy-frontend:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    name: Build and Deploy Frontend
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          lfs: false
+
+      # Setup Node.js with caching
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      # Cache node_modules for faster builds
+      - name: Cache node modules
+        uses: actions/cache@v4
+        with:
+          path: frontend/node_modules
+          key: ${{ runner.os }}-node-${{ hashFiles('frontend/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
+
+      # Install dependencies
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      # Build frontend with env vars baked in
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: https://myaigamingfriendcontainerjj.bravebay-621a33e9.westus3.azurecontainerapps.io
+          NEXT_PUBLIC_WEBSOCKET_URL: wss://myaigamingfriendcontainerjj.bravebay-621a33e9.westus3.azurecontainerapps.io/ws
+          NODE_ENV: production
+
+      # Deploy prebuilt app to Azure Static Web Apps
+      - name: Deploy to Azure SWA
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_THANKFUL_BAY_09EC9CF1E }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: "upload"
+          app_location: "/frontend"
+          output_location: ".next"
+          skip_app_build: true
+
   # Deploy built image from ACR to Azure Container App
-  deploy:
-    needs: build
+  deploy-backend:
+    needs: build-backend
     runs-on: ubuntu-latest
     steps:
       - name: Log in to Azure
