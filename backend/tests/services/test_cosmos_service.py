@@ -47,30 +47,10 @@ def mock_cosmos_client(mock_db_client: MagicMock) -> MagicMock:
 
 
 class TestCosmosServiceInitialization:
-    def test_init_with_connection_string(self, mocker, mock_cosmos_client, monkeypatch):
-        # ARRANGE
-        monkeypatch.setattr(
-            cosmos_service.settings, "COSMOS_CONNECTION_STRING", "test_conn_str"
-        )
-        monkeypatch.setattr(cosmos_service.settings, "COSMOS_ENDPOINT", None)
-        # Patch the class directly using mocker
-        mocker.patch(
-            "app.services.cosmos_service.CosmosClient.from_connection_string",
-            return_value=mock_cosmos_client,
-        )
-
-        # ACT
-        service = cosmos_service.CosmosService()
-
-        # ASSERT
-        assert service.client is not None
-        service.client.get_database_client.assert_called_once()
-
     def test_init_with_endpoint_and_credential(
         self, mocker, mock_cosmos_client, monkeypatch
     ):
         # ARRANGE
-        monkeypatch.setattr(cosmos_service.settings, "COSMOS_CONNECTION_STRING", None)
         monkeypatch.setattr(cosmos_service.settings, "COSMOS_ENDPOINT", "test_endpoint")
         # Patch the credential and client classes
         mocker.patch("app.services.cosmos_service.DefaultAzureCredential")
@@ -87,7 +67,6 @@ class TestCosmosServiceInitialization:
         service.client.get_database_client.assert_called_once()
 
     def test_init_no_config_raises_error(self, monkeypatch):
-        monkeypatch.setattr(cosmos_service.settings, "COSMOS_CONNECTION_STRING", None)
         monkeypatch.setattr(cosmos_service.settings, "COSMOS_ENDPOINT", None)
         with pytest.raises(ValueError, match="Database configuration missing"):
             cosmos_service.CosmosService()
@@ -103,13 +82,12 @@ class TestCosmosServiceMethods:
         This fixture bypasses the real __init__ and injects our mocks directly,
         providing a clean service instance for each test.
         """
-        monkeypatch.setattr(
-            cosmos_service.settings, "COSMOS_CONNECTION_STRING", "test_conn_str"
-        )
-        # Use mocker to patch the class method that's called during init
+        # ARRANGE
+        monkeypatch.setattr(cosmos_service.settings, "COSMOS_ENDPOINT", "test_endpoint")
+        # Patch the credential and client classes
+        mocker.patch("app.services.cosmos_service.DefaultAzureCredential")
         mocker.patch(
-            "app.services.cosmos_service.CosmosClient.from_connection_string",
-            return_value=mock_cosmos_client,
+            "app.services.cosmos_service.CosmosClient", return_value=mock_cosmos_client
         )
 
         self.service = cosmos_service.CosmosService()
