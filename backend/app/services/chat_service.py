@@ -54,7 +54,9 @@ class ChatService:
         )
 
         cosmos_chat_room = chat_room.model_dump(mode="json")
-        redis_chat_room = chat_room.model_dump(exclude={"users", "chat_log", "bots"}, mode="json")
+        redis_chat_room = chat_room.model_dump(
+            exclude={"users", "chat_log", "bots"}, mode="json"
+        )
 
         try:
             # Write new chat room into redis
@@ -73,7 +75,9 @@ class ChatService:
             )
             await self._redis_service.expire(f"chatroom:{chat_id}:bots", 86400)
 
-            await self._redis_service.set_value(key=f"chatroom:{chat_id}:log", value=chat_room.chat_log)
+            await self._redis_service.set_value(
+                key=f"chatroom:{chat_id}:log", value=chat_room.chat_log
+            )
             await self._redis_service.expire(f"chatroom:{chat_id}:log", 86400)
 
             # Write user into new chat room
@@ -84,7 +88,9 @@ class ChatService:
             logger.warning(f"Redis unavailable for creating chat room: {e}")
 
         # Write new chat room into cosmos
-        await self._cosmos_service.add_item(item=cosmos_chat_room, container_type="chats")
+        await self._cosmos_service.add_item(
+            item=cosmos_chat_room, container_type="chats"
+        )
 
         # Add current chat room to user information.
         # User can only be in one chat at a time for now
@@ -205,7 +211,8 @@ class ChatService:
             else:
                 logger.warning(f"User list not found in cosmos for chat '{chat_id}'")
                 raise HTTPException(
-                    status_code=404, detail=f"User '{user_id}' not found in chat '{chat_id}'"
+                    status_code=404,
+                    detail=f"User '{user_id}' not found in chat '{chat_id}'",
                 )
         except ValueError:
             logger.warning(f"Tag '{chat_id}' not found in the list, no changes made.")
@@ -226,9 +233,7 @@ class ChatService:
             chat_data = await self._redis_service.dict_get_all(key=f"chat:{chat_id}")
             user_set = await self._redis_service.set_get(key=f"chat:{chat_id}:users")
             bot_set = await self._redis_service.set_get(key=f"chat:{chat_id}:bots")
-            chat_log = await self._redis_service.get_value(
-                key=f"chat:{chat_id}:log"
-            )
+            chat_log = await self._redis_service.get_value(key=f"chat:{chat_id}:log")
             if chat_data and user_set is not None and chat_log is not None:
                 # Combine the data into a single dictionary
                 full_chat_data = chat_data | {
@@ -294,7 +299,9 @@ class ChatService:
             raise ValueError("Chat ID missing on getting chat log")
 
         try:
-            chat_log = await self._redis_service.get_value(key=f"chatroom:{chat_id}:log")
+            chat_log = await self._redis_service.get_value(
+                key=f"chatroom:{chat_id}:log"
+            )
             if chat_log:
                 return [ChatMessage.model_validate(msg) for msg in json.loads(chat_log)]
         except HTTPException as e:
@@ -306,7 +313,9 @@ class ChatService:
         )
 
         if chat_data:
-            return [ChatMessage.model_validate(msg) for msg in chat_data.get("chat_log", [])]
+            return [
+                ChatMessage.model_validate(msg) for msg in chat_data.get("chat_log", [])
+            ]
 
         logger.warning(f"Chat log for '{chat_id}' not found in any data source.")
         return None
@@ -354,7 +363,9 @@ class ChatService:
         if not user_id:
             raise ValueError("User ID cannot be empty")
         try:
-            chat_id = await self._redis_service.get_value(key=f"user:{user_id}:chatroom")
+            chat_id = await self._redis_service.get_value(
+                key=f"user:{user_id}:chatroom"
+            )
         except HTTPException as e:
             logger.warning(f"Redis unavailable for getting user chatroom: {e}")
 
@@ -402,7 +413,9 @@ class ChatService:
         if not chat_id:
             raise ValueError("Chat ID missing on getting user list")
         try:
-            user_list = await self._redis_service.set_get(key=f"chatroom:{chat_id}:users")
+            user_list = await self._redis_service.set_get(
+                key=f"chatroom:{chat_id}:users"
+            )
         except HTTPException as e:
             logger.warning(f"Redis unavailable for getting user list: {e}")
 
@@ -492,6 +505,5 @@ class ChatService:
             await self._redis_service.expire(f"chatroom:{chat_id}:log", 86400)
         except HTTPException as e:
             logger.warning(f"Redis unavailable for adding message to chat: {e}")
-
 
         return chat_message

@@ -7,8 +7,13 @@ and dispatches incoming messages to appropriate handlers for real-time game and 
 import asyncio
 import logging
 
-from app.dependencies import get_chat_service, get_connection_service, get_redis_service, get_room_service
-from app.schemas import BroadcastPayload, PubSubMessage, ChatMessage
+from app.dependencies import (
+    get_chat_service,
+    get_connection_service,
+    get_redis_service,
+    get_room_service,
+)
+from app.schemas import BroadcastPayload, PubSubMessage
 
 logger = logging.getLogger(__name__)
 
@@ -111,9 +116,11 @@ class RedisListener:
         active_user_list = self._connection_service.get_active_users_from_list(
             list(payload.user_list)
         )
-        await self._connection_service.broadcast(payload=BroadcastPayload(
-            user_list=set(active_user_list), message=message_data
-        ))
+        await self._connection_service.broadcast(
+            payload=BroadcastPayload(
+                user_list=set(active_user_list), message=message_data
+            )
+        )
 
     async def handle_default(self, payload: BroadcastPayload):
         """Default handler, sends payload to all users in user list.

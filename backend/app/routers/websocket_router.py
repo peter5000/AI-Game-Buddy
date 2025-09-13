@@ -15,10 +15,10 @@ from starlette.endpoints import WebSocketEndpoint
 
 from app import auth
 from app.dependencies import (
+    get_chat_service,
     get_connection_service,
     get_game_service_factory,
     get_room_service,
-    get_chat_service,
 )
 from app.schemas import GameUpdate
 from app.services.connection_service import ConnectionService
@@ -259,7 +259,9 @@ class ConnectionEndpoint(WebSocketEndpoint):
 
         if chat_id and sender and message:
             # Verify chat exists and user is in chat
-            await self.chat_service.check_user_in_chat(user_id=self.user_id, chat_id=chat_id)
+            await self.chat_service.check_user_in_chat(
+                user_id=self.user_id, chat_id=chat_id
+            )
 
             # Send chat message to chat service
             chat_message = await self.chat_service.add_message_to_chat(

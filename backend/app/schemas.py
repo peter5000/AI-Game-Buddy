@@ -1,5 +1,5 @@
 import datetime
-from typing import Any, Set, List
+from typing import Any
 
 from pydantic import BaseModel, EmailStr, Field, SecretStr
 
@@ -60,12 +60,14 @@ class GameUpdate(BaseModel):
 class ChatMessage(BaseModel):
     sender: str
     message: str
-    timestamp: datetime.datetime = Field(default_factory=lambda: datetime.datetime.now(datetime.timezone.utc))
+    timestamp: datetime.datetime = Field(
+        default_factory=lambda: datetime.datetime.now(datetime.timezone.utc)
+    )
 
 
 class ChatRoom(BaseModel):
     id: str  # chat id
     room_id: str
-    users: Set[str] = Field(default_factory=set)
-    bots: Set[str] = Field(default_factory=set)
-    chat_log: List[ChatMessage] = Field(default_factory=list)
+    users: set[str] = Field(default_factory=set)
+    bots: set[str] = Field(default_factory=set)
+    chat_log: list[ChatMessage] = Field(default_factory=list)
