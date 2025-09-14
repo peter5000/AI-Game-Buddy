@@ -494,7 +494,6 @@ class ChatService:
         except HTTPException as e:
             logger.warning(f"Redis unavailable for check user in chat: {e}")
 
-
         return chat == chat_id
 
     async def add_message_to_chat(
@@ -522,7 +521,8 @@ class ChatService:
             # Convert chat_log to a list of dictionaries for JSON serialization
             chat_log_dict = [message.model_dump() for message in chat.chat_log]
             await self._redis_service.set_value(
-                key=f"chatroom:{chat_id}:log", value=json.dumps(chat_log_dict, default=str)
+                key=f"chatroom:{chat_id}:log",
+                value=json.dumps(chat_log_dict, default=str),
             )
             await self._redis_service.expire(f"chatroom:{chat_id}:log", 86400)
         except HTTPException as e:

@@ -168,7 +168,9 @@ class TestGetChatLog:
         self, chat_service, mock_redis_service, mock_cosmos_service
     ):
         # ARRANGE: Simulate a cache hit.
-        mock_redis_service.get_value.return_value = '[{"sender": "user1", "message": "hello"}]'
+        mock_redis_service.get_value.return_value = (
+            '[{"sender": "user1", "message": "hello"}]'
+        )
 
         # ACT
         chat_log = await chat_service.get_chat_log(TEST_CHAT_ID)
@@ -185,9 +187,7 @@ class TestGetChatLog:
     ):
         # ARRANGE: Simulate a cache miss and a database hit.
         mock_redis_service.get_value.return_value = None
-        db_data = {
-            "chat_log": [{"sender": "user1", "message": "hello from db"}]
-        }
+        db_data = {"chat_log": [{"sender": "user1", "message": "hello from db"}]}
         mock_cosmos_service.get_item.return_value = db_data
 
         # ACT
@@ -206,6 +206,7 @@ class TestAddMessageToChat:
     async def test_add_message_to_chat_success(self, chat_service, mock_redis_service):
         # ARRANGE
         from app.schemas import ChatRoom
+
         chat_service.get_chat = AsyncMock(
             return_value=ChatRoom(
                 id=TEST_CHAT_ID,
@@ -230,6 +231,7 @@ class TestAddMessageToChat:
     async def test_add_message_to_chat_fails_if_user_not_in_chat(self, chat_service):
         # ARRANGE
         from app.schemas import ChatRoom
+
         chat_service.get_chat = AsyncMock(
             return_value=ChatRoom(
                 id=TEST_CHAT_ID,
@@ -242,9 +244,7 @@ class TestAddMessageToChat:
 
         # ACT & ASSERT
         with pytest.raises(HTTPException) as exc_info:
-            await chat_service.add_message_to_chat(
-                TEST_CHAT_ID, TEST_USER_ID, message
-            )
+            await chat_service.add_message_to_chat(TEST_CHAT_ID, TEST_USER_ID, message)
 
         assert exc_info.value.status_code == 403
 
@@ -252,9 +252,12 @@ class TestAddMessageToChat:
 ## Tests for leave_chat
 class TestLeaveChat:
     @pytest.mark.asyncio
-    async def test_leave_chat_success(self, chat_service, mock_redis_service, mock_cosmos_service):
+    async def test_leave_chat_success(
+        self, chat_service, mock_redis_service, mock_cosmos_service
+    ):
         # ARRANGE
         from app.schemas import ChatRoom
+
         chat_service.get_chat = AsyncMock(
             return_value=ChatRoom(
                 id=TEST_CHAT_ID,
@@ -263,7 +266,9 @@ class TestLeaveChat:
                 chat_log=[],
             )
         )
-        mock_cosmos_service.get_item.return_value = {"users": [TEST_USER_ID, "another-user"]}
+        mock_cosmos_service.get_item.return_value = {
+            "users": [TEST_USER_ID, "another-user"]
+        }
 
         # ACT
         await chat_service.leave_chat(TEST_CHAT_ID, TEST_USER_ID)
@@ -271,12 +276,15 @@ class TestLeaveChat:
         # ASSERT
         mock_redis_service.set_remove.assert_awaited_once()
         mock_redis_service.delete_keys.assert_awaited_once()
-        assert mock_cosmos_service.patch_item.call_count == 2 # once for chat, once for user
+        assert (
+            mock_cosmos_service.patch_item.call_count == 2
+        )  # once for chat, once for user
 
     @pytest.mark.asyncio
     async def test_leave_chat_deletes_chat_if_last_user(self, chat_service):
         # ARRANGE
         from app.schemas import ChatRoom
+
         chat_service.get_chat = AsyncMock(
             return_value=ChatRoom(
                 id=TEST_CHAT_ID,
@@ -297,10 +305,14 @@ class TestLeaveChat:
 ## Tests for delete_chat
 class TestDeleteChat:
     @pytest.mark.asyncio
-    async def test_delete_chat_success(self, chat_service, mock_redis_service, mock_cosmos_service):
+    async def test_delete_chat_success(
+        self, chat_service, mock_redis_service, mock_cosmos_service
+    ):
         # ARRANGE
         chat_service.get_user_list = AsyncMock(return_value=[TEST_USER_ID])
-        mock_redis_service.scan_keys.return_value = [f"chatroom:{TEST_CHAT_ID}:extra_key"]
+        mock_redis_service.scan_keys.return_value = [
+            f"chatroom:{TEST_CHAT_ID}:extra_key"
+        ]
 
         # ACT
         await chat_service.delete_chat(TEST_CHAT_ID)
@@ -309,13 +321,15 @@ class TestDeleteChat:
         mock_redis_service.scan_keys.assert_awaited_once()
         mock_redis_service.delete_keys.assert_awaited_once()
         mock_cosmos_service.delete_item.assert_awaited_once()
-        mock_cosmos_service.patch_item.assert_awaited_once() # for the user
+        mock_cosmos_service.patch_item.assert_awaited_once()  # for the user
 
 
 ## Tests for get_user_chatroom
 class TestGetUserChatroom:
     @pytest.mark.asyncio
-    async def test_get_user_chatroom_from_cache(self, chat_service, mock_redis_service, mock_cosmos_service):
+    async def test_get_user_chatroom_from_cache(
+        self, chat_service, mock_redis_service, mock_cosmos_service
+    ):
         # ARRANGE
         mock_redis_service.get_value.return_value = TEST_CHAT_ID
 
@@ -327,7 +341,9 @@ class TestGetUserChatroom:
         mock_cosmos_service.get_item.assert_not_awaited()
 
     @pytest.mark.asyncio
-    async def test_get_user_chatroom_from_db(self, chat_service, mock_redis_service, mock_cosmos_service):
+    async def test_get_user_chatroom_from_db(
+        self, chat_service, mock_redis_service, mock_cosmos_service
+    ):
         # ARRANGE
         mock_redis_service.get_value.return_value = None
         mock_cosmos_service.get_item.return_value = {"chatroom": TEST_CHAT_ID}
@@ -337,13 +353,17 @@ class TestGetUserChatroom:
 
         # ASSERT
         assert chat_id == TEST_CHAT_ID
-        mock_redis_service.set_value.assert_awaited_once_with(key=f"user:{TEST_USER_ID}:chatroom", value=TEST_CHAT_ID)
+        mock_redis_service.set_value.assert_awaited_once_with(
+            key=f"user:{TEST_USER_ID}:chatroom", value=TEST_CHAT_ID
+        )
 
 
 ## Tests for get_user_list
 class TestGetUserList:
     @pytest.mark.asyncio
-    async def test_get_user_list_from_cache(self, chat_service, mock_redis_service, mock_cosmos_service):
+    async def test_get_user_list_from_cache(
+        self, chat_service, mock_redis_service, mock_cosmos_service
+    ):
         # ARRANGE
         mock_redis_service.set_get.return_value = {TEST_USER_ID}
 
@@ -355,7 +375,9 @@ class TestGetUserList:
         mock_cosmos_service.get_item.assert_not_awaited()
 
     @pytest.mark.asyncio
-    async def test_get_user_list_from_db(self, chat_service, mock_redis_service, mock_cosmos_service):
+    async def test_get_user_list_from_db(
+        self, chat_service, mock_redis_service, mock_cosmos_service
+    ):
         # ARRANGE
         mock_redis_service.set_get.return_value = None
         mock_cosmos_service.get_item.return_value = {"users": [TEST_USER_ID]}
@@ -365,7 +387,9 @@ class TestGetUserList:
 
         # ASSERT
         assert user_list == [TEST_USER_ID]
-        mock_redis_service.set_add.assert_awaited_once_with(key=f"chatroom:{TEST_CHAT_ID}:users", values=[TEST_USER_ID])
+        mock_redis_service.set_add.assert_awaited_once_with(
+            key=f"chatroom:{TEST_CHAT_ID}:users", values=[TEST_USER_ID]
+        )
 
 
 ## Tests for get_all_chats
