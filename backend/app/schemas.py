@@ -67,7 +67,7 @@ class ChatMessage(BaseModel):
 
 class ChatRoom(BaseModel):
     id: str  # chat id
-    room_id: str
+    room_id: str | None = None
     users: set[str] = Field(default_factory=set)
     bots: set[str] = Field(default_factory=set)
     chat_log: list[ChatMessage] = Field(default_factory=list)
