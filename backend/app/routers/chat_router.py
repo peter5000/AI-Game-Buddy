@@ -153,29 +153,3 @@ async def get_chat_log(
 
     return {"message": "success", "chat_log": chat_log}
 
-
-@router.post("/send")
-async def send_message(
-    message: str,
-    user_id: str = Depends(auth.get_user_id_http),
-    chat_service: ChatService = Depends(get_chat_service),
-):
-    try:
-        chat_id = await chat_service.get_user_chatroom(user_id=user_id)
-        if not chat_id:
-            return {"message": "User not in a chat room"}
-
-        chat_message = await chat_service.add_message_to_chat(
-            chat_id=chat_id, user_id=user_id, message=message
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
-    except HTTPException as e:
-        raise e
-    except Exception as e:
-        logger.error(f"An unexpected error occurred in send_message: {e}")
-        raise HTTPException(
-            status_code=500, detail="An internal error occurred."
-        ) from e
-
-    return {"message": "Message sent successfully", "chat_message": chat_message}

@@ -274,54 +274,6 @@
 			"response": []
 		},
 		{
-			"name": "Send Message 1",
-			"request": {
-				"method": "POST",
-				"header": [],
-				"url": {
-					"raw": "{{baseURL}}/chat/send?message=Hello",
-					"host": [
-						"{{baseURL}}"
-					],
-					"path": [
-						"chat",
-						"send"
-					],
-					"query": [
-						{
-							"key": "message",
-							"value": "Hello"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Send Message 2",
-			"request": {
-				"method": "POST",
-				"header": [],
-				"url": {
-					"raw": "{{baseURL}}/chat/send?message=How are you?",
-					"host": [
-						"{{baseURL}}"
-					],
-					"path": [
-						"chat",
-						"send"
-					],
-					"query": [
-						{
-							"key": "message",
-							"value": "How are you?"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
 			"name": "Get Chat Log",
 			"event": [
 				{
