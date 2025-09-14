@@ -14,12 +14,12 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"const requestBodyString = pm.request.body.raw;\r",
-							"const requestBody = JSON.parse(requestBodyString);\r",
-							"\r",
-							"pm.environment.set(\"savedUsername\", requestBody.username);\r",
-							"pm.environment.set(\"savedEmail\", requestBody.email);\r",
-							"pm.environment.set(\"savedPassword\", requestBody.password);\r",
+							"const requestBodyString = pm.request.body.raw;",
+							"const requestBody = JSON.parse(requestBodyString);",
+							"",
+							"pm.environment.set(\"savedUsername\", requestBody.username);",
+							"pm.environment.set(\"savedEmail\", requestBody.email);",
+							"pm.environment.set(\"savedPassword\", requestBody.password);",
 							""
 						],
 						"type": "text/javascript",
@@ -69,19 +69,19 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"if (pm.cookies.has('access_token')) {\r",
-							"\r",
-							"    // Get the value of the cookie\r",
-							"    const jwtToken = pm.cookies.get('access_token');\r",
-							"\r",
-							"    // Save the token to an environment variable\r",
-							"    pm.environment.set('access_token', jwtToken);\r",
-							"\r",
-							"    console.log(\"✅ JWT Token saved to environment.\");\r",
-							"\r",
-							"} else {\r",
-							"    console.error(\"🚨 Could not find the specified JWT cookie!\");\r",
-							"}\r",
+							"if (pm.cookies.has('access_token')) {",
+							"",
+							"    // Get the value of the cookie",
+							"    const jwtToken = pm.cookies.get('access_token');",
+							"",
+							"    // Save the token to an environment variable",
+							"    pm.environment.set('access_token', jwtToken);",
+							"",
+							"    console.log(\"✅ JWT Token saved to environment.\");",
+							"",
+							"} else {",
+							"    console.error(\"🚨 Could not find the specified JWT cookie!\");",
+							"}",
 							""
 						],
 						"type": "text/javascript",
@@ -140,18 +140,18 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"if (pm.cookies.has('access_token')) {\r",
-							"\r",
-							"    // Get the value of the cookie\r",
-							"    const jwtToken = pm.cookies.get('access_token');\r",
-							"\r",
-							"    // Save the token to an environment variable\r",
-							"    pm.environment.set('access_token', jwtToken);\r",
-							"\r",
-							"    console.log(\"✅ JWT Token saved to environment.\");\r",
-							"\r",
-							"} else {\r",
-							"    console.error(\"🚨 Could not find the specified JWT cookie!\");\r",
+							"if (pm.cookies.has('access_token')) {",
+							"",
+							"    // Get the value of the cookie",
+							"    const jwtToken = pm.cookies.get('access_token');",
+							"",
+							"    // Save the token to an environment variable",
+							"    pm.environment.set('access_token', jwtToken);",
+							"",
+							"    console.log(\"✅ JWT Token saved to environment.\");",
+							"",
+							"} else {",
+							"    console.error(\"🚨 Could not find the specified JWT cookie!\");",
 							"}"
 						],
 						"type": "text/javascript",
@@ -182,9 +182,9 @@
 					"listen": "test",
 					"script": {
 						"exec": [
-							"const responseBody = pm.response.json()\r",
-							"\r",
-							"pm.environment.set(\"roomId\", responseBody.room_id.room_id);\r",
+							"const responseBody = pm.response.json()",
+							"",
+							"pm.environment.set(\"roomId\", responseBody.room_id.room_id);",
 							""
 						],
 						"type": "text/javascript",
@@ -213,6 +213,145 @@
 							"key": "game_type",
 							"value": "chess"
 						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Chat Room",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"const responseBody = pm.response.json();",
+							"pm.environment.set(\"chatId\", responseBody.chat_room.id);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/chat/create?room_id={{roomId}}",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"chat",
+						"create"
+					],
+					"query": [
+						{
+							"key": "room_id",
+							"value": "{{roomId}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Chat Room",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/chat/get",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"chat",
+						"get"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Send Message 1",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/chat/send?message=Hello",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"chat",
+						"send"
+					],
+					"query": [
+						{
+							"key": "message",
+							"value": "Hello"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Send Message 2",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/chat/send?message=How are you?",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"chat",
+						"send"
+					],
+					"query": [
+						{
+							"key": "message",
+							"value": "How are you?"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get Chat Log",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Chat log should contain the sent messages\", function () {",
+							"    const responseBody = pm.response.json();",
+							"    pm.expect(responseBody.chat_log.length).to.be.gte(2);",
+							"    const messages = responseBody.chat_log.map(item => item.message);",
+							"    pm.expect(messages).to.include(\"Hello\");",
+							"    pm.expect(messages).to.include(\"How are you?\");",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/chat/log",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"chat",
+						"log"
 					]
 				}
 			},
@@ -285,6 +424,24 @@
 					"path": [
 						"rooms",
 						"end_game"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Delete Chat Room",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/chat/delete",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"chat",
+						"delete"
 					]
 				}
 			},
