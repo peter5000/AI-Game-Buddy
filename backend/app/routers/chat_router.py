@@ -10,15 +10,15 @@ router = APIRouter(prefix="/chat", tags=["Chat"])
 logger = logging.getLogger(__name__)
 
 
+# Create a chat room independent of game room
 @router.post("/create", status_code=201)
 async def create_chat_room(
-    room_id: str,
     user_id: str = Depends(auth.get_user_id_http),
     chat_service: ChatService = Depends(get_chat_service),
 ):
     try:
         chat_room = await chat_service.create_chat_room(
-            room_id=room_id, user_id=user_id
+            user_id=user_id
         )
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e

@@ -30,12 +30,9 @@ class ChatService:
         self._redis_service = redis_service
         self._connection_service = connection_service
 
-    async def create_chat_room(self, user_id: str, room_id: str) -> ChatRoom:
+    async def create_chat_room(self, user_id: str, room_id: str | None = None) -> ChatRoom:
         if not user_id:
             raise ValueError("User ID missing on room creation")
-        # Chat rooms are bounded to a room, but subject to change on DM implementation
-        if not room_id:
-            raise ValueError("Room ID missing on room creation")
 
         # Currently user can only be in one chat room at a time
         if await self.get_user_chatroom(user_id=user_id):
@@ -46,7 +43,6 @@ class ChatService:
             )
 
         chat_id = str(uuid.uuid4())
-
         chat_room = ChatRoom(
             id=chat_id,
             room_id=room_id,
