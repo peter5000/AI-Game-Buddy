@@ -606,4 +606,19 @@ class RoomService:
             raise ValueError("User ID missing on checking room")
 
         room = await self._redis_service.get_value(key=f"user:{user_id}:room")
-        return room == room_id
+        if room:
+            return room == room_id
+
+        user_data = await self._cosmos_service.get_item(
+            item_id=user_id, partition_key=user_id, container_type="users"
+        )
+        if user_data:
+            room = user_data.get("room")
+            if room:
+                await self._redis_service.set_value(
+                    key=f"user:{user_id}:room", value=room
+                )
+                await self._redis_service.expire(key=f"user:{user_id}:room", time=86400)
+                return room == room_id
+
+        return False
