@@ -484,10 +484,23 @@ class ChatService:
             chat = await self._redis_service.get_value(key=f"user:{user_id}:chat")
             if chat:
                 await self._redis_service.expire(f"user:{user_id}:chat", 86400)
+                return True
         except HTTPException as e:
             logger.warning(f"Redis unavailable for check user in chat: {e}")
 
-        return chat == chat_id
+        chat_data = await self._cosmos_service.get_item(
+            item_id=chat_id, partition_key=chat_id, container_type="chats"
+        )
+
+        if chat_data is not None:
+
+            user_list = chat_data.get("users")
+            return user_id in user_list
+
+        logger.warning(
+            f"User not found in both redis and cosmos for chat '{chat_id}'"
+        )
+        return False
 
     async def add_message_to_chat(
         self, chat_id: str, user_id: str, message: str
