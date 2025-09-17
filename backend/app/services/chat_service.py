@@ -12,7 +12,6 @@ from typing import Any
 from fastapi import HTTPException
 
 from app.schemas import ChatMessage, ChatRoom
-from app.services.connection_service import ConnectionService
 from app.services.cosmos_service import CosmosService
 from app.services.redis_service import RedisService
 
@@ -24,11 +23,9 @@ class ChatService:
         self,
         cosmos_service: CosmosService,
         redis_service: RedisService,
-        connection_service: ConnectionService,
     ):
         self._cosmos_service = cosmos_service
         self._redis_service = redis_service
-        self._connection_service = connection_service
 
     async def create_chat_room(self, user_id: str, room_id: str | None = None) -> ChatRoom:
         if not user_id:

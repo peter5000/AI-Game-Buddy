@@ -54,5 +54,4 @@ def get_chat_service() -> ChatService:
     return ChatService(
         cosmos_service=get_cosmos_service(),
         redis_service=get_redis_service(),
-        connection_service=get_connection_service(),
     )
