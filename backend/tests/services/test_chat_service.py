@@ -45,50 +45,49 @@ def chat_service(
     return ChatService(
         cosmos_service=mock_cosmos_service,
         redis_service=mock_redis_service,
-        connection_service=mock_connection_service,
     )
 
 
 # --- Test Cases for each method ---
 
 
-## Tests for create_chat_room
-class TestCreateChatRoom:
+## Tests for create_chat
+class TestCreateChat:
     @pytest.mark.asyncio
-    async def test_create_chat_room_success(
+    async def test_create_chat_success(
         self, chat_service, mock_redis_service, mock_cosmos_service
     ):
         # ARRANGE: Mock that the user is not currently in any chat room.
-        chat_service.get_user_chatroom = AsyncMock(return_value=None)
+        chat_service.get_user_chat = AsyncMock(return_value=None)
 
-        # ACT: Call the create_chat_room method, patching uuid to control the chat_id.
+        # ACT: Call the create_chat method, patching uuid to control the chat_id.
         with patch("uuid.uuid4", return_value=TEST_CHAT_ID):
-            created_chat_room = await chat_service.create_chat_room(
+            created_chat = await chat_service.create_chat(
                 TEST_USER_ID, TEST_ROOM_ID
             )
 
-        # ASSERT: Check that the returned ChatRoom object is correct.
-        assert created_chat_room.id == TEST_CHAT_ID
-        assert created_chat_room.room_id == TEST_ROOM_ID
-        assert TEST_USER_ID in created_chat_room.users
+        # ASSERT: Check that the returned Chat object is correct.
+        assert created_chat.id == TEST_CHAT_ID
+        assert created_chat.room_id == TEST_ROOM_ID
+        assert TEST_USER_ID in created_chat.users
 
         # ASSERT: Verify that data was written to Redis correctly.
         assert mock_redis_service.dict_add.call_count == 1
         assert mock_redis_service.set_add.call_count == 2  # users and bots
-        assert mock_redis_service.set_value.call_count == 2  # log and user's chatroom
+        assert mock_redis_service.set_value.call_count == 2  # log and user's chat
 
         # ASSERT: Verify that data was written to Cosmos correctly.
         mock_cosmos_service.add_item.assert_awaited_once()
         mock_cosmos_service.patch_item.assert_awaited_once()
 
     @pytest.mark.asyncio
-    async def test_create_chat_room_fails_if_user_already_in_room(self, chat_service):
+    async def test_create_chat_fails_if_user_already_in_room(self, chat_service):
         # ARRANGE: Mock that the user is already in a chat room.
-        chat_service.get_user_chatroom = AsyncMock(return_value="existing-chat")
+        chat_service.get_user_chat = AsyncMock(return_value="existing-chat")
 
         # ACT & ASSERT: Expect a 409 Conflict HTTPException.
         with pytest.raises(HTTPException) as exc_info:
-            await chat_service.create_chat_room(TEST_USER_ID, TEST_ROOM_ID)
+            await chat_service.create_chat(TEST_USER_ID, TEST_ROOM_ID)
 
         assert exc_info.value.status_code == 409
 
@@ -205,10 +204,10 @@ class TestAddMessageToChat:
     @pytest.mark.asyncio
     async def test_add_message_to_chat_success(self, chat_service, mock_redis_service):
         # ARRANGE
-        from app.schemas import ChatRoom
+        from app.schemas import Chat
 
         chat_service.get_chat = AsyncMock(
-            return_value=ChatRoom(
+            return_value=Chat(
                 id=TEST_CHAT_ID,
                 room_id=TEST_ROOM_ID,
                 users={TEST_USER_ID},
@@ -230,10 +229,10 @@ class TestAddMessageToChat:
     @pytest.mark.asyncio
     async def test_add_message_to_chat_fails_if_user_not_in_chat(self, chat_service):
         # ARRANGE
-        from app.schemas import ChatRoom
+        from app.schemas import Chat
 
         chat_service.get_chat = AsyncMock(
-            return_value=ChatRoom(
+            return_value=Chat(
                 id=TEST_CHAT_ID,
                 room_id=TEST_ROOM_ID,
                 users={"another-user"},
@@ -256,10 +255,10 @@ class TestLeaveChat:
         self, chat_service, mock_redis_service, mock_cosmos_service
     ):
         # ARRANGE
-        from app.schemas import ChatRoom
+        from app.schemas import Chat
 
         chat_service.get_chat = AsyncMock(
-            return_value=ChatRoom(
+            return_value=Chat(
                 id=TEST_CHAT_ID,
                 room_id=TEST_ROOM_ID,
                 users={TEST_USER_ID, "another-user"},
@@ -283,10 +282,10 @@ class TestLeaveChat:
     @pytest.mark.asyncio
     async def test_leave_chat_deletes_chat_if_last_user(self, chat_service):
         # ARRANGE
-        from app.schemas import ChatRoom
+        from app.schemas import Chat
 
         chat_service.get_chat = AsyncMock(
-            return_value=ChatRoom(
+            return_value=Chat(
                 id=TEST_CHAT_ID,
                 room_id=TEST_ROOM_ID,
                 users={TEST_USER_ID},
@@ -311,7 +310,7 @@ class TestDeleteChat:
         # ARRANGE
         chat_service.get_user_list = AsyncMock(return_value=[TEST_USER_ID])
         mock_redis_service.scan_keys.return_value = [
-            f"chatroom:{TEST_CHAT_ID}:extra_key"
+            f"chat:{TEST_CHAT_ID}:extra_key"
         ]
 
         # ACT
@@ -324,37 +323,37 @@ class TestDeleteChat:
         mock_cosmos_service.patch_item.assert_awaited_once()  # for the user
 
 
-## Tests for get_user_chatroom
+## Tests for get_user_chat
 class TestGetUserChatroom:
     @pytest.mark.asyncio
-    async def test_get_user_chatroom_from_cache(
+    async def test_get_user_chat_from_cache(
         self, chat_service, mock_redis_service, mock_cosmos_service
     ):
         # ARRANGE
         mock_redis_service.get_value.return_value = TEST_CHAT_ID
 
         # ACT
-        chat_id = await chat_service.get_user_chatroom(TEST_USER_ID)
+        chat_id = await chat_service.get_user_chat(TEST_USER_ID)
 
         # ASSERT
         assert chat_id == TEST_CHAT_ID
         mock_cosmos_service.get_item.assert_not_awaited()
 
     @pytest.mark.asyncio
-    async def test_get_user_chatroom_from_db(
+    async def test_get_user_chat_from_db(
         self, chat_service, mock_redis_service, mock_cosmos_service
     ):
         # ARRANGE
         mock_redis_service.get_value.return_value = None
-        mock_cosmos_service.get_item.return_value = {"chatroom": TEST_CHAT_ID}
+        mock_cosmos_service.get_item.return_value = {"chat": TEST_CHAT_ID}
 
         # ACT
-        chat_id = await chat_service.get_user_chatroom(TEST_USER_ID)
+        chat_id = await chat_service.get_user_chat(TEST_USER_ID)
 
         # ASSERT
         assert chat_id == TEST_CHAT_ID
         mock_redis_service.set_value.assert_awaited_once_with(
-            key=f"user:{TEST_USER_ID}:chatroom", value=TEST_CHAT_ID
+            key=f"user:{TEST_USER_ID}:chat", value=TEST_CHAT_ID
         )
 
 
@@ -388,7 +387,7 @@ class TestGetUserList:
         # ASSERT
         assert user_list == [TEST_USER_ID]
         mock_redis_service.set_add.assert_awaited_once_with(
-            key=f"chatroom:{TEST_CHAT_ID}:users", values=[TEST_USER_ID]
+            key=f"chat:{TEST_CHAT_ID}:users", values=[TEST_USER_ID]
         )
 
 
@@ -433,38 +432,38 @@ class TestCheckUserInChat:
         assert is_in_chat is False
 
 
-## Tests for join_chat_room
-class TestJoinChatRoom:
+## Tests for join_chat
+class TestJoinChat:
     @pytest.mark.asyncio
-    async def test_join_chat_room_success(
+    async def test_join_chat_success(
         self, chat_service, mock_redis_service, mock_cosmos_service
     ):
         # ARRANGE
         joining_user_id = "user-456"
-        chat_service.get_user_chatroom = AsyncMock(return_value=None)
+        chat_service.get_user_chat = AsyncMock(return_value=None)
         chat_service.get_user_list = AsyncMock(return_value=["user-123"])
 
         # ACT
-        await chat_service.join_chat_room(TEST_CHAT_ID, joining_user_id)
+        await chat_service.join_chat(TEST_CHAT_ID, joining_user_id)
 
         # ASSERT: Redis was updated
         mock_redis_service.set_add.assert_awaited_once_with(
-            key=f"chatroom:{TEST_CHAT_ID}:users", values=[joining_user_id]
+            key=f"chat:{TEST_CHAT_ID}:users", values=[joining_user_id]
         )
         mock_redis_service.set_value.assert_awaited_once_with(
-            key=f"user:{joining_user_id}:chatroom", value=TEST_CHAT_ID
+            key=f"user:{joining_user_id}:chat", value=TEST_CHAT_ID
         )
 
         # ASSERT: Cosmos was updated twice (once for the chat, once for the user)
         assert mock_cosmos_service.patch_item.call_count == 2
 
     @pytest.mark.asyncio
-    async def test_join_chat_room_fails_if_user_already_in_room(self, chat_service):
+    async def test_join_chat_fails_if_user_already_in_room(self, chat_service):
         # ARRANGE
-        chat_service.get_user_chatroom = AsyncMock(return_value="existing-chat")
+        chat_service.get_user_chat = AsyncMock(return_value="existing-chat")
 
         # ACT & ASSERT
         with pytest.raises(HTTPException) as exc_info:
-            await chat_service.join_chat_room(TEST_CHAT_ID, TEST_USER_ID)
+            await chat_service.join_chat(TEST_CHAT_ID, TEST_USER_ID)
 
         assert exc_info.value.status_code == 409
