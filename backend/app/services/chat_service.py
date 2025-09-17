@@ -484,7 +484,7 @@ class ChatService:
             chat = await self._redis_service.get_value(key=f"user:{user_id}:chat")
             if chat:
                 await self._redis_service.expire(f"user:{user_id}:chat", 86400)
-                return True
+                return chat == chat_id
         except HTTPException as e:
             logger.warning(f"Redis unavailable for check user in chat: {e}")
 

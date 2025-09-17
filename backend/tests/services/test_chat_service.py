@@ -409,9 +409,10 @@ class TestCheckUserInChat:
         assert is_in_chat is True
 
     @pytest.mark.asyncio
-    async def test_check_user_in_chat_false(self, chat_service, mock_redis_service):
+    async def test_check_user_in_chat_false(self, chat_service, mock_redis_service, mock_cosmos_service):
         # ARRANGE
         mock_redis_service.get_value.return_value = "another-chat-id"
+        mock_cosmos_service.get_item.return_value = None
 
         # ACT
         is_in_chat = await chat_service.check_user_in_chat(TEST_USER_ID, TEST_CHAT_ID)
