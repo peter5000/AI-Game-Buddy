@@ -112,13 +112,9 @@ class RedisListener:
         if message_data.get("timestamp") is None:
             raise ValueError("Timestamp missing on sending chat message")
 
-        # Broadcast chat message to all users in the user list
-        active_user_list = self._connection_service.get_active_users_from_list(
-            list(payload.user_list)
-        )
         await self._connection_service.broadcast(
             payload=BroadcastPayload(
-                user_list=set(active_user_list), message=message_data
+                user_list=payload.user_list, message=message_data
             )
         )
 
