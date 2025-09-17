@@ -26,20 +26,8 @@ def mock_redis_service() -> AsyncMock:
 
 
 @pytest.fixture
-def mock_connection_service() -> MagicMock:
-    """
-    Provides a mock for ConnectionService that handles both sync and async methods.
-    We start with a MagicMock (for sync methods) and then attach an AsyncMock
-    for any methods that need to be awaited.
-    """
-    mock = MagicMock()
-    # ChatService doesn't seem to use any async methods from connection_service
-    return mock
-
-
-@pytest.fixture
 def chat_service(
-    mock_cosmos_service, mock_redis_service, mock_connection_service
+    mock_cosmos_service, mock_redis_service
 ) -> ChatService:
     """Provides an instance of ChatService with all dependencies mocked."""
     return ChatService(
