@@ -147,7 +147,9 @@ class RoomService:
                 detail="User already in another room",
             )
 
-        user_list = await self.get_user_list(room_id=room_id)
+        room = await self.get_room(room_id=room_id)
+        room_dict = room.model_dump()
+        user_list = room_dict.get("users")
 
         if user_list is None:
             logger.error("User list not found in redis and cosmos")
