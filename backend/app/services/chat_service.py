@@ -534,4 +534,17 @@ class ChatService:
         except HTTPException as e:
             logger.warning(f"Redis unavailable for adding message to chat: {e}")
 
+        patch_operation = [{
+            "op": "add",
+            "path": "/chat_log/-",
+            "value": chat_message.model_dump(mode="json")
+        }]
+
+        await self._cosmos_service.patch_item(
+            item_id=chat_id,
+            partition_key=chat_id,
+            patch_operations=patch_operation,
+            container_type="chats",
+        )
+
         return chat_message
