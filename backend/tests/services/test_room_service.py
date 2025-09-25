@@ -190,35 +190,3 @@ class TestGetRoom:
         # ASSERT: Check that the cache was repopulated.
         mock_redis_service.dict_add.assert_awaited_once()
         mock_redis_service.set_add.assert_awaited_once()
-
-
-## Tests for send_game_state
-class TestSendGameState:
-    @pytest.mark.asyncio
-    async def test_send_game_state_success(self, room_service, mock_connection_service):
-        # ARRANGE
-        game_state = {"turn": "white"}
-        initial_user_list = ["user1", "user2"]
-        active_user_list = ["user1", "user2"]  # Assume both are active
-
-        room_service.get_user_list = AsyncMock(return_value=initial_user_list)
-        # Configure the synchronous get_active_users_from_list method
-        mock_connection_service.get_active_users_from_list.return_value = (
-            active_user_list
-        )
-
-        # ACT
-        await room_service.send_game_state(TEST_ROOM_ID, game_state)
-
-        # ASSERT
-        mock_connection_service.get_active_users_from_list.assert_called_once_with(
-            user_list=initial_user_list
-        )
-
-        expected_payload = BroadcastPayload(
-            user_list=active_user_list, message=game_state
-        )
-        # Assert the async broadcast method was awaited with the correct payload
-        mock_connection_service.broadcast.assert_awaited_once_with(
-            payload=expected_payload
-        )

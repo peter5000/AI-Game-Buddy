@@ -11,7 +11,7 @@ from typing import Any
 
 from fastapi import HTTPException
 
-from app.schemas import BroadcastPayload, Room
+from app.schemas import Room
 from app.services.connection_service import ConnectionService
 from app.services.cosmos_service import CosmosService
 from app.services.redis_service import RedisService
@@ -159,6 +159,8 @@ class RoomService:
             await self._redis_service.set_value(
                 key=f"user:{user_id}:room", value=room_id
             )
+            await self._redis_service.expire(f"room:{room_id}:users", 86400)
+            await self._redis_service.expire(f"user:{user_id}:room", 86400)
         except HTTPException as e:
             logger.warning(f"Redis unavailable for joining room: {e}")
 
@@ -316,6 +318,9 @@ class RoomService:
                         key=f"room:{room_id}:state",
                         value=json.dumps(room_object.game_state),
                     )
+                    await self._redis_service.expire(f"room:{room_id}", 86400)
+                    await self._redis_service.expire(f"room:{room_id}:users", 86400)
+                    await self._redis_service.expire(f"room:{room_id}:state", 86400)
                 except HTTPException as e:
                     logger.warning(f"Redis unavailable for writing new room: {e}")
 
@@ -445,6 +450,7 @@ class RoomService:
                     await self._redis_service.set_value(
                         key=f"room:{room_id}:state", value=json.dumps(game_state)
                     )
+                    await self._redis_service.expire(f"room:{room_id}:state", 86400)
                 except HTTPException as e:
                     logger.warning(f"Redis unavailable for setting game state: {e}")
 
@@ -476,40 +482,6 @@ class RoomService:
             patch_operations=patch_operation,
             container_type="rooms",
         )
-
-    async def send_game_state(self, room_id: str, game_state: dict | None):
-        """Sends the game state to all local user connections.
-
-        Args:
-            room_id (str): The room ID of the room to send the game state to.
-            game_state (Optional[dict]): The game state to send to the users in the room.
-
-        Raises:
-            ValueError: If the room ID or game state is missing.
-        """
-        if not room_id:
-            raise ValueError("Room ID missing on sending game state")
-
-        room_list = await self.get_user_list(room_id=room_id)
-        if room_list is None:
-            logger.warning(f"Room '{room_id}' not found in room connections")
-            return
-
-        if game_state is None:
-            game_state = await self.get_game_state(room_id=room_id)
-            if game_state is None:
-                raise ValueError(
-                    f"Game state missing and not not found in database for room '{room_id}'"
-                )
-
-        # Get list of users connected through websocket endpoint on the server
-        user_list = self._connection_service.get_active_users_from_list(
-            user_list=room_list
-        )
-        logger.info(f"Sending game state to room '{room_id}'")
-
-        payload = BroadcastPayload(user_list=user_list, message=game_state)
-        await self._connection_service.broadcast(payload=payload)
 
     async def get_user_room(self, user_id: str) -> str | None:
         """Gets the room ID of the room that the user is in.
@@ -548,6 +520,7 @@ class RoomService:
                     await self._redis_service.set_value(
                         key=f"user:{user_id}:room", value=room_id
                     )
+                    await self._redis_service.expire(f"user:{user_id}:room", 86400)
                 except HTTPException as e:
                     logger.warning(f"Redis unavailable for setting user room: {e}")
 
@@ -594,6 +567,7 @@ class RoomService:
                     await self._redis_service.set_add(
                         key=f"room:{room_id}:users", values=user_list
                     )
+                    await self._redis_service.expire(f"room:{room_id}:users", 86400)
                 except HTTPException as e:
                     logger.warning(f"Redis unavailable for setting user list: {e}")
 
@@ -617,7 +591,7 @@ class RoomService:
         return room_list
 
     async def check_user_in_room(self, user_id: str, room_id: str) -> bool:
-        """Check if user is in a room.
+        """Check if user is in the room.
 
         Args:
             room_id (str): The room ID of the room to check.
@@ -632,4 +606,19 @@ class RoomService:
             raise ValueError("User ID missing on checking room")
 
         room = await self._redis_service.get_value(key=f"user:{user_id}:room")
-        return room == room_id
+        if room:
+            return room == room_id
+
+        user_data = await self._cosmos_service.get_item(
+            item_id=user_id, partition_key=user_id, container_type="users"
+        )
+        if user_data:
+            room = user_data.get("room")
+            if room:
+                await self._redis_service.set_value(
+                    key=f"user:{user_id}:room", value=room
+                )
+                await self._redis_service.expire(key=f"user:{user_id}:room", time=86400)
+                return room == room_id
+
+        return False

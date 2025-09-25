@@ -15,12 +15,7 @@ class CosmosService:
     def __init__(self):
         self.client: CosmosClient | None = None
 
-        if settings.COSMOS_CONNECTION_STRING:
-            logger.info("Initializing Cosmos Service Client with Connection String")
-            self.client = CosmosClient.from_connection_string(
-                conn_str=settings.COSMOS_CONNECTION_STRING
-            )
-        elif settings.COSMOS_ENDPOINT:
+        if settings.COSMOS_ENDPOINT:
             # Use managed identity if no connection string
             logger.info("Initializing Cosmos Service Client with Azure Credentials")
             credential = DefaultAzureCredential()
