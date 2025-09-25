@@ -1,7 +1,7 @@
 import datetime
 from typing import Any
 
-from pydantic import BaseModel, EmailStr, Field, SecretStr
+from pydantic import BaseModel, EmailStr, Field, SecretStr, model_validator
 
 
 class UserCreate(BaseModel):
@@ -44,6 +44,15 @@ class Room(BaseModel):
 class BroadcastPayload(BaseModel):
     user_list: set[str]
     message: dict[str, Any]
+    @model_validator(mode="after")
+    def validate_payload_state(self) -> "BroadcastPayload":
+        # user_list and message must not be empty
+        if len(self.user_list) == 0:
+            raise ValueError(f"User list was empty while validating BroadcastPayload {self}")
+        elif len(self.message) == 0:
+            raise ValueError(f"Message was empty while validating BroadcastPayload {self}")
+
+        return self
 
 
 class PubSubMessage(BaseModel):

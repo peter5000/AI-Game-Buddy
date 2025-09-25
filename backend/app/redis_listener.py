@@ -7,6 +7,8 @@ and dispatches incoming messages to appropriate handlers for real-time game and 
 import asyncio
 import logging
 
+from pydantic import validate_call
+
 from app.dependencies import (
     get_chat_service,
     get_connection_service,
@@ -91,17 +93,14 @@ class RedisListener:
                 room_id=room_id, game_state=game_state
             )
 
+    @validate_call
     async def handle_chat_message(self, payload: BroadcastPayload):
         """Chat message handler, sends chat message to users in user list.
 
         Args:
             payload (BroadcastPayload): Payload of list of users to send to and message to send.
         """
-        # Validation
-        if not payload:
-            raise ValueError("Payload missing on sending chat message")
-        if not payload.user_list:
-            raise ValueError("User list missing on sending chat message")
+        # Message Validation
         message_data = payload.message
         if not message_data:
             raise ValueError("Message missing on sending chat message")
