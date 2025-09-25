@@ -17,9 +17,7 @@ async def create_chat(
     chat_service: ChatService = Depends(get_chat_service),
 ):
     try:
-        chat = await chat_service.create_chat(
-            user_id=user_id
-        )
+        chat = await chat_service.create_chat(user_id=user_id)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
     except HTTPException as e:
@@ -152,4 +150,3 @@ async def get_chat_log(
         ) from e
 
     return {"message": "success", "chat_log": chat_log}
-

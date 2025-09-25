@@ -1,7 +1,6 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from app.schemas import BroadcastPayload
 from app.services.room_service import RoomService
 from fastapi import HTTPException
 
