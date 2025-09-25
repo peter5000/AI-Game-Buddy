@@ -38,6 +38,7 @@ class CosmosService:
         db_client = self.client.get_database_client(settings.COSMOS_DATABASE_NAME)
         self.users_container_client = db_client.get_container_client("users")
         self.rooms_container_client = db_client.get_container_client("rooms")
+        self.chats_container_client = db_client.get_container_client("chats")
 
     async def close(self):
         logger.info("Closing Cosmos client session")
@@ -48,6 +49,8 @@ class CosmosService:
             return self.users_container_client
         elif container_type == "rooms":
             return self.rooms_container_client
+        elif container_type == "chats":
+            return self.chats_container_client
         else:
             raise ValueError(f"Container type '{container_type}' does not exist")
 

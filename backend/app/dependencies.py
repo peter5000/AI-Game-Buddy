@@ -1,6 +1,7 @@
 from functools import lru_cache
 
 from app.services.blob_service import BlobService
+from app.services.chat_service import ChatService
 from app.services.connection_service import ConnectionService
 from app.services.cosmos_service import CosmosService
 from app.services.game_service_factory import GameServiceFactory
@@ -45,4 +46,12 @@ def get_room_service() -> RoomService:
         cosmos_service=get_cosmos_service(),
         redis_service=get_redis_service(),
         connection_service=get_connection_service(),
+    )
+
+
+@lru_cache
+def get_chat_service() -> ChatService:
+    return ChatService(
+        cosmos_service=get_cosmos_service(),
+        redis_service=get_redis_service(),
     )

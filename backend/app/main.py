@@ -13,6 +13,7 @@ from app.dependencies import get_blob_service, get_cosmos_service, get_redis_ser
 from app.redis_listener import RedisListener
 from app.routers import (
     accounts_router,
+    chat_router,
     room_router,
     test_router,
     websocket_router,
@@ -60,7 +61,7 @@ app = FastAPI(lifespan=lifespan)
 origins = [
     "http://localhost",
     "http://localhost:3000",
-    "https://thankful-bay-09ec9cf1e.2.azurestaticapps.net", # Frontend URL
+    "https://thankful-bay-09ec9cf1e.2.azurestaticapps.net",  # Frontend URL
 ]
 
 app.add_middleware(
@@ -82,6 +83,7 @@ app.include_router(accounts_router.router)
 app.include_router(room_router.router)
 app.include_router(test_router.router)
 app.include_router(websocket_router.router)
+app.include_router(chat_router.router)
 
 # Then mount the static files at the root
 # app.mount("/", StaticFiles(directory="path/to/frontend/build", html=True), name="static")
