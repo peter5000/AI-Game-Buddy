@@ -15,7 +15,7 @@ from app.dependencies import (
     get_redis_service,
     get_room_service,
 )
-from app.schemas import BroadcastPayload, PubSubMessage, GameUpdate
+from app.schemas import BroadcastPayload, ChatMessage, PubSubMessage, GameUpdate
 
 logger = logging.getLogger(__name__)
 
@@ -108,14 +108,7 @@ class RedisListener:
         """
         # Message Validation
         message_data = payload.message
-        if not message_data:
-            raise ValueError("Message missing on sending chat message")
-        if message_data.get("sender") is None:
-            raise ValueError("Sender missing on sending chat message")
-        if message_data.get("message") is None:
-            raise ValueError("Message content missing on sending chat message")
-        if message_data.get("timestamp") is None:
-            raise ValueError("Timestamp missing on sending chat message")
+        ChatMessage.model_validate(message_data)
 
         await self._connection_service.broadcast(
             payload=BroadcastPayload(
