@@ -1,7 +1,5 @@
 import logging
-import os
 
-import aiofiles
 from fastapi import APIRouter, Depends, HTTPException
 
 from app import auth
@@ -210,25 +208,3 @@ async def get_game_state(
             status_code=500, detail="An internal error occurred."
         ) from e
     return {"message": "success", "game_state": game_state}
-
-
-@router.get("/rules/{game_type}", tags=["Games"])
-async def get_rules(game_type: str):
-    """
-    Get the rules for a specific game.
-    """
-    rules_directory = "backend/app/rules"
-    file_path = os.path.join(rules_directory, f"{game_type}.md")
-
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="Rules not found for this game type.")
-
-    try:
-        async with aiofiles.open(file_path, mode="r") as f:
-            content = await f.read()
-        return {"game_type": game_type, "rules": content}
-    except Exception as e:
-        logger.error(f"An unexpected error occurred in get_rules: {e}")
-        raise HTTPException(
-            status_code=500, detail="An internal error occurred."
-        ) from e
