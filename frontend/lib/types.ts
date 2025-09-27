@@ -67,3 +67,12 @@ export interface WebSocketContextType {
     error: string | null;
     readyState: WebSocket["readyState"] | null;
 }
+
+// Chat types
+export interface Message {
+    id: string;
+    sender: string;
+    text: string;
+    isUser: boolean;
+    timestamp: Date;
+}
