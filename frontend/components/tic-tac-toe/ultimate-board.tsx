@@ -30,7 +30,6 @@ export type UltimateTicTacToeState = {
   finished: boolean;
   meta: Record<string, any>; // Contains game-specific data like winner or current player index
   turn: number | null;
-  // phase and private_state are omitted for simplicity as they are not used in this UI component
 
   // --- UltimateTicTacToe-specific state ---
   large_board: SmallBoard[][];
