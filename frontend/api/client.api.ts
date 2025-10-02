@@ -1,3 +1,6 @@
+import camelcaseKeys from "camelcase-keys";
+import snakecaseKeys from "snakecase-keys";
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export class ApiError extends Error {
@@ -22,13 +25,19 @@ export async function apiRequest<T>(
             "Content-Type": "application/json",
             ...options.headers,
         },
-        credentials: "include", // Important: This ensures cookies are sent with requests
+        credentials: "include",
         ...options,
     };
 
+    // Convert outgoing request body to snake_case
+    if (config.body && typeof config.body === "string") {
+        const bodyObject = JSON.parse(config.body);
+        config.body = JSON.stringify(snakecaseKeys(bodyObject, { deep: true }));
+    }
+
     let response = await fetch(url, config);
 
-    // If we get a 401 (unauthorized) and it's not already a refresh request,
+    // If we get a 401 (unauthorized) and it's not a refresh request,
     // try to refresh the token automatically
     if (response.status === 401 && !endpoint.includes("/accounts/refresh")) {
         try {
@@ -56,22 +65,24 @@ export async function apiRequest<T>(
         }
     }
 
+    // Handle responses with no content
+    if (response.status === 204) {
+        return null as T;
+    }
+
     const data = await response.json();
 
     if (!response.ok) {
+        const errors = data.errors
+            ? camelcaseKeys(data.errors, { deep: true })
+            : undefined;
         throw new ApiError(
             data.detail || data.message || "An error occurred",
             response.status,
-            data.errors
+            errors
         );
     }
 
-    return data;
+    // Convert incoming response data to camelCase before returning
+    return camelcaseKeys(data, { deep: true });
 }
-
-// Export all API modules
-export * from "./auth";
-// export * from './games';
-// export * from './users';
-// export * from './ai-friends';
-// export * from './rooms';

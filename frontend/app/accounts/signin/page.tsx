@@ -7,6 +7,8 @@ import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import { Gamepad2 } from "lucide-react";
 
+import { signinUser } from "@/api/account.api";
+import { ApiError } from "@/api/client.api";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -19,13 +21,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/use-auth";
-import { signinUser } from "@/lib/api";
-import { ApiError } from "@/lib/api/index";
 
 export default function SignInPage() {
-    const { isAuthenticated, isLoading: isAuthLoading } = useAuth(true, "/");
-    const [identifier, setIdentifier] = useState("");
-    const [password, setPassword] = useState("");
+    const { isAuthenticated, isLoading: isAuthLoading } = useAuth({
+        redirectIfAuthed: true,
+    });
+    // Consolidated state for form fields
+    const [formData, setFormData] = useState({
+        identifier: "",
+        password: "",
+    });
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
@@ -39,6 +44,11 @@ export default function SignInPage() {
         );
     }
 
+    // Single handler for all text input changes
+    const handleInputChange = (field: string, value: string) => {
+        setFormData((prev) => ({ ...prev, [field]: value }));
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (isLoading) return;
@@ -46,8 +56,11 @@ export default function SignInPage() {
         setError(null);
 
         try {
-            const response = await signinUser({ identifier, password });
-            queryClient.setQueryData(["user"], response);
+            const user = await signinUser({
+                identifier: formData.identifier,
+                password: formData.password,
+            });
+            queryClient.setQueryData(["user"], user);
             await queryClient.invalidateQueries({ queryKey: ["authStatus"] });
 
             router.push("/");
@@ -83,8 +96,13 @@ export default function SignInPage() {
                                 id="identifier"
                                 type="text"
                                 placeholder="Enter your username or email"
-                                value={identifier}
-                                onChange={(e) => setIdentifier(e.target.value)}
+                                value={formData.identifier}
+                                onChange={(e) =>
+                                    handleInputChange(
+                                        "identifier",
+                                        e.target.value
+                                    )
+                                }
                                 required
                             />
                         </div>
@@ -94,8 +112,13 @@ export default function SignInPage() {
                                 id="password"
                                 type="password"
                                 placeholder="Enter your password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
+                                value={formData.password}
+                                onChange={(e) =>
+                                    handleInputChange(
+                                        "password",
+                                        e.target.value
+                                    )
+                                }
                                 required
                             />
                         </div>
@@ -123,17 +146,6 @@ export default function SignInPage() {
                     </div>
 
                     <Separator />
-
-                    {/* <div className="space-y-2">
-            <Button variant="outline" className="w-full bg-transparent">
-              <Github className="mr-2 h-4 w-4" />
-              Continue with GitHub
-            </Button>
-            <Button variant="outline" className="w-full bg-transparent">
-              <Mail className="mr-2 h-4 w-4" />
-              Continue with Google
-            </Button>
-          </div> */}
 
                     <div className="text-center text-sm">
                         {"Don't have an account? "}
