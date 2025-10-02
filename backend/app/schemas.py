@@ -26,7 +26,9 @@ class UserResponse(BaseModel):
     user_id: str
     username: str
     email: EmailStr
-    room: str | None = None # TODO: Possibly make this a list if we want users to be able to join multiple rooms at once
+    room: str | None = (
+        None  # TODO: Possibly make this a list if we want users to be able to join multiple rooms at once
+    )
 
 
 class UserLogin(BaseModel):

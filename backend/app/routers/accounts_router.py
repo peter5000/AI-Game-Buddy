@@ -16,9 +16,14 @@ router = APIRouter(prefix="/accounts", tags=["Accounts"])
 
 @router.post("/register", status_code=201, response_model=UserResponse)
 async def create_account(
-    user: UserCreate, user_service: UserService = Depends(get_user_service)
+    response: Response,
+    user: UserCreate,
+    user_service: UserService = Depends(get_user_service),
 ):
     new_user = await user_service.create_user(user=user)
+
+    auth._set_auth_cookies(response=response, user_id=new_user["id"])
+
     return new_user
 
 
@@ -41,35 +46,7 @@ async def login_account(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Access token for storing jwt
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = auth.create_access_token(
-        data={"sub": user["id"]}, expires_delta=access_token_expires
-    )
-
-    response.set_cookie(
-        key="access_token",
-        value=access_token,
-        httponly=True,
-        secure=True,
-        samesite="none",
-        max_age=int(access_token_expires.total_seconds()),
-    )
-
-    # Refresh token for refreshing access token
-    refresh_token_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-    refresh_token = auth.create_refresh_token(
-        data={"sub": user["id"]}, expires_delta=refresh_token_expires
-    )
-
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        httponly=True,
-        secure=True,
-        samesite="none",
-        max_age=int(refresh_token_expires.total_seconds()),
-    )
+    auth._set_auth_cookies(response=response, user_id=user["id"])
 
     user.pop("password", None)
 
@@ -77,12 +54,7 @@ async def login_account(
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
-async def logout_account(
-    response: Response, user_id: str = Depends(auth.get_user_id_http)
-):
-    if not user_id:
-        raise HTTPException(status_code=404, detail="User not found")
-
+async def logout_account(response: Response):
     response.delete_cookie(
         key="access_token", httponly=True, secure=True, samesite="none"
     )
@@ -91,7 +63,8 @@ async def logout_account(
         key="refresh_token", httponly=True, secure=True, samesite="none"
     )
 
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
+    response.status_code = status.HTTP_204_NO_CONTENT
+    return response
 
 
 # Call refresh endpoint if jwt/cookie is expired
