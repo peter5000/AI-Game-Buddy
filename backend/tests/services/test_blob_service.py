@@ -48,29 +48,9 @@ def mock_blob_service_client(mock_container_client: MagicMock) -> MagicMock:
 
 
 class TestBlobServiceInitialization:
-    def test_init_with_connection_string(
-        self, mocker, mock_blob_service_client, monkeypatch
-    ):
-        monkeypatch.setattr(
-            blob_service.settings, "BLOB_CONNECTION_STRING", "test_conn_str"
-        )
-        monkeypatch.setattr(blob_service.settings, "BLOB_ENDPOINT", None)
-        mocker.patch(
-            "app.services.blob_service.BlobServiceClient.from_connection_string",
-            return_value=mock_blob_service_client,
-        )
-
-        service = blob_service.BlobService()
-
-        blob_service.BlobServiceClient.from_connection_string.assert_called_once_with(
-            conn_str="test_conn_str"
-        )
-        assert service.client is not None
-
     def test_init_with_endpoint_and_credential(
         self, mocker, mock_blob_service_client, monkeypatch
     ):
-        monkeypatch.setattr(blob_service.settings, "BLOB_CONNECTION_STRING", None)
         monkeypatch.setattr(blob_service.settings, "BLOB_ENDPOINT", "test_endpoint")
         mocker.patch("app.services.blob_service.DefaultAzureCredential")
         mocker.patch(
@@ -84,7 +64,6 @@ class TestBlobServiceInitialization:
         assert service.client is not None
 
     def test_init_no_config_raises_error(self, monkeypatch):
-        monkeypatch.setattr(blob_service.settings, "BLOB_CONNECTION_STRING", None)
         monkeypatch.setattr(blob_service.settings, "BLOB_ENDPOINT", None)
         with pytest.raises(ValueError, match="Storage configuration missing"):
             blob_service.BlobService()
@@ -96,11 +75,10 @@ class TestBlobServiceInitialization:
 class TestBlobServiceMethods:
     @pytest.fixture(autouse=True)
     def setup_service(self, mocker, mock_blob_service_client, monkeypatch):
-        monkeypatch.setattr(
-            blob_service.settings, "BLOB_CONNECTION_STRING", "test_conn_str"
-        )
+        monkeypatch.setattr(blob_service.settings, "BLOB_ENDPOINT", "test_endpoint")
+        mocker.patch("app.services.blob_service.DefaultAzureCredential")
         mocker.patch(
-            "app.services.blob_service.BlobServiceClient.from_connection_string",
+            "app.services.blob_service.BlobServiceClient",
             return_value=mock_blob_service_client,
         )
 

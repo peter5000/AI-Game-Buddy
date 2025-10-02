@@ -15,6 +15,7 @@ from starlette.endpoints import WebSocketEndpoint
 
 from app import auth
 from app.dependencies import (
+    get_chat_service,
     get_connection_service,
     get_game_service_factory,
     get_room_service,
@@ -78,7 +79,7 @@ class ConnectionEndpoint(WebSocketEndpoint):
             self.connection_service: ConnectionService = get_connection_service()
             self.room_service = get_room_service()
             self.game_service_factory = get_game_service_factory()
-            # self.chat_service = get_chat_service()
+            self.chat_service = get_chat_service()
 
             # Handler map for mapping message type to handler function
             self.handler_map = {
@@ -236,7 +237,45 @@ class ConnectionEndpoint(WebSocketEndpoint):
             )
 
     async def handle_chat_message(self, payload: dict):
-        pass
+        """Handler for chat messages.
+
+        Args:
+            payload (dict): Contains room_id and message for the chat.
+
+        Payload example:
+        {
+            "type": "chat_message",
+            "payload": {
+                "chat_id": "chat_id",
+                "sender": "user_id",
+                "message": "Hello, world!"
+            }
+        }
+
+        """
+        chat_id = payload.get("chat_id")
+        sender = payload.get("sender")
+        message = payload.get("message")
+
+        if chat_id and sender and message:
+            # Verify chat exists and user is in chat
+            await self.chat_service.check_user_in_chat(
+                user_id=self.user_id, chat_id=chat_id
+            )
+
+            # Send chat message to chat service
+            chat_message = await self.chat_service.add_message_to_chat(
+                chat_id=chat_id, user_id=self.user_id, message=message
+            )
+
+            user_list = await self.chat_service.get_user_list(chat_id=chat_id)
+            await self.connection_service.publish_event(
+                channel="chat_message",
+                user_list=user_list,
+                message_data=chat_message.model_dump(),
+            )
+        else:
+            logger.warning(f"Invalid chat message payload: {payload}")
 
     async def handle_unknown(self, _payload: dict):
         """Handler for unknown message type"""

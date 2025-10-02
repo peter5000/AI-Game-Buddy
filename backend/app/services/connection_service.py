@@ -46,7 +46,9 @@ class ConnectionService:
         message = payload.message
         user_list = payload.user_list
 
-        for user_id in user_list:
+        active_user_list = self.get_active_users_from_list(user_list=user_list)
+
+        for user_id in active_user_list:
             await self.send_message(message=message, user_id=user_id)
 
     async def send_message(self, message: dict, user_id: str):

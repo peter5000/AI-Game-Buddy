@@ -15,12 +15,7 @@ class CosmosService:
     def __init__(self):
         self.client: CosmosClient | None = None
 
-        if settings.COSMOS_CONNECTION_STRING:
-            logger.info("Initializing Cosmos Service Client with Connection String")
-            self.client = CosmosClient.from_connection_string(
-                conn_str=settings.COSMOS_CONNECTION_STRING
-            )
-        elif settings.COSMOS_ENDPOINT:
+        if settings.COSMOS_ENDPOINT:
             # Use managed identity if no connection string
             logger.info("Initializing Cosmos Service Client with Azure Credentials")
             credential = DefaultAzureCredential()
@@ -38,6 +33,7 @@ class CosmosService:
         db_client = self.client.get_database_client(settings.COSMOS_DATABASE_NAME)
         self.users_container_client = db_client.get_container_client("users")
         self.rooms_container_client = db_client.get_container_client("rooms")
+        self.chats_container_client = db_client.get_container_client("chats")
 
     async def close(self):
         logger.info("Closing Cosmos client session")
@@ -48,6 +44,8 @@ class CosmosService:
             return self.users_container_client
         elif container_type == "rooms":
             return self.rooms_container_client
+        elif container_type == "chats":
+            return self.chats_container_client
         else:
             raise ValueError(f"Container type '{container_type}' does not exist")
 

@@ -7,8 +7,15 @@ and dispatches incoming messages to appropriate handlers for real-time game and 
 import asyncio
 import logging
 
-from app.dependencies import get_connection_service, get_redis_service, get_room_service
-from app.schemas import BroadcastPayload, PubSubMessage
+from pydantic import ValidationError, validate_call
+
+from app.dependencies import (
+    get_chat_service,
+    get_connection_service,
+    get_redis_service,
+    get_room_service,
+)
+from app.schemas import BroadcastPayload, ChatMessage, GameUpdate, PubSubMessage
 
 logger = logging.getLogger(__name__)
 
@@ -25,9 +32,11 @@ class RedisListener:
         self._connection_service = get_connection_service()
         self._room_service = get_room_service()
         self._redis_service = get_redis_service()
+        self._chat_service = get_chat_service()
 
         self._handler_map = {
             "game_update": self.handle_game_update,
+            "chat_message": self.handle_chat_message,
         }
 
     async def listen(self):
@@ -77,12 +86,33 @@ class RedisListener:
         Args:
             payload (BroadcastPayload): Payload of list of users to send to and message to send.
         """
-        room_id = payload.message.get("room_id")
-        game_state = payload.message.get("game_state")
-        if room_id is not None:
-            await self._room_service.send_game_state(
-                room_id=room_id, game_state=game_state
-            )
+        # Validation
+        if not payload or not payload.user_list:
+            logger.error("Payload or user_list is missing for game update.")
+            return
+
+        try:
+            GameUpdate.model_validate(payload.message)
+        except ValidationError as e:
+            logger.error(f"Invalid game update message: {e}")
+            return
+
+        await self._connection_service.broadcast(payload)
+
+    @validate_call
+    async def handle_chat_message(self, payload: BroadcastPayload):
+        """Chat message handler, sends chat message to users in user list.
+
+        Args:
+            payload (BroadcastPayload): Payload of list of users to send to and message to send.
+        """
+        # Message Validation
+        message_data = payload.message
+        ChatMessage.model_validate(message_data)
+
+        await self._connection_service.broadcast(
+            payload=BroadcastPayload(user_list=payload.user_list, message=message_data)
+        )
 
     async def handle_default(self, payload: BroadcastPayload):
         """Default handler, sends payload to all users in user list.

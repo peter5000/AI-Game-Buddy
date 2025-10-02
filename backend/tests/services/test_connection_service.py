@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, call
 
 import pytest
 from app.schemas import BroadcastPayload
@@ -92,15 +92,21 @@ class TestConnectionService:
         mock_websocket.send_json.assert_not_awaited()
 
     @pytest.mark.asyncio
-    async def test_broadcast_calls_send_message_for_each_user(
+    async def test_broadcast_sends_to_all_users_when_all_are_active(
         self, connection_service: ConnectionService, mocker
     ):
         # ARRANGE
         user_list = ["user1", "user2", "user3"]
-        message = {"type": "ANNOUNCEMENT", "text": "Server maintenance soon"}
+        message = {"type": "ANNOUNCEMENT", "text": "Server is up!"}
         payload = BroadcastPayload(user_list=user_list, message=message)
 
-        # We mock the service's own `send_message` method to isolate the broadcast logic
+        # Mock the dependencies:
+        # 1. Assume get_active_users_from_list returns the same list it was given.
+        mocker.patch.object(
+            connection_service, "get_active_users_from_list", return_value=user_list
+        )
+
+        # 2. Mock the send_message method to monitor its calls.
         mock_send = mocker.patch.object(
             connection_service, "send_message", new_callable=AsyncMock
         )
@@ -108,11 +114,59 @@ class TestConnectionService:
         # ACT
         await connection_service.broadcast(payload)
 
-        # ASSERT: Check that send_message was called for every user in the list
-        assert mock_send.call_count == 3
-        mock_send.assert_any_call(message=message, user_id="user1")
-        mock_send.assert_any_call(message=message, user_id="user2")
-        mock_send.assert_any_call(message=message, user_id="user3")
+        # ASSERT
+        # Check that send_message was called for every user.
+        assert mock_send.call_count == len(user_list)
+
+        expected_calls = [
+            call(message=message, user_id="user1"),
+            call(message=message, user_id="user2"),
+            call(message=message, user_id="user3"),
+        ]
+        mock_send.assert_has_calls(expected_calls, any_order=True)
+
+    @pytest.mark.asyncio
+    async def test_broadcast_sends_only_to_active_users_from_mixed_list(
+        self, connection_service: ConnectionService, mocker
+    ):
+        # ARRANGE
+        full_user_list = ["active_user1", "inactive_user1", "active_user2"]
+        active_users = [
+            "active_user1",
+            "active_user2",
+        ]  # The subset that should get the message
+
+        message = {"type": "GAME_UPDATE", "text": "Your turn!"}
+        payload = BroadcastPayload(user_list=full_user_list, message=message)
+
+        # Mock the dependencies:
+        # 1. CRITICAL: Make get_active_users_from_list return ONLY the active subset.
+        mocker.patch.object(
+            connection_service, "get_active_users_from_list", return_value=active_users
+        )
+
+        # 2. Mock the send_message method to monitor its calls.
+        mock_send = mocker.patch.object(
+            connection_service, "send_message", new_callable=AsyncMock
+        )
+
+        # ACT
+        await connection_service.broadcast(payload)
+
+        # ASSERT
+        # 1. The number of calls should match the number of ACTIVE users.
+        assert mock_send.call_count == len(active_users)
+
+        # 2. Check that a message was sent to each active user.
+        expected_calls = [
+            call(message=message, user_id="active_user1"),
+            call(message=message, user_id="active_user2"),
+        ]
+        mock_send.assert_has_calls(expected_calls, any_order=True)
+
+        # 3. Explicitly check that no message was sent to the inactive user.
+        called_user_ids = [c.kwargs["user_id"] for c in mock_send.call_args_list]
+        assert "inactive_user1" not in called_user_ids
 
     @pytest.mark.asyncio
     async def test_get_active_users_from_list(
