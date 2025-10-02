@@ -11,7 +11,7 @@ from typing import Any
 
 from fastapi import HTTPException
 
-from app.schemas import BroadcastPayload, Room, RoomCreate
+from app.schemas import Room, RoomCreate
 from app.services.connection_service import ConnectionService
 from app.services.cosmos_service import CosmosService
 from app.services.redis_service import RedisService
@@ -148,6 +148,8 @@ class RoomService:
             )
 
         room = await self.get_room(room_id=room_id)
+        if not room:
+            raise ValueError("Room not found")
         room_dict = room.model_dump()
         user_list = room_dict.get("users")
 
@@ -185,6 +187,8 @@ class RoomService:
             patch_operations=patch_operation,
             container_type="users",
         )
+
+        return await self.get_room(room_id=room_id)
 
     async def leave_room(self, room_id: str, user_id: str):
         """Leaves a room.
