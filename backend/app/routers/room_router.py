@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response, status
 
 from app import auth
 from app.dependencies import get_game_service_factory, get_room_service
-from app.schemas import Room
+from app.schemas import Room, RoomCreate
 from app.services.game_service_factory import GameServiceFactory
 from app.services.games.chess.chess_interface import ChessState
 from app.services.games.lands.lands_interface import LandsState
@@ -18,17 +18,15 @@ logger = logging.getLogger(__name__)
 # All states value for using as response model
 all_states = ChessState | UltimateTicTacToeState | LandsState
 
+
 @router.post("", status_code=status.HTTP_201_CREATED, response_model=Room)
 async def create_room(
-    room_name: str,
-    game_type: str,
+    room_data: RoomCreate,
     user_id: str = Depends(auth.get_user_id_http),
     room_service: RoomService = Depends(get_room_service),
 ):
     try:
-        room = await room_service.create_room(
-            room_name=room_name, game_type=game_type, user_id=user_id
-        )
+        room = await room_service.create_room(room_data=room_data, user_id=user_id)
         if not room:
             raise HTTPException(status_code=500, detail="Failed to create room")
 
@@ -82,16 +80,12 @@ async def leave_room(
 
 @router.delete("/{room_id}/delete", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_room(
-    user_id: str = Depends(auth.get_user_id_http),
+    room_id: str,
     room_service: RoomService = Depends(get_room_service),
 ):
     try:
-        room_id = await room_service.get_user_room(user_id=user_id)
-        if not room_id:
-            logger.error(f"Room not found for user '{user_id}'")
-            return {"message": "User not in a room"}
-
         await room_service.delete_room(room_id=room_id)
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:
@@ -99,8 +93,6 @@ async def delete_room(
         raise HTTPException(
             status_code=500, detail="An internal error occurred."
         ) from e
-
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.get("/{room_id}", response_model=Room)
@@ -122,7 +114,6 @@ async def get_room(
 
 @router.get("", response_model=list[dict[str, Any]])
 async def list_rooms(room_service: RoomService = Depends(get_room_service)):
-    """Lists all available game rooms."""
     try:
         rooms = await room_service.get_all_rooms()
         return rooms
@@ -136,21 +127,16 @@ async def list_rooms(room_service: RoomService = Depends(get_room_service)):
 
 @router.post("/{room_id}/game", response_model=all_states)
 async def start_game(
-    user_id: str = Depends(auth.get_user_id_http),
+    room_id: str,
     room_service: RoomService = Depends(get_room_service),
     game_service_factory: GameServiceFactory = Depends(get_game_service_factory),
 ):
     try:
-        room_id = await room_service.get_user_room(user_id=user_id)
-        if not room_id:
-            logger.error(f"Room not found for user '{user_id}'")
-            return {"message": "User not in a room"}
-
         room = await room_service.get_room(room_id=room_id)
 
         if room is None:
             logger.error(f"Room '{room_id}' not found in database")
-            return {"message": "Room not found in database"}
+            raise HTTPException(status_code=500, detail="Room not found")
 
         # Get game service based on game type of room
         game_type = room.model_dump().get("game_type")
@@ -163,6 +149,8 @@ async def start_game(
         await room_service.set_game_state(
             room_id=room_id, game_state=game_state.model_dump()
         )
+
+        return game_state
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:
@@ -171,21 +159,16 @@ async def start_game(
             status_code=500, detail="An internal error occurred."
         ) from e
 
-    return game_state
-
 
 @router.delete("/{room_id}/game", status_code=status.HTTP_204_NO_CONTENT)
 async def end_game(
+    room_id: str,
     user_id: str = Depends(auth.get_user_id_http),
     room_service: RoomService = Depends(get_room_service),
 ):
     try:
-        room_id = await room_service.get_user_room(user_id=user_id)
-        if not room_id:
-            logger.error(f"Room not found for user '{user_id}'")
-            return {"message": "User not in a room"}
-
         await room_service.delete_game_state(room_id=room_id)
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:
@@ -194,31 +177,22 @@ async def end_game(
             status_code=500, detail="An internal error occurred."
         ) from e
 
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
-
-@router.get(
-    "/{room_id}/game", response_model=all_states
-)
+@router.get("/{room_id}/game", response_model=all_states)
 async def get_game(
-    user_id: str = Depends(auth.get_user_id_http),
+    room_id: str,
     room_service: RoomService = Depends(get_room_service),
 ):
     try:
-        room_id = await room_service.get_user_room(user_id=user_id)
-        if not room_id:
-            logger.error(f"Room not found for user '{user_id}'")
-            return {"message": "User not in a room"}
-
         game_state = await room_service.get_game_state(room_id=room_id)
+        return game_state
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e)) from e
     except Exception as e:
-        logger.error(f"An unexpected error occurred in end_game: {e}")
+        logger.error(f"An unexpected error occurred in get_game: {e}")
         raise HTTPException(
             status_code=500, detail="An internal error occurred."
         ) from e
-    return game_state
 
 
 # TODO: Add endpoint for updating room information (status, name)

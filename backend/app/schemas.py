@@ -47,6 +47,11 @@ class Room(BaseModel):
     game_state: dict = {}
 
 
+class RoomCreate(BaseModel):
+    room_name: str
+    game_type: str
+
+
 class BroadcastPayload(BaseModel):
     user_list: set[str]
     message: dict[str, Any]
