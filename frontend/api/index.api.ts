@@ -1,5 +1,5 @@
 // Export the core client functions and types
-export * from "./client.api";
+export * from "./client";
 
 // Export all API modules
 export * from "./account.api";

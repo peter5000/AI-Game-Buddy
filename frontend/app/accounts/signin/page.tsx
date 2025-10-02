@@ -8,7 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Gamepad2 } from "lucide-react";
 
 import { signinUser } from "@/api/account.api";
-import { ApiError } from "@/api/client.api";
+import { ApiError } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import {
     Card,

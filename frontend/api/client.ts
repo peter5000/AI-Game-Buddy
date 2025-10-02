@@ -14,6 +14,14 @@ export class ApiError extends Error {
     }
 }
 
+/**
+ * A helper function that only throws an error.
+ * Its 'never' return type tells TypeScript that it will stop the execution flow.
+ */
+function handleSessionExpired(): never {
+    throw new ApiError("Session expired. Please sign in again.", 401);
+}
+
 export async function apiRequest<T>(
     endpoint: string,
     options: RequestInit = {}
@@ -38,7 +46,7 @@ export async function apiRequest<T>(
     let response = await fetch(url, config);
 
     // If we get a 401 (unauthorized) and it's not a refresh request,
-    // try to refresh the token automatically
+    // try to refresh the token automatically.
     if (response.status === 401 && !endpoint.includes("/accounts/refresh")) {
         try {
             const refreshResponse = await fetch(
@@ -46,22 +54,21 @@ export async function apiRequest<T>(
                 {
                     method: "POST",
                     credentials: "include",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
+                    headers: { "Content-Type": "application/json" },
                 }
             );
 
             if (refreshResponse.ok) {
-                // Retry the original request with the new token
+                // If refresh was successful, retry the original request.
                 response = await fetch(url, config);
+            } else {
+                // If the refresh itself fails, the session is truly expired.
+                // Throw an error to be caught by React Query.
+                return handleSessionExpired();
             }
         } catch {
-            // Refresh failed, redirect to login
-            if (typeof window !== "undefined") {
-                window.location.href = "/accounts/signin";
-            }
-            throw new ApiError("Session expired. Please sign in again.", 401);
+            // If the fetch call for refresh fails (e.g., network error), also throw.
+            return handleSessionExpired();
         }
     }
 
