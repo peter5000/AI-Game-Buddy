@@ -29,19 +29,13 @@ export async function refreshToken(): Promise<void> {
 }
 
 export async function deleteUser(): Promise<void> {
-    await apiRequest<void>("/accounts/delete", {
+    await apiRequest<void>("/accounts/me", {
         method: "DELETE",
     });
 }
 
-export async function getAuthStatus(): Promise<{ userId: string }> {
-    return apiRequest<{ userId: string }>("/accounts/status", {
-        method: "GET",
-    });
-}
-
-export async function getCurrentUser(): Promise<User> {
-    return apiRequest<User>("/accounts/user", {
+export async function getUser(): Promise<User> {
+    return apiRequest<User>("/accounts/me", {
         method: "GET",
     });
 }

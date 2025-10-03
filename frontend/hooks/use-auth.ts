@@ -2,16 +2,13 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { getAuthStatus } from "@/api/account.api";
+import { getUser, signoutUser } from "@/api/account.api";
 
 interface UseAuthOptions {
-    // If true, redirects unauthenticated users to the login page.
     requireAuth?: boolean;
-    // If true, redirects authenticated users away from the current page (e.g., login/signup).
     redirectIfAuthed?: boolean;
-    // The URL to redirect to.
     redirectUrl?: string;
 }
 
@@ -21,27 +18,33 @@ export function useAuth({
     redirectUrl,
 }: UseAuthOptions = {}) {
     const router = useRouter();
+    const queryClient = useQueryClient();
 
-    const { data, isLoading, isError } = useQuery({
-        queryKey: ["authStatus"],
-        queryFn: getAuthStatus,
-        staleTime: 5 * 60 * 1000, // 5 minutes
-        retry: false, // Important: prevent retrying on auth errors (401)
+    const {
+        data: user,
+        isLoading,
+        isError,
+    } = useQuery({
+        queryKey: ["user"],
+        queryFn: getUser,
+        staleTime: 5 * 60 * 1000,
+        retry: false,
     });
 
-    // The query is successful if the user has a valid token.
-    const isAuthenticated = !!data && !isError;
+    const isAuthenticated = !!user && !isError;
+
+    const logout = async () => {
+        await signoutUser();
+        queryClient.resetQueries({ queryKey: ["user"] });
+    };
 
     useEffect(() => {
-        // Don't redirect while the auth status is still being determined
         if (isLoading) return;
 
-        // If the route requires authentication and the user is not logged in, redirect.
         if (requireAuth && !isAuthenticated) {
             router.push(redirectUrl || "/accounts/signin");
         }
 
-        // If the user is already authenticated, redirect away from auth pages (login/signup).
         if (redirectIfAuthed && isAuthenticated) {
             router.push(redirectUrl || "/");
         }
@@ -54,5 +57,5 @@ export function useAuth({
         router,
     ]);
 
-    return { isAuthenticated, user: data, isLoading };
+    return { isAuthenticated, user, isLoading, logout };
 }

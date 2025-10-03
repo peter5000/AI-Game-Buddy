@@ -69,7 +69,6 @@ export default function SignUpPage() {
 
             // Immediately sign the user in by updating the query cache
             queryClient.setQueryData(["user"], user);
-            await queryClient.invalidateQueries({ queryKey: ["authStatus"] });
 
             // Redirect to the main application page, not the sign-in page
             router.push("/");

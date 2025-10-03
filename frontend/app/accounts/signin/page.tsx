@@ -61,7 +61,6 @@ export default function SignInPage() {
                 password: formData.password,
             });
             queryClient.setQueryData(["user"], user);
-            await queryClient.invalidateQueries({ queryKey: ["authStatus"] });
 
             router.push("/");
         } catch (error: unknown) {

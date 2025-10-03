@@ -104,7 +104,7 @@ async def refresh_access_token(
         ) from e
 
 
-@router.delete("/delete", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_account(
     response: Response,
     user_id: str = Depends(auth.get_user_id_http),
@@ -127,16 +127,7 @@ async def delete_account(
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.get("/status")
-async def get_auth_status(user_id: str = Depends(auth.get_user_id_http)):
-    """
-    A lightweight endpoint to check if the user's access token is valid.
-    It doesn't hit the database. It only validates the JWT.
-    """
-    return {"user_id": user_id}
-
-
-@router.get("/user", response_model=UserResponse)
+@router.get("/me", response_model=UserResponse)
 async def get_user(
     user_id: str = Depends(auth.get_user_id_http),
     cosmos_service: CosmosService = Depends(get_cosmos_service),
