@@ -1,41 +1,9 @@
 "use client";
 
 import { Board } from "@/components/tic-tac-toe/board";
-import { SmallBoard } from "@/lib/types";
+import { UltimateTicTacToeAction, UltimateTicTacToeState } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-// --- Frontend-specific type definitions ---
-// These types are synchronized with the Pydantic models in the backend.
-
-// Corresponds to the backend's UltimateTicTacToePayload schema
-export type UltimateTicTacToePayload = {
-    board_row: number;
-    board_col: number;
-    row: number;
-    col: number;
-};
-
-// Corresponds to the backend's UltimateTicTacToeAction schema
-export type UltimateTicTacToeAction = {
-    type: "PLACE_MARKER" | "RESIGN";
-    payload: UltimateTicTacToePayload | null;
-};
-
-// Corresponds to the backend's UltimateTicTacToeState schema,
-// including fields inherited from the base GameState.
-export type UltimateTicTacToeState = {
-    // --- Inherited from base GameState ---
-    game_id: string;
-    player_ids: string[];
-    finished: boolean;
-    meta: Record<string, any>; // Contains game-specific data like winner or current player index
-    turn: number | null;
-
-    // --- UltimateTicTacToe-specific state ---
-    large_board: SmallBoard[][];
-    meta_board: SmallBoard; // Tracks winners of the small boards
-    active_board: [number, number] | null;
-};
 
 // --- Component Props ---
 type Props = {
