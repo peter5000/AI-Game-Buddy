@@ -2,8 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-export type CellValue = "X" | "O" | "-" | null;
+import { CellValue } from "@/lib/types"
 
 type Props = {
     value: CellValue;

@@ -1,8 +1,7 @@
 "use client";
 
-import { Cell, CellValue } from "@/components/tic-tac-toe/cell";
-
-export type SmallBoard = (CellValue | null)[][];
+import { Cell } from "@/components/tic-tac-toe/cell";
+import { SmallBoard } from "@/lib/types"
 
 type Props = {
     board: SmallBoard;

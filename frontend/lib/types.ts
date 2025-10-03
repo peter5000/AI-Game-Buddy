@@ -36,6 +36,10 @@ export interface Game {
     };
 }
 
+// Ultimate Tic-Tac-Toe types
+export type SmallBoard = (CellValue | null)[][];
+export type CellValue = "X" | "O" | "-" | null;
+
 // AI Friend types
 export interface AIFriend {
     id: string;
