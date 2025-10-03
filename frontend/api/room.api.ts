@@ -1,4 +1,4 @@
-import { Room, RoomCreateRequest, RoomJoinRequest } from "@/types/room.types";
+import { Room, RoomCreateRequest } from "@/types/room.types";
 
 import { apiRequest } from "./index.api";
 
@@ -9,45 +9,50 @@ export async function createRoom(data: RoomCreateRequest): Promise<Room> {
     });
 }
 
-export async function joinRoom(data: RoomJoinRequest): Promise<Room> {
-    return apiRequest<Room>("/rooms/join", {
-        method: "POST",
-        body: JSON.stringify(data),
-    });
-}
-
-export async function leaveRoom(): Promise<never> {
-    return apiRequest<never>("/rooms/leave", {
+export async function joinRoom(roomId: string): Promise<Room> {
+    return apiRequest<Room>(`/rooms/${roomId}/join`, {
         method: "POST",
     });
 }
 
-export async function deleteRoom(): Promise<never> {
-    return apiRequest<never>("/rooms/delete", {
+export async function leaveRoom(roomId: string): Promise<void> {
+    return apiRequest<void>(`/rooms/${roomId}/leave`, {
+        method: "POST",
+    });
+}
+
+export async function deleteRoom(roomId: string): Promise<void> {
+    return apiRequest<void>(`/rooms/${roomId}`, {
         method: "DELETE",
     });
 }
 
-export async function getRoom(): Promise<Room> {
-    return apiRequest<Room>("/rooms/get", {
+export async function getRoom(roomId: string): Promise<Room> {
+    return apiRequest<Room>(`/rooms/${roomId}`, {
+        method: "GET",
+    });
+}
+
+export async function listRooms(): Promise<Record<string, unknown>[]> {
+    return apiRequest<Record<string, unknown>[]>("/rooms", {
+        method: "GET",
+    });
+}
+
+export async function startGame(roomId: string): Promise<unknown> {
+    return apiRequest<unknown>(`/rooms/${roomId}/game`, {
         method: "POST",
     });
 }
 
-export async function startGame(): Promise<never> {
-    return apiRequest<never>("/rooms/start", {
-        method: "POST",
+export async function endGame(roomId: string): Promise<void> {
+    return apiRequest<void>(`/rooms/${roomId}/game`, {
+        method: "DELETE",
     });
 }
 
-export async function endGame(): Promise<never> {
-    return apiRequest<never>("/rooms/end", {
-        method: "POST",
-    });
-}
-
-export async function getGameState(): Promise<never> {
-    return apiRequest<never>("/rooms/get_game_state", {
+export async function getGameState(roomId: string): Promise<unknown> {
+    return apiRequest<unknown>(`/rooms/${roomId}/game`, {
         method: "GET",
     });
 }

@@ -10,15 +10,7 @@ export interface Room {
     gameState: Record<string, unknown>;
 }
 
-// -----------------
-// API Request Types
-// -----------------
-
 export interface RoomCreateRequest {
     roomName: string;
     gameType: string;
-}
-
-export interface RoomJoinRequest {
-    roomId: string;
 }

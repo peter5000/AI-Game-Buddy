@@ -3,6 +3,6 @@ export * from "./client";
 
 // Export all API modules
 export * from "./account.api";
-// export * from "./chats.api"
+export * from "./chat.api";
 // export * from './ai-friends';
 export * from "./room.api";
