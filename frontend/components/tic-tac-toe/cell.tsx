@@ -1,8 +1,8 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { CellValue } from "@/lib/types"
+import { cn } from "@/lib/utils";
 
 type Props = {
     value: CellValue;

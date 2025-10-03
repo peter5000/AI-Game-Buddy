@@ -1,8 +1,8 @@
 "use client";
 
 import { Board } from "@/components/tic-tac-toe/board";
-import { cn } from "@/lib/utils";
 import { SmallBoard } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 // --- Frontend-specific type definitions ---
 // These types are synchronized with the Pydantic models in the backend.
