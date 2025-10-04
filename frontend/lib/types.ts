@@ -1,3 +1,5 @@
+import { Message } from "./schemas"
+
 // Common API response structure
 export interface ApiResponse<T> {
     status: string;
@@ -54,6 +56,12 @@ export type WebSocketMessage =
     | { type: "game_over"; payload: unknown }
     | { type: "error"; payload: { message: string } };
 
+export interface SendChatMessagePayload {
+    chat_id: string;
+    sender: string;
+    message: string;
+}
+
 export type WebSocketSendMessage =
     | { type: "game_action"; payload: unknown }
     | { type: "chat_message"; payload: unknown };
@@ -69,13 +77,6 @@ export interface WebSocketContextType {
 }
 
 // Chat types
-export interface Message {
-    id: string;
-    sender: string;
-    message: string;
-    timestamp: string;
-}
-
 export interface Chat {
     id: string;
     room_id: string | null;
