@@ -4,7 +4,6 @@ import { Board } from "@/components/tic-tac-toe/board";
 import { UltimateTicTacToeAction, UltimateTicTacToeState } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-
 // --- Component Props ---
 type Props = {
     gameState: UltimateTicTacToeState;
