@@ -2,7 +2,7 @@ import React from "react";
 import { format } from "date-fns";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Message as MessageType } from "@/lib/types";
+import { Message as MessageType } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 
 interface MessageProps {

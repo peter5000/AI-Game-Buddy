@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 
-import { Message as MessageType } from "@/lib/types";
+import { Message as MessageType } from "@/lib/schemas";
 
 import { Message } from "./message";
 
@@ -26,9 +26,9 @@ export function MessageList({ messages, currentUserId }: MessageListProps) {
 
     return (
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {messages.map((message) => (
+            {messages.map((message, index) => (
                 <Message
-                    key={message.id}
+                    key={index}  // should use message-id when it is implemented
                     message={message}
                     isUser={message.sender === currentUserId}
                 />
