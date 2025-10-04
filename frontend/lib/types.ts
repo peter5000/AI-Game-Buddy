@@ -72,7 +72,14 @@ export interface WebSocketContextType {
 export interface Message {
     id: string;
     sender: string;
-    text: string;
-    isUser: boolean;
-    timestamp: Date;
+    message: string;
+    timestamp: string;
+}
+
+export interface Chat {
+    id: string;
+    room_id: string | null;
+    users: string[];
+    bots: string[];
+    chat_log: Message[];
 }
