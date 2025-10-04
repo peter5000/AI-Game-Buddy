@@ -3,12 +3,12 @@
 import React, { useEffect, useState } from "react";
 
 import { useWebSocket } from "@/components/websocket-provider";
+import { Message as MessageType,MessageSchema } from "@/lib/schemas"
 import {
     Chat as ChatType,
     SendChatMessagePayload,
 } from "@/lib/types";
 
-import { MessageSchema, Message as MessageType } from "@/lib/schemas"
 import { MessageInput } from "./message-input";
 import { MessageList } from "./message-list";
 
