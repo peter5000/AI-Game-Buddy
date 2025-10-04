@@ -12,11 +12,22 @@ interface MessageInputProps {
 export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
     const [inputValue, setInputValue] = React.useState("");
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSendMessage = () => {
         if (inputValue.trim() && !isLoading) {
             onSendMessage(inputValue);
             setInputValue("");
+        }
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        handleSendMessage();
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            handleSendMessage();
         }
     };
 
@@ -28,6 +39,7 @@ export function MessageInput({ onSendMessage, isLoading }: MessageInputProps) {
             <Input
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
+                onKeyDown={handleKeyDown}
                 placeholder="Type your message..."
                 className="flex-1"
                 disabled={isLoading}
