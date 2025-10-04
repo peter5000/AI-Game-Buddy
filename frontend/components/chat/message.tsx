@@ -25,9 +25,7 @@ export function Message({ message, isUser }: MessageProps) {
                 )}
             >
                 <Avatar className="h-8 w-8">
-                    <AvatarFallback>
-                        {message.sender.charAt(0)}
-                    </AvatarFallback>
+                    <AvatarFallback>{message.sender.charAt(0)}</AvatarFallback>
                 </Avatar>
                 <div
                     className={cn(

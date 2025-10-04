@@ -1,4 +1,4 @@
-import { Message } from "./schemas"
+import { Message } from "./schemas";
 
 // Common API response structure
 export interface ApiResponse<T> {

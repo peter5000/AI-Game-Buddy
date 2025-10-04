@@ -19,7 +19,9 @@ export function MessageList({ messages, currentUserId }: MessageListProps) {
     if (!messages.length) {
         return (
             <div className="flex flex-1 items-center justify-center">
-                <p className="text-gray-500">No messages yet. Start the conversation!</p>
+                <p className="text-gray-500">
+                    No messages yet. Start the conversation!
+                </p>
             </div>
         );
     }
@@ -28,7 +30,7 @@ export function MessageList({ messages, currentUserId }: MessageListProps) {
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((message, index) => (
                 <Message
-                    key={index}  // should use message-id when it is implemented
+                    key={index} // should use message-id when it is implemented
                     message={message}
                     isUser={message.sender === currentUserId}
                 />

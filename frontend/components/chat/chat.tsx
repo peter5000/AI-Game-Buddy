@@ -3,11 +3,8 @@
 import React, { useEffect, useState } from "react";
 
 import { useWebSocket } from "@/components/websocket-provider";
-import { Message as MessageType,MessageSchema } from "@/lib/schemas"
-import {
-    Chat as ChatType,
-    SendChatMessagePayload,
-} from "@/lib/types";
+import { Message as MessageType, MessageSchema } from "@/lib/schemas";
+import { Chat as ChatType, SendChatMessagePayload } from "@/lib/types";
 
 import { MessageInput } from "./message-input";
 import { MessageList } from "./message-list";
@@ -19,7 +16,9 @@ interface ChatProps {
 
 export function Chat({ chat, currentUserId }: ChatProps) {
     const { sendMessage, connectionStatus } = useWebSocket();
-    const [messages, setMessages] = useState<MessageType[]>(chat.chat_log || []);
+    const [messages, setMessages] = useState<MessageType[]>(
+        chat.chat_log || []
+    );
     useEffect(() => {
         const handleNewMessage = (event: Event) => {
             if (event instanceof CustomEvent) {
@@ -30,10 +29,12 @@ export function Chat({ chat, currentUserId }: ChatProps) {
 
                 // Update log only when it has a valid structure (in the future with multiple chat, need to check which chat to update)
                 if (result.success) {
-                    setMessages(prevMessages => [...prevMessages, newMessage]);
+                    setMessages((prevMessages) => [
+                        ...prevMessages,
+                        newMessage,
+                    ]);
                 }
             }
-
         };
 
         window.addEventListener("websocket-message", handleNewMessage);
@@ -53,7 +54,7 @@ export function Chat({ chat, currentUserId }: ChatProps) {
         if (connectionStatus === "connected") {
             sendMessage({ type: "chat_message", payload: messagePayload });
         } else {
-            console.error("Connection unstable. Failed to send the message.")
+            console.error("Connection unstable. Failed to send the message.");
         }
     };
 
