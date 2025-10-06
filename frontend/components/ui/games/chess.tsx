@@ -17,6 +17,8 @@ type ChessGameProps = {
     playerColor?: PlayerColor; // The color this component instance controls
 };
 
+type PromotionPiece = "q" | "r" | "b" | "n";
+
 const ChessGame: React.FC<ChessGameProps> = ({
     gameState,
     onMove,
@@ -29,6 +31,10 @@ const ChessGame: React.FC<ChessGameProps> = ({
     const [highlightedSquares, setHighlightedSquares] = useState<
         Record<string, React.CSSProperties>
     >({});
+    const [promotionSquare, setPromotionSquare] = useState<{
+        from: string;
+        to: string;
+    } | null>(null);
 
     const highlightPieceAndMoves = (square: string, pieceColor: "w" | "b") => {
         // Prevent interaction for spectators or if it's not the player's piece or turn
@@ -48,18 +54,61 @@ const ChessGame: React.FC<ChessGameProps> = ({
 
         const newHighlights: Record<string, React.CSSProperties> = {};
         newHighlights[square] = {
-            background: "rgba(255, 255, 0, 0.4)", // highlight piece
+            background: "rgba(255, 255, 0, 0.4)", // highlight selected piece
         };
 
         moves.forEach((m) => {
+            const isCapture = m.flags.includes("c") || m.flags.includes("e");
             newHighlights[m.to] = {
-                background:
-                    "radial-gradient(circle, rgba(17, 119, 1, 0.5) 20%, transparent 20%)",
+                background: isCapture
+                    ? "radial-gradient(circle, rgba(17, 119, 1, 0.5) 60%, transparent 50%)"
+                    : "radial-gradient(circle, rgba(17, 119, 1, 0.5) 20%, transparent 20%)",
             };
         });
 
         setHighlightedSquares(newHighlights);
         return true;
+    };
+
+    const isPromotionMove = (from: string, to: string): boolean => {
+        const piece = game.get(from as Square);
+        if (!piece || piece.type !== "p") return false;
+
+        const toRank = to[1];
+        return (
+            (piece.color === "w" && toRank === "8") ||
+            (piece.color === "b" && toRank === "1")
+        );
+    };
+
+    const executeMove = (
+        from: string,
+        to: string,
+        promotion?: PromotionPiece
+    ) => {
+        let move = null;
+        try {
+            move = game.move({
+                from,
+                to,
+                promotion: promotion || "q",
+            });
+        } catch (error) {
+            if (error instanceof Error) {
+                console.warn("Invalid move attempted:", error.message);
+            } else {
+                console.warn("Invalid move attempted:", error);
+            }
+        }
+
+        if (move) {
+            onMove?.(from + to + (promotion || ""));
+            setBoardPosition(game.fen());
+        }
+
+        setSelectedSquare(null);
+        setHighlightedSquares({});
+        return !!move;
     };
 
     const handlePieceDrop = ({
@@ -70,7 +119,7 @@ const ChessGame: React.FC<ChessGameProps> = ({
 
         const piece = game.get(sourceSquare as Square);
 
-        // Prevent moving opponent’s pieces or moving as a spectator
+        // Prevent moving opponent's pieces or moving as a spectator
         if (
             playerColor === "spectator" ||
             !piece ||
@@ -87,36 +136,20 @@ const ChessGame: React.FC<ChessGameProps> = ({
             return false;
         }
 
-        // The game.move() function will validate if it's a legal move for the current turn
-        let move = null;
-        try {
-            move = game.move({
-                from: sourceSquare,
-                to: targetSquare,
-                promotion: "q",
-            });
-        } catch (error) {
-            // Silently catch the error for click-based moves as well.
-            if (error instanceof Error) {
-                console.warn("Invalid move attempted:", error.message);
-            } else {
-                console.warn("Invalid move attempted:", error);
-            }
+        // Check if this is a promotion move
+        if (isPromotionMove(sourceSquare, targetSquare)) {
+            setPromotionSquare({ from: sourceSquare, to: targetSquare });
+            setSelectedSquare(null);
+            setHighlightedSquares({});
+            return false; // Wait for player to choose piece
         }
 
-        // If the move is illegal, chess.js returns null
-        if (move) {
-            onMove?.(sourceSquare + targetSquare);
-            setBoardPosition(game.fen());
-        }
-
-        // Always clear selections after a move attempt
-        setSelectedSquare(null);
-        setHighlightedSquares({});
-        return !!move;
+        return executeMove(sourceSquare, targetSquare);
     };
 
     const handleSquareClick = ({ square }: SquareHandlerArgs) => {
+        setPromotionSquare(null);
+
         // No interaction for spectators
         if (playerColor === "spectator") return;
 
@@ -128,47 +161,30 @@ const ChessGame: React.FC<ChessGameProps> = ({
             return;
         }
 
-        // If a piece is clicked, attempt to highlight it and its moves
-        if (piece) {
-            if (!highlightPieceAndMoves(square, piece.color)) {
-                // If highlighting fails, clear any existing highlights
-                setSelectedSquare(null);
-                setHighlightedSquares({});
-            }
+        // Select a new piece
+        if (
+            piece &&
+            piece.color === playerColor &&
+            piece.color === game.turn()
+        ) {
+            highlightPieceAndMoves(square, piece.color);
             return;
         }
 
-        // If an empty square is clicked and a piece was already selected, try to move
+        // If already selected, attempt to move there
         if (selectedSquare) {
-            let move = null;
-            // Also wrap this move attempt in a try...catch block
-            try {
-                move = game.move({
-                    from: selectedSquare,
-                    to: square,
-                    promotion: "q",
-                });
-            } catch (error) {
-                // Silently catch the error for click-based moves as well.
-                if (error instanceof Error) {
-                    console.warn("Invalid move attempted:", error.message);
-                } else {
-                    console.warn("Invalid move attempted:", error);
-                }
+            if (isPromotionMove(selectedSquare, square)) {
+                setPromotionSquare({ from: selectedSquare, to: square });
+                setSelectedSquare(null);
+                setHighlightedSquares({});
+                return;
             }
 
-            if (move) {
-                onMove?.(selectedSquare + square);
-                setBoardPosition(game.fen());
-            }
-
-            setSelectedSquare(null);
-            setHighlightedSquares({});
+            executeMove(selectedSquare, square);
         }
     };
 
     const handleCanDragPiece = ({ piece }: PieceHandlerArgs) => {
-        // Spectators can't drag. Players can only drag their own pieces on their turn.
         const pieceColor = piece.pieceType[0] as "w" | "b";
         return (
             playerColor !== "spectator" &&
@@ -178,7 +194,7 @@ const ChessGame: React.FC<ChessGameProps> = ({
     };
 
     const handlePieceDrag = ({ square, piece }: PieceHandlerArgs) => {
-        // Clear any previous highlights when starting a new drag
+        setPromotionSquare(null);
         setHighlightedSquares({});
         setSelectedSquare(null);
 
@@ -188,8 +204,43 @@ const ChessGame: React.FC<ChessGameProps> = ({
         }
     };
 
+    const handlePromotion = (piece: PromotionPiece) => {
+        if (!promotionSquare) return;
+        executeMove(promotionSquare.from, promotionSquare.to, piece);
+        setPromotionSquare(null);
+    };
+
+    const getPromotionSquarePosition = () => {
+        if (!promotionSquare) return {};
+
+        const file = promotionSquare.to.charCodeAt(0) - "a".charCodeAt(0);
+        const rank = parseInt(promotionSquare.to[1]);
+        const isFlipped = playerColor === "b";
+
+        // Horizontal alignment
+        const leftPercent = isFlipped ? (7 - file) * 12.5 : file * 12.5;
+
+        // Show menu above pawn for white promotion (rank 8) and black promotion (rank 1)
+        const verticalStyle =
+            (playerColor === "w" && rank === 8) ||
+            (playerColor === "b" && rank === 1)
+                ? { top: "0", bottom: "auto" }
+                : { bottom: "0", top: "auto" };
+
+        return {
+            left: `${leftPercent}%`,
+            ...verticalStyle,
+        };
+    };
+
+    const promotionPieces: PromotionPiece[] = ["q", "r", "b", "n"];
+
+    const getPieceImageUrl = (piece: PromotionPiece) => {
+        return `/pieces/${playerColor}${piece}.svg`;
+    };
+
     return (
-        <div className="w-full aspect-square max-w-full sm:max-w-[400px] md:max-w-[600px] lg:max-w-[800px]">
+        <div className="relative w-full aspect-square max-w-full sm:max-w-[400px] md:max-w-[600px] lg:max-w-[800px]">
             <Chessboard
                 options={{
                     position: boardPosition,
@@ -197,13 +248,35 @@ const ChessGame: React.FC<ChessGameProps> = ({
                     canDragPiece: handleCanDragPiece,
                     onPieceDrag: handlePieceDrag,
                     onPieceDrop: handlePieceDrop,
-                    // Flip the board if the player is black
+                    showAnimations: false,
                     boardOrientation: playerColor === "b" ? "black" : "white",
                     darkSquareStyle: { backgroundColor: "#779556" },
                     lightSquareStyle: { backgroundColor: "#eeeed2" },
                     squareStyles: highlightedSquares,
                 }}
             />
+
+            {/* Promotion Dropdown (auto closes when clicking elsewhere) */}
+            {promotionSquare && (
+                <div
+                    className="absolute w-[12.5%] bg-white shadow-lg rounded z-50 flex flex-col"
+                    style={getPromotionSquarePosition()}
+                >
+                    {promotionPieces.map((piece) => (
+                        <button
+                            key={piece}
+                            onClick={() => handlePromotion(piece)}
+                            className="aspect-square hover:bg-gray-200 transition-colors flex items-center justify-center border-b border-gray-300 last:border-b-0"
+                        >
+                            <img
+                                src={getPieceImageUrl(piece)}
+                                alt={piece}
+                                className="w-full h-full p-2"
+                            />
+                        </button>
+                    ))}
+                </div>
+            )}
         </div>
     );
 };
