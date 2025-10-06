@@ -19,11 +19,11 @@ type ChessGameProps = {
 
 type PromotionPiece = "q" | "r" | "b" | "n";
 
-const ChessGame: React.FC<ChessGameProps> = ({
+export default function ChessGame({
     gameState,
     onMove,
     playerColor = "w", // Default to white for simplicity
-}) => {
+}: ChessGameProps) {
     const fen = typeof gameState?.fen === "string" ? gameState.fen : undefined;
     const [game] = useState(() => new Chess(fen));
     const [boardPosition, setBoardPosition] = useState(fen);
@@ -61,7 +61,7 @@ const ChessGame: React.FC<ChessGameProps> = ({
             const isCapture = m.flags.includes("c") || m.flags.includes("e");
             newHighlights[m.to] = {
                 background: isCapture
-                    ? "radial-gradient(circle, rgba(17, 119, 1, 0.5) 60%, transparent 50%)"
+                    ? "radial-gradient(circle, rgba(17, 119, 1, 0.7) 70%, transparent 50%)"
                     : "radial-gradient(circle, rgba(17, 119, 1, 0.5) 20%, transparent 20%)",
             };
         });
@@ -279,6 +279,4 @@ const ChessGame: React.FC<ChessGameProps> = ({
             )}
         </div>
     );
-};
-
-export default ChessGame;
+}
