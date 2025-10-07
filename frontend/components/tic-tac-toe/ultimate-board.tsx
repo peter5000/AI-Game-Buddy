@@ -1,8 +1,11 @@
 "use client";
 
 import { Board } from "@/components/tic-tac-toe/board";
-import { UltimateTicTacToeAction, UltimateTicTacToeState } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import {
+    UltimateTicTacToeAction,
+    UltimateTicTacToeState,
+} from "@/types/games/ulttt.types";
 
 // --- Component Props ---
 type Props = {

@@ -22,11 +22,19 @@ export type UltimateTicTacToeState = {
     game_id: string;
     player_ids: string[];
     finished: boolean;
-    meta: Record<string, unknown>; // Contains game-specific data like winner or current player index
+    meta: UltimateTicTacToeMeta; // Contains game-specific data like winner or current player index
     turn: number | null;
 
     // --- UltimateTicTacToe-specific state ---
     large_board: SmallBoard[][];
     meta_board: SmallBoard; // Tracks winners of the small boards
     active_board: [number, number] | null;
+};
+
+export type UltimateTicTacToeMeta = {
+    curr_player_index: number;
+    player_symbols: {
+        [playerId: string]: "X" | "O"; // Maps a player ID to their symbol
+    };
+    winner: string | null; // Can be a player ID or null
 };

@@ -1,7 +1,7 @@
 "use client";
 
 import { Cell } from "@/components/tic-tac-toe/cell";
-import { SmallBoard } from "@/lib/types";
+import { SmallBoard } from "@/types/games/ulttt.types";
 
 type Props = {
     board: SmallBoard;

@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 
+import { UltimateBoard } from "@/components/tic-tac-toe/ultimate-board";
 import {
-    UltimateBoard,
     UltimateTicTacToeAction,
     UltimateTicTacToeState,
-} from "@/components/tic-tac-toe/ultimate-board";
+} from "@/types/games/ulttt.types";
 
 // This is an interactive demonstration page for the UltimateBoard component.
 // It shows how a parent "Game Room" would manage state.

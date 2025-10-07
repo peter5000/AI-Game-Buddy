@@ -65,7 +65,6 @@ const ChessTestPage = () => {
         });
 
         setLastMove(result.san); // Display the last move in a readable format
-        console.log("Move captured by test page:", action);
     };
 
     const handleRoleChange = (color: PlayerColor) => {
