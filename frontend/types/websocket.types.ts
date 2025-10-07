@@ -6,8 +6,19 @@ export type WebSocketMessage =
     | { type: "error"; payload: { message: string } };
 
 export type WebSocketSendMessage =
-    | { type: "game_action"; payload: unknown }
+    | { type: "game_action"; payload: GameActionPayload }
     | { type: "chat_message"; payload: unknown };
+
+export type GameActionPayload = {
+    room_id: string;
+    game_type: string;
+    action: GameAction;
+};
+
+export type GameAction = {
+    type: string;
+    payload: Record<string, unknown>;
+};
 
 export type WebSocketStatus = "disconnected" | "connecting" | "connected";
 

@@ -1,5 +1,6 @@
 "use client";
-import React, { useState } from "react";
+
+import React, { useEffect, useState } from "react";
 import {
     Chessboard,
     PieceDropHandlerArgs,
@@ -8,24 +9,24 @@ import {
 } from "react-chessboard";
 import { Chess, Square } from "chess.js";
 
-// Define the type for the player's color or spectator status
+import { GameAction } from "@/types/websocket.types";
+
 type PlayerColor = "w" | "b" | "spectator";
 
 type ChessGameProps = {
-    gameState?: Record<string, unknown> | null; // starting position
-    onMove?: (move: string) => void; // e.g., "e2e4"
-    playerColor?: PlayerColor; // The color this component instance controls
+    fen: string;
+    onMove: (action: GameAction) => void; // e.g., "e2e4"
+    playerColor: PlayerColor;
 };
 
 type PromotionPiece = "q" | "r" | "b" | "n";
 
 export default function ChessGame({
-    gameState,
+    fen,
     onMove,
-    playerColor = "w", // Default to white for simplicity
+    playerColor,
 }: ChessGameProps) {
-    const fen = typeof gameState?.fen === "string" ? gameState.fen : undefined;
-    const [game] = useState(() => new Chess(fen));
+    const [game, setGame] = useState(() => new Chess(fen));
     const [boardPosition, setBoardPosition] = useState(fen);
     const [selectedSquare, setSelectedSquare] = useState<string | null>(null);
     const [highlightedSquares, setHighlightedSquares] = useState<
@@ -36,8 +37,12 @@ export default function ChessGame({
         to: string;
     } | null>(null);
 
+    useEffect(() => {
+        setGame(new Chess(fen));
+        setBoardPosition(fen);
+    }, [fen]);
+
     const highlightPieceAndMoves = (square: string, pieceColor: "w" | "b") => {
-        // Prevent interaction for spectators or if it's not the player's piece or turn
         if (
             playerColor === "spectator" ||
             pieceColor !== playerColor ||
@@ -54,7 +59,7 @@ export default function ChessGame({
 
         const newHighlights: Record<string, React.CSSProperties> = {};
         newHighlights[square] = {
-            background: "rgba(255, 255, 0, 0.4)", // highlight selected piece
+            background: "rgba(255, 255, 0, 0.4)",
         };
 
         moves.forEach((m) => {
@@ -73,7 +78,6 @@ export default function ChessGame({
     const isPromotionMove = (from: string, to: string): boolean => {
         const piece = game.get(from as Square);
         if (!piece || piece.type !== "p") return false;
-
         const toRank = to[1];
         return (
             (piece.color === "w" && toRank === "8") ||
@@ -88,22 +92,33 @@ export default function ChessGame({
     ) => {
         let move = null;
         try {
+            // This move mutates the local 'game' instance for instant feedback
             move = game.move({
                 from,
                 to,
                 promotion: promotion || "q",
             });
-        } catch (error) {
-            if (error instanceof Error) {
-                console.warn("Invalid move attempted:", error.message);
-            } else {
-                console.warn("Invalid move attempted:", error);
-            }
+        } catch {
+            // Invalid move, do nothing
+            setSelectedSquare(null);
+            setHighlightedSquares({});
+            return false;
         }
 
         if (move) {
-            onMove?.(from + to + (promotion || ""));
+            // Update the visual board position
             setBoardPosition(game.fen());
+
+            // Create action object
+            const action: GameAction = {
+                type: "MAKE_MOVE",
+                payload: {
+                    move: from + to + (promotion || ""),
+                },
+            };
+
+            // Pass the entire action object to the parent
+            onMove(action);
         }
 
         setSelectedSquare(null);
@@ -111,37 +126,35 @@ export default function ChessGame({
         return !!move;
     };
 
+    const handlePieceDrag = ({ square, piece }: PieceHandlerArgs) => {
+        // Clear any previous selections or highlights
+        setPromotionSquare(null);
+        setSelectedSquare(null);
+        setHighlightedSquares({});
+
+        // Highlight the moves for the piece being dragged
+        const pieceColor = piece.pieceType[0] as "w" | "b";
+        if (square) {
+            highlightPieceAndMoves(square, pieceColor);
+        }
+    };
+
     const handlePieceDrop = ({
         sourceSquare,
         targetSquare,
     }: PieceDropHandlerArgs) => {
-        if (!sourceSquare || !targetSquare) return false;
+        if (!sourceSquare || !targetSquare || sourceSquare === targetSquare) {
+            return false;
+        }
 
         const piece = game.get(sourceSquare as Square);
-
-        // Prevent moving opponent's pieces or moving as a spectator
-        if (
-            playerColor === "spectator" ||
-            !piece ||
-            piece.color !== playerColor
-        ) {
-            setSelectedSquare(null);
-            setHighlightedSquares({});
+        if (!piece || piece.color !== playerColor) {
             return false;
         }
 
-        if (sourceSquare === targetSquare) {
-            setSelectedSquare(null);
-            setHighlightedSquares({});
-            return false;
-        }
-
-        // Check if this is a promotion move
         if (isPromotionMove(sourceSquare, targetSquare)) {
             setPromotionSquare({ from: sourceSquare, to: targetSquare });
-            setSelectedSquare(null);
-            setHighlightedSquares({});
-            return false; // Wait for player to choose piece
+            return false;
         }
 
         return executeMove(sourceSquare, targetSquare);
@@ -149,19 +162,15 @@ export default function ChessGame({
 
     const handleSquareClick = ({ square }: SquareHandlerArgs) => {
         setPromotionSquare(null);
-
-        // No interaction for spectators
         if (playerColor === "spectator") return;
 
         const piece = game.get(square as Square);
-
         if (selectedSquare === square) {
             setSelectedSquare(null);
             setHighlightedSquares({});
             return;
         }
 
-        // Select a new piece
         if (
             piece &&
             piece.color === playerColor &&
@@ -171,15 +180,11 @@ export default function ChessGame({
             return;
         }
 
-        // If already selected, attempt to move there
         if (selectedSquare) {
             if (isPromotionMove(selectedSquare, square)) {
                 setPromotionSquare({ from: selectedSquare, to: square });
-                setSelectedSquare(null);
-                setHighlightedSquares({});
                 return;
             }
-
             executeMove(selectedSquare, square);
         }
     };
@@ -191,17 +196,6 @@ export default function ChessGame({
             pieceColor === playerColor &&
             pieceColor === game.turn()
         );
-    };
-
-    const handlePieceDrag = ({ square, piece }: PieceHandlerArgs) => {
-        setPromotionSquare(null);
-        setHighlightedSquares({});
-        setSelectedSquare(null);
-
-        const pieceColor = piece.pieceType[0] as "w" | "b";
-        if (square) {
-            highlightPieceAndMoves(square, pieceColor);
-        }
     };
 
     const handlePromotion = (piece: PromotionPiece) => {
@@ -244,9 +238,9 @@ export default function ChessGame({
             <Chessboard
                 options={{
                     position: boardPosition,
+                    onPieceDrag: handlePieceDrag,
                     onSquareClick: handleSquareClick,
                     canDragPiece: handleCanDragPiece,
-                    onPieceDrag: handlePieceDrag,
                     onPieceDrop: handlePieceDrop,
                     showAnimations: false,
                     boardOrientation: playerColor === "b" ? "black" : "white",
@@ -255,8 +249,6 @@ export default function ChessGame({
                     squareStyles: highlightedSquares,
                 }}
             />
-
-            {/* Promotion Dropdown (auto closes when clicking elsewhere) */}
             {promotionSquare && (
                 <div
                     className="absolute w-[12.5%] bg-white shadow-lg rounded z-50 flex flex-col"
