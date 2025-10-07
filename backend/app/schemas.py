@@ -22,6 +22,15 @@ class User(BaseModel):
     password: str
 
 
+class UserResponse(BaseModel):
+    user_id: str
+    username: str
+    email: EmailStr
+    room: str | None = (
+        None  # TODO: Possibly make this a list if we want users to be able to join multiple rooms at once
+    )
+
+
 class UserLogin(BaseModel):
     identifier: str
     password: SecretStr = Field(
@@ -41,6 +50,11 @@ class Room(BaseModel):
     )
     users: set[str]
     game_state: dict = Field(default_factory=dict)
+
+
+class RoomCreate(BaseModel):
+    room_name: str
+    game_type: str
 
 
 class BroadcastPayload(BaseModel):

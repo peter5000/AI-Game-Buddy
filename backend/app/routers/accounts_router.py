@@ -1,5 +1,5 @@
 from datetime import timedelta
-from typing import Annotated, Any
+from typing import Annotated
 
 from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
 from jose import JWTError
@@ -7,22 +7,27 @@ from jose import JWTError
 from app import auth
 from app.config import settings
 from app.dependencies import get_cosmos_service, get_user_service
-from app.schemas import UserCreate, UserLogin
+from app.schemas import UserCreate, UserLogin, UserResponse
 from app.services.cosmos_service import CosmosService
 from app.services.user_service import UserService
 
 router = APIRouter(prefix="/accounts", tags=["Accounts"])
 
 
-@router.post("/register", status_code=201)
+@router.post("/register", status_code=201, response_model=UserResponse)
 async def create_account(
-    user: UserCreate, user_service: UserService = Depends(get_user_service)
+    response: Response,
+    user: UserCreate,
+    user_service: UserService = Depends(get_user_service),
 ):
     new_user = await user_service.create_user(user=user)
-    return {"status": "success", "message": "Account created", "data": new_user}
+
+    auth._set_auth_cookies(response=response, user_id=new_user["id"])
+
+    return new_user
 
 
-@router.post("/login")
+@router.post("/login", response_model=UserResponse)
 async def login_account(
     response: Response,
     user_login: UserLogin,
@@ -41,48 +46,15 @@ async def login_account(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # Access token for storing jwt
-    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = auth.create_access_token(
-        data={"sub": user["id"]}, expires_delta=access_token_expires
-    )
-
-    response.set_cookie(
-        key="access_token",
-        value=access_token,
-        httponly=True,
-        secure=True,
-        samesite="none",
-        max_age=int(access_token_expires.total_seconds()),
-    )
-
-    # Refresh token for refreshing access token
-    refresh_token_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
-    refresh_token = auth.create_refresh_token(
-        data={"sub": user["id"]}, expires_delta=refresh_token_expires
-    )
-
-    response.set_cookie(
-        key="refresh_token",
-        value=refresh_token,
-        httponly=True,
-        secure=True,
-        samesite="none",
-        max_age=int(refresh_token_expires.total_seconds()),
-    )
+    auth._set_auth_cookies(response=response, user_id=user["id"])
 
     user.pop("password", None)
 
-    return {"status": "success", "message": "Account logged in", "data": user}
+    return user
 
 
-@router.post("/logout")
-async def logout_account(
-    response: Response, user_id: str = Depends(auth.get_user_id_http)
-):
-    if not user_id:
-        raise HTTPException(status_code=404, detail="User not found")
-
+@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+async def logout_account(response: Response):
     response.delete_cookie(
         key="access_token", httponly=True, secure=True, samesite="none"
     )
@@ -91,11 +63,12 @@ async def logout_account(
         key="refresh_token", httponly=True, secure=True, samesite="none"
     )
 
-    return {"status": "success", "message": "User logged out"}
+    response.status_code = status.HTTP_204_NO_CONTENT
+    return response
 
 
 # Call refresh endpoint if jwt/cookie is expired
-@router.post("/refresh")
+@router.post("/refresh", status_code=status.HTTP_204_NO_CONTENT)
 async def refresh_access_token(
     response: Response, refresh_token: Annotated[str | None, Cookie()] = None
 ):
@@ -124,14 +97,14 @@ async def refresh_access_token(
             samesite="none",
             max_age=int(access_token_expires.total_seconds()),
         )
-        return {"status": "success", "message": "Access token refreshed"}
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
     except JWTError as e:
         raise HTTPException(
             status_code=401, detail="Invalid or expired refresh token"
         ) from e
 
 
-@router.delete("/delete")
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_account(
     response: Response,
     user_id: str = Depends(auth.get_user_id_http),
@@ -151,19 +124,10 @@ async def delete_account(
         key="refresh_token", httponly=True, secure=True, samesite="none"
     )
 
-    return {"status": "success", "message": "Account deleted"}
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
-@router.get("/status")
-async def get_auth_status(user_id: str = Depends(auth.get_user_id_http)):
-    """
-    A lightweight endpoint to check if the user's access token is valid.
-    It doesn't hit the database. It only validates the JWT.
-    """
-    return {"status": "success", "message": "authenticated", "data": user_id}
-
-
-@router.get("/user", response_model=dict[str, Any])
+@router.get("/me", response_model=UserResponse)
 async def get_user(
     user_id: str = Depends(auth.get_user_id_http),
     cosmos_service: CosmosService = Depends(get_cosmos_service),
@@ -182,4 +146,4 @@ async def get_user(
 
     user_data.pop("password", None)  # Don't send hashed password back
 
-    return {"status": "success", "data": user_data}
+    return user_data

@@ -4,8 +4,11 @@ import type React from "react";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Gamepad2 } from "lucide-react";
 
+import { signupUser } from "@/api/account.api";
+import { ApiError } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -19,11 +22,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/use-auth";
-import { signupUser } from "@/lib/api";
-import { ApiError } from "@/lib/api/index";
 
 export default function SignUpPage() {
-    const { isAuthenticated, isLoading: isAuthLoading } = useAuth(true, "/");
+    const { isAuthenticated, isLoading: isAuthLoading } = useAuth({
+        redirectIfAuthed: true,
+    });
     const [formData, setFormData] = useState({
         username: "",
         email: "",
@@ -34,6 +37,7 @@ export default function SignUpPage() {
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
+    const queryClient = useQueryClient();
 
     if (isAuthLoading || isAuthenticated) {
         return (
@@ -46,19 +50,28 @@ export default function SignUpPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (isLoading) return;
+
         if (formData.password !== formData.confirmPassword) {
             setError("Passwords do not match");
             return;
         }
+
         setIsLoading(true);
+        setError(null); // Clear previous errors on a new submission
 
         try {
-            await signupUser({
+            // Capture the returned user object on successful signup
+            const user = await signupUser({
                 username: formData.username,
                 email: formData.email,
                 password: formData.password,
             });
-            router.push("/accounts/signin");
+
+            // Immediately sign the user in by updating the query cache
+            queryClient.setQueryData(["user"], user);
+
+            // Redirect to the main application page, not the sign-in page
+            router.push("/");
         } catch (error: unknown) {
             if (error instanceof ApiError) {
                 setError(error.message);
@@ -153,7 +166,6 @@ export default function SignUpPage() {
                                 required
                             />
                         </div>
-
                         <div className="flex items-center space-x-2">
                             <Checkbox
                                 id="terms"
@@ -197,20 +209,7 @@ export default function SignUpPage() {
                                 : "Create Account"}
                         </Button>
                     </form>
-
                     <Separator />
-
-                    {/* <div className="space-y-2">
-            <Button variant="outline" className="w-full bg-transparent">
-              <Github className="mr-2 h-4 w-4" />
-              Continue with GitHub
-            </Button>
-            <Button variant="outline" className="w-full bg-transparent">
-              <Mail className="mr-2 h-4 w-4" />
-              Continue with Google
-            </Button>
-          </div> */}
-
                     <div className="text-center text-sm">
                         Already have an account?{" "}
                         <Link

@@ -29,7 +29,7 @@ class ChatService:
 
     async def create_chat(self, user_id: str, room_id: str | None = None) -> Chat:
         if not user_id:
-            raise ValueError("User ID missing on room creation")
+            raise ValueError("User ID missing on chat creation")
 
         # Currently user can only be in one chat room at a time
         if await self.get_user_chat(user_id=user_id):
