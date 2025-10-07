@@ -4,8 +4,10 @@ FROM python:3.10-slim-bookworm
 # Set environment variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    UV_SYSTEM_PYTHON=1
+
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 # Create non-root user
 RUN adduser --uid 5678 --disabled-password --gecos "" --no-create-home appuser
@@ -13,11 +15,11 @@ RUN adduser --uid 5678 --disabled-password --gecos "" --no-create-home appuser
 # Set working directory
 WORKDIR /app
 
-# Copy and install Python dependencies first (better layer caching)
-COPY --chown=appuser:appuser pyproject.toml .
+# Copy dependency files first (better layer caching)
+COPY --chown=appuser:appuser pyproject.toml uv.lock* ./
 
-# Install Python dependencies
-RUN python -m pip install --no-cache-dir .
+# Install dependencies using uv
+RUN uv pip install --no-cache -r pyproject.toml
 
 # Copy application code
 COPY --chown=appuser:appuser backend/ .

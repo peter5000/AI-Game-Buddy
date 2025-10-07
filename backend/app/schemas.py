@@ -22,6 +22,15 @@ class User(BaseModel):
     password: str
 
 
+class UserResponse(BaseModel):
+    user_id: str
+    username: str
+    email: EmailStr
+    room: str | None = (
+        None  # TODO: Possibly make this a list if we want users to be able to join multiple rooms at once
+    )
+
+
 class UserLogin(BaseModel):
     identifier: str
     password: SecretStr = Field(
@@ -43,16 +52,26 @@ class Room(BaseModel):
     game_state: dict = Field(default_factory=dict)
 
 
+class RoomCreate(BaseModel):
+    room_name: str
+    game_type: str
+
+
 class BroadcastPayload(BaseModel):
     user_list: set[str]
     message: dict[str, Any]
+
     @model_validator(mode="after")
     def validate_payload_state(self) -> "BroadcastPayload":
         # user_list and message must not be empty
         if len(self.user_list) == 0:
-            raise ValueError(f"User list was empty while validating BroadcastPayload {self}")
+            raise ValueError(
+                f"User list was empty while validating BroadcastPayload {self}"
+            )
         elif len(self.message) == 0:
-            raise ValueError(f"Message was empty while validating BroadcastPayload {self}")
+            raise ValueError(
+                f"Message was empty while validating BroadcastPayload {self}"
+            )
 
         return self
 

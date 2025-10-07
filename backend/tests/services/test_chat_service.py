@@ -1,4 +1,4 @@
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from app.services.chat_service import ChatService
@@ -26,9 +26,7 @@ def mock_redis_service() -> AsyncMock:
 
 
 @pytest.fixture
-def chat_service(
-    mock_cosmos_service, mock_redis_service
-) -> ChatService:
+def chat_service(mock_cosmos_service, mock_redis_service) -> ChatService:
     """Provides an instance of ChatService with all dependencies mocked."""
     return ChatService(
         cosmos_service=mock_cosmos_service,
@@ -50,9 +48,7 @@ class TestCreateChat:
 
         # ACT: Call the create_chat method, patching uuid to control the chat_id.
         with patch("uuid.uuid4", return_value=TEST_CHAT_ID):
-            created_chat = await chat_service.create_chat(
-                TEST_USER_ID, TEST_ROOM_ID
-            )
+            created_chat = await chat_service.create_chat(TEST_USER_ID, TEST_ROOM_ID)
 
         # ASSERT: Check that the returned Chat object is correct.
         assert created_chat.id == TEST_CHAT_ID
@@ -297,9 +293,7 @@ class TestDeleteChat:
     ):
         # ARRANGE
         chat_service.get_user_list = AsyncMock(return_value=[TEST_USER_ID])
-        mock_redis_service.scan_keys.return_value = [
-            f"chat:{TEST_CHAT_ID}:extra_key"
-        ]
+        mock_redis_service.scan_keys.return_value = [f"chat:{TEST_CHAT_ID}:extra_key"]
 
         # ACT
         await chat_service.delete_chat(TEST_CHAT_ID)
@@ -409,7 +403,9 @@ class TestCheckUserInChat:
         assert is_in_chat is True
 
     @pytest.mark.asyncio
-    async def test_check_user_in_chat_false(self, chat_service, mock_redis_service, mock_cosmos_service):
+    async def test_check_user_in_chat_false(
+        self, chat_service, mock_redis_service, mock_cosmos_service
+    ):
         # ARRANGE
         mock_redis_service.get_value.return_value = "another-chat-id"
         mock_cosmos_service.get_item.return_value = None

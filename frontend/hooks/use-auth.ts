@@ -1,27 +1,61 @@
+"use client";
+
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { checkAuth } from "@/lib/api";
+import { getUser, signoutUser } from "@/api/account.api";
 
-export function useAuth(redirectIfAuthenticated = false, redirectUrl = "/") {
+interface UseAuthOptions {
+    requireAuth?: boolean;
+    redirectIfAuthed?: boolean;
+    redirectUrl?: string;
+}
+
+export function useAuth({
+    requireAuth = false,
+    redirectIfAuthed = false,
+    redirectUrl,
+}: UseAuthOptions = {}) {
     const router = useRouter();
+    const queryClient = useQueryClient();
 
-    const { data, isLoading, isSuccess } = useQuery({
-        queryKey: ["authStatus"],
-        queryFn: checkAuth,
-        staleTime: 5 * 60 * 1000, // 5 minutes
+    const {
+        data: user,
+        isLoading,
+        isError,
+    } = useQuery({
+        queryKey: ["user"],
+        queryFn: getUser,
+        staleTime: 5 * 60 * 1000,
         retry: false,
-        refetchOnWindowFocus: false,
     });
 
-    const isAuthenticated = isSuccess && data?.message === "authenticated";
+    const isAuthenticated = !!user && !isError;
+
+    const logout = async () => {
+        await signoutUser();
+        queryClient.resetQueries({ queryKey: ["user"] });
+    };
 
     useEffect(() => {
-        if (isAuthenticated && redirectIfAuthenticated) {
-            router.push(redirectUrl);
-        }
-    }, [isAuthenticated, redirectIfAuthenticated, redirectUrl, router]);
+        if (isLoading) return;
 
-    return { isAuthenticated, isLoading };
+        if (requireAuth && !isAuthenticated) {
+            router.push(redirectUrl || "/accounts/signin");
+        }
+
+        if (redirectIfAuthed && isAuthenticated) {
+            router.push(redirectUrl || "/");
+        }
+    }, [
+        isLoading,
+        isAuthenticated,
+        requireAuth,
+        redirectIfAuthed,
+        redirectUrl,
+        router,
+    ]);
+
+    return { isAuthenticated, user, isLoading, logout };
 }

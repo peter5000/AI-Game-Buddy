@@ -1,7 +1,7 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from app.schemas import BroadcastPayload
+from app.schemas import RoomCreate
 from app.services.room_service import RoomService
 from fastapi import HTTPException
 
@@ -67,7 +67,8 @@ class TestCreateRoom:
         # ACT: Call the create_room method, patching uuid to control the room_id.
         with patch("uuid.uuid4", return_value=TEST_ROOM_ID):
             created_room = await room_service.create_room(
-                TEST_ROOM_NAME, TEST_GAME_TYPE, TEST_USER_ID
+                RoomCreate(room_name=TEST_ROOM_NAME, game_type=TEST_GAME_TYPE),
+                TEST_USER_ID,
             )
 
         # ASSERT: Check that the returned Room object is correct.
@@ -94,7 +95,10 @@ class TestCreateRoom:
 
         # ACT & ASSERT: Expect a 409 Conflict HTTPException.
         with pytest.raises(HTTPException) as exc_info:
-            await room_service.create_room(TEST_ROOM_NAME, TEST_GAME_TYPE, TEST_USER_ID)
+            await room_service.create_room(
+                RoomCreate(room_name=TEST_ROOM_NAME, game_type=TEST_GAME_TYPE),
+                TEST_USER_ID,
+            )
 
         assert exc_info.value.status_code == 409
         assert "User already in another room" in exc_info.value.detail
@@ -109,7 +113,11 @@ class TestJoinRoom:
         # ARRANGE
         joining_user_id = "user-456"
         room_service.get_user_room = AsyncMock(return_value=None)
-        room_service.get_user_list = AsyncMock(return_value=["user-123"])
+
+        mock_room = MagicMock()
+        mock_room.model_dump.return_value = {"users": ["user-123"]}
+
+        room_service.get_room = AsyncMock(return_value=mock_room)
 
         # ACT
         await room_service.join_room(TEST_ROOM_ID, joining_user_id)
@@ -121,8 +129,9 @@ class TestJoinRoom:
         mock_redis_service.set_value.assert_awaited_once_with(
             key=f"user:{joining_user_id}:room", value=TEST_ROOM_ID
         )
+        assert mock_redis_service.expire.call_count == 2
 
-        # ASSERT: Cosmos was updated twice (once for the room, once for the user)
+        # ASSERT: Cosmos was updated twice
         assert mock_cosmos_service.patch_item.call_count == 2
 
     @pytest.mark.asyncio
