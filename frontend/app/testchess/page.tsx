@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { Chess } from "chess.js";
 
-import ChessGame from "@/components/ui/games/chess";
+import ChessGame from "@/components/games/chess";
 import { GameAction } from "@/types/websocket.types";
 
 // Define the types for clarity and type safety

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { UltimateBoard } from "@/components/tic-tac-toe/ultimate-board";
+import { UltimateBoard } from "@/components/games/tic-tac-toe/ultimate-board";
 import {
     UltimateTicTacToeAction,
     UltimateTicTacToeState,

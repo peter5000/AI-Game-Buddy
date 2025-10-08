@@ -1,6 +1,6 @@
 "use client";
 
-import { Board } from "@/components/tic-tac-toe/board";
+import { Board } from "@/components/games/tic-tac-toe/board";
 import { cn } from "@/lib/utils";
 import {
     UltimateTicTacToeAction,
