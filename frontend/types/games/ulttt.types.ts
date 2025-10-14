@@ -1,40 +1,32 @@
+import { Action, GameState } from "./game.types";
+
 export type SmallBoard = (CellValue | null)[][];
 export type CellValue = "X" | "O" | "-" | null;
 
-// Corresponds to the backend's UltimateTicTacToePayload schema
-export type UltimateTicTacToePayload = {
+// A specific meta interface for this game
+export interface UltimateTicTacToeMeta {
+    curr_player_index: 0 | 1;
+    winner?: string | null;
+}
+
+// The main state interface, extending the generic GameState
+export interface UltimateTicTacToeState
+    extends GameState<UltimateTicTacToeMeta> {
+    large_board: SmallBoard[][];
+    meta_board: SmallBoard;
+    active_board: [number, number] | null;
+}
+
+// The payload for a player's move
+export interface UltimateTicTacToePayload {
     board_row: number;
     board_col: number;
     row: number;
     col: number;
-};
+}
 
-// Corresponds to the backend's UltimateTicTacToeAction schema
-export type UltimateTicTacToeAction = {
+// The action interface, extending the generic Action
+export interface UltimateTicTacToeAction
+    extends Action<UltimateTicTacToePayload> {
     type: "PLACE_MARKER" | "RESIGN";
-    payload: UltimateTicTacToePayload | null;
-};
-
-// Corresponds to the backend's UltimateTicTacToeState schema,
-// including fields inherited from the base GameState.
-export type UltimateTicTacToeState = {
-    // --- Inherited from base GameState ---
-    game_id: string;
-    player_ids: string[];
-    finished: boolean;
-    meta: UltimateTicTacToeMeta; // Contains game-specific data like winner or current player index
-    turn: number | null;
-
-    // --- UltimateTicTacToe-specific state ---
-    large_board: SmallBoard[][];
-    meta_board: SmallBoard; // Tracks winners of the small boards
-    active_board: [number, number] | null;
-};
-
-export type UltimateTicTacToeMeta = {
-    curr_player_index: number;
-    player_symbols: {
-        [playerId: string]: "X" | "O"; // Maps a player ID to their symbol
-    };
-    winner: string | null; // Can be a player ID or null
-};
+}
