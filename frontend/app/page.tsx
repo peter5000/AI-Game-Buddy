@@ -8,6 +8,7 @@ import {
     Users,
 } from "lucide-react";
 
+// import { Chat } from "@/components/chat";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -163,6 +164,16 @@ export default function LandingPage() {
                             </div>
                         </Card>
                     </div>
+
+                    {/* Try Our AI Chat Section
+                    <div className="mb-12">
+                        <h2 className="text-3xl font-bold text-center mb-8">
+                            Try Our AI Chat
+                        </h2>
+                        <div className="max-w-4xl mx-auto">
+                            <Chat className="h-[600px]" />
+                        </div>
+                    </div> */}
 
                     {/* Recent Activity */}
                     <div className="bg-white rounded-lg p-6 shadow-sm">
