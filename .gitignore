@@ -34,3 +34,6 @@ next-env.d.ts
 # scripts
 **/config.json
 **/*.sh
+
+# uv
+uv.lock

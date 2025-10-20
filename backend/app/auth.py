@@ -8,7 +8,7 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Any
 
-from fastapi import Cookie, HTTPException, WebSocket, status
+from fastapi import Cookie, HTTPException, Response, WebSocket, status
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from pydantic import SecretStr
@@ -264,3 +264,34 @@ async def get_user_id_websocket(websocket: WebSocket) -> str | None:
         )
 
     return user_id
+
+
+def _set_auth_cookies(response: Response, user_id: str):
+    """Generates access/refresh tokens and sets them as secure HTTPOnly cookies."""
+    # Access token
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user_id}, expires_delta=access_token_expires
+    )
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        max_age=int(access_token_expires.total_seconds()),
+    )
+
+    # Refresh token
+    refresh_token_expires = timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS)
+    refresh_token = create_refresh_token(
+        data={"sub": user_id}, expires_delta=refresh_token_expires
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        max_age=int(refresh_token_expires.total_seconds()),
+    )

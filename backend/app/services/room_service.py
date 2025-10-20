@@ -11,7 +11,7 @@ from typing import Any
 
 from fastapi import HTTPException
 
-from app.schemas import Room
+from app.schemas import Room, RoomCreate
 from app.services.connection_service import ConnectionService
 from app.services.cosmos_service import CosmosService
 from app.services.redis_service import RedisService
@@ -46,7 +46,7 @@ class RoomService:
         self._redis_service = redis_service
         self._connection_service = connection_service
 
-    async def create_room(self, room_name: str, game_type: str, user_id: str) -> Room:
+    async def create_room(self, room_data: RoomCreate, user_id: str) -> Room:
         """Creates a room and stores inside redis and cosmos.
 
         Args:
@@ -60,7 +60,7 @@ class RoomService:
         Returns:
             str: The room ID of the room.
         """
-        if not game_type:
+        if not room_data.game_type:
             raise ValueError("Game type missing on room creation")
         if not user_id:
             raise ValueError("User ID missing on room creation")
@@ -77,9 +77,9 @@ class RoomService:
         room = Room(
             id=room_id,
             room_id=room_id,
-            name=room_name,
+            name=room_data.room_name,
             creator_id=user_id,
-            game_type=game_type,
+            game_type=room_data.game_type,
             users=[user_id],
         )
 
@@ -147,7 +147,11 @@ class RoomService:
                 detail="User already in another room",
             )
 
-        user_list = await self.get_user_list(room_id=room_id)
+        room = await self.get_room(room_id=room_id)
+        if not room:
+            raise ValueError("Room not found")
+        room_dict = room.model_dump()
+        user_list = room_dict.get("users")
 
         if user_list is None:
             logger.error("User list not found in redis and cosmos")
@@ -183,6 +187,8 @@ class RoomService:
             patch_operations=patch_operation,
             container_type="users",
         )
+
+        return await self.get_room(room_id=room_id)
 
     async def leave_room(self, room_id: str, user_id: str):
         """Leaves a room.

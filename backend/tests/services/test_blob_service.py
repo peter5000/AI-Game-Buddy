@@ -75,9 +75,7 @@ class TestBlobServiceInitialization:
 class TestBlobServiceMethods:
     @pytest.fixture(autouse=True)
     def setup_service(self, mocker, mock_blob_service_client, monkeypatch):
-        monkeypatch.setattr(
-            blob_service.settings, "BLOB_ENDPOINT", "test_endpoint"
-        )
+        monkeypatch.setattr(blob_service.settings, "BLOB_ENDPOINT", "test_endpoint")
         mocker.patch("app.services.blob_service.DefaultAzureCredential")
         mocker.patch(
             "app.services.blob_service.BlobServiceClient",

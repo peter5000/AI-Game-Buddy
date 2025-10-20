@@ -14,6 +14,7 @@ from app.redis_listener import RedisListener
 from app.routers import (
     accounts_router,
     chat_router,
+    document_router,
     room_router,
     test_router,
     websocket_router,
@@ -80,10 +81,11 @@ logger = logging.getLogger(__name__)
 FastAPIInstrumentor.instrument_app(app)
 
 app.include_router(accounts_router.router)
+app.include_router(chat_router.router)
+app.include_router(document_router.router)
 app.include_router(room_router.router)
 app.include_router(test_router.router)
 app.include_router(websocket_router.router)
-app.include_router(chat_router.router)
 
 # Then mount the static files at the root
 # app.mount("/", StaticFiles(directory="path/to/frontend/build", html=True), name="static")

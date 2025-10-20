@@ -11,7 +11,7 @@ from typing import Any
 
 from fastapi import HTTPException
 
-from app.schemas import ChatMessage, Chat
+from app.schemas import Chat, ChatMessage
 from app.services.cosmos_service import CosmosService
 from app.services.redis_service import RedisService
 
@@ -29,7 +29,7 @@ class ChatService:
 
     async def create_chat(self, user_id: str, room_id: str | None = None) -> Chat:
         if not user_id:
-            raise ValueError("User ID missing on room creation")
+            raise ValueError("User ID missing on chat creation")
 
         # Currently user can only be in one chat room at a time
         if await self.get_user_chat(user_id=user_id):
@@ -47,9 +47,7 @@ class ChatService:
         )
 
         cosmos_chat = chat.model_dump(mode="json")
-        redis_chat = chat.model_dump(
-            exclude={"users", "chat_log", "bots"}, mode="json"
-        )
+        redis_chat = chat.model_dump(exclude={"users", "chat_log", "bots"}, mode="json")
 
         try:
             # Write new chat into redis
@@ -81,9 +79,7 @@ class ChatService:
             logger.warning(f"Redis unavailable for creating chat room: {e}")
 
         # Write new chat room into cosmos
-        await self._cosmos_service.add_item(
-            item=cosmos_chat, container_type="chats"
-        )
+        await self._cosmos_service.add_item(item=cosmos_chat, container_type="chats")
 
         # Add current chat room to user information.
         # User can only be in one chat at a time for now
@@ -300,9 +296,7 @@ class ChatService:
             raise ValueError("Chat ID missing on getting chat log")
 
         try:
-            chat_log = await self._redis_service.get_value(
-                key=f"chat:{chat_id}:log"
-            )
+            chat_log = await self._redis_service.get_value(key=f"chat:{chat_id}:log")
             if chat_log:
                 await self._redis_service.expire(f"chat:{chat_id}:log", 86400)
                 return [ChatMessage.model_validate(msg) for msg in json.loads(chat_log)]
@@ -365,9 +359,7 @@ class ChatService:
         if not user_id:
             raise ValueError("User ID cannot be empty")
         try:
-            chat_id = await self._redis_service.get_value(
-                key=f"user:{user_id}:chat"
-            )
+            chat_id = await self._redis_service.get_value(key=f"user:{user_id}:chat")
             if chat_id:
                 await self._redis_service.expire(f"user:{user_id}:chat", 86400)
         except HTTPException as e:
@@ -417,9 +409,7 @@ class ChatService:
         if not chat_id:
             raise ValueError("Chat ID missing on getting user list")
         try:
-            user_list = await self._redis_service.set_get(
-                key=f"chat:{chat_id}:users"
-            )
+            user_list = await self._redis_service.set_get(key=f"chat:{chat_id}:users")
             if user_list is not None:
                 await self._redis_service.expire(f"chat:{chat_id}:users", 86400)
         except HTTPException as e:
@@ -493,13 +483,10 @@ class ChatService:
         )
 
         if chat_data is not None:
-
             user_list = chat_data.get("users")
             return user_id in user_list
 
-        logger.warning(
-            f"User not found in both redis and cosmos for chat '{chat_id}'"
-        )
+        logger.warning(f"User not found in both redis and cosmos for chat '{chat_id}'")
         return False
 
     async def add_message_to_chat(
@@ -534,11 +521,13 @@ class ChatService:
         except HTTPException as e:
             logger.warning(f"Redis unavailable for adding message to chat: {e}")
 
-        patch_operation = [{
-            "op": "add",
-            "path": "/chat_log/-",
-            "value": chat_message.model_dump(mode="json")
-        }]
+        patch_operation = [
+            {
+                "op": "add",
+                "path": "/chat_log/-",
+                "value": chat_message.model_dump(mode="json"),
+            }
+        ]
 
         await self._cosmos_service.patch_item(
             item_id=chat_id,
