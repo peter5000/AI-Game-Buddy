@@ -3,8 +3,8 @@
 import React, { useEffect, useState } from "react";
 
 import { useWebSocket } from "@/components/websocket-provider";
-import { Message as MessageType, MessageSchema } from "@/lib/schemas";
-import { Chat as ChatType, SendChatMessagePayload } from "@/lib/types";
+import { Message as MessageType, MessageSchema } from "@/types/schemas";
+import { Chat as ChatType, SendChatMessagePayload } from "@/types/chat.types";
 
 import { MessageInput } from "./message-input";
 import { MessageList } from "./message-list";
@@ -17,7 +17,7 @@ interface ChatProps {
 export function Chat({ chat, currentUserId }: ChatProps) {
     const { sendMessage, connectionStatus } = useWebSocket();
     const [messages, setMessages] = useState<MessageType[]>(
-        chat.chat_log || []
+        chat.ChatLog || []
     );
     useEffect(() => {
         const handleNewMessage = (event: Event) => {
@@ -47,9 +47,9 @@ export function Chat({ chat, currentUserId }: ChatProps) {
 
     const handleSendMessage = (messageText: string) => {
         const messagePayload: SendChatMessagePayload = {
-            chat_id: chat.id,
-            sender: currentUserId,
-            message: messageText,
+            ChatId: chat.Id,
+            Sender: currentUserId,
+            Message: messageText,
         };
         if (connectionStatus === "connected") {
             sendMessage({ type: "chat_message", payload: messagePayload });

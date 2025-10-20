@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 
-import { Message as MessageType } from "@/lib/schemas";
+import { Message as MessageType } from "@/types/schemas";
 
 import { Message } from "./message";
 
