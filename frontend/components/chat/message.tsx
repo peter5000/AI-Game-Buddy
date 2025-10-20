@@ -2,8 +2,8 @@ import React from "react";
 import { format } from "date-fns";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Message as MessageType } from "@/types/schemas";
 import { cn } from "@/lib/utils";
+import { Message as MessageType } from "@/types/schemas";
 
 interface MessageProps {
     message: MessageType;
