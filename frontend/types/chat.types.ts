@@ -1,13 +1,16 @@
+import { Message } from "./schemas";
+
+// Chat types
 export interface Chat {
-    id: string;
-    room_id: string | null;
-    users: string[];
-    bots: string[];
-    chat_log: ChatMessage[];
+    Id: string;
+    RoomId: string | null;
+    Users: string[];
+    Bots: string[];
+    ChatLog: Message[];
 }
 
-export interface ChatMessage {
-    sender: string;
-    message: string;
-    timestamp: Date;
+export interface SendChatMessagePayload {
+    ChatId: string;
+    Sender: string;
+    Message: string;
 }
