@@ -14,3 +14,9 @@ export interface SendChatMessagePayload {
     Sender: string;
     Message: string;
 }
+
+export interface ChatMessage {
+    Id: string;
+    Sender: string;
+    Timestamp: Date;
+}
