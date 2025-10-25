@@ -60,6 +60,11 @@ class LandsState(GameState):
     # cards in player's discard when a grass is successfully played
     selection: list[int] | None = None
 
+    winner: str | None = None  # The player_id of the winner, if any
+    main_player_index: int = 0
+    countered: int = 0 # 0 = not countered, 1 = countered
+    curr_player_index: int = 0
+
 
 class LandsPayload(BaseModel):
     """

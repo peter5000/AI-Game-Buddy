@@ -19,6 +19,7 @@ class ChessState(GameState):
     )
     game_result: str | None = None
     move_history: list[str] = Field(default_factory=list)
+    current_player_index: int = 0
 
     @model_validator(mode="after")
     def validate_chess_state(self) -> "ChessState":
@@ -35,13 +36,12 @@ class ChessState(GameState):
 
         # White's turn corresponds to current_player_index 0, Black's to 1
         is_white_turn = board.turn == chess.WHITE
-        current_player_index = self.meta.get("current_player_index")
 
-        if is_white_turn and current_player_index != 0:
+        if is_white_turn and self.current_player_index != 0:
             raise ValueError(
                 "FEN indicates white's turn, but current_player_index is not 0"
             )
-        if not is_white_turn and current_player_index != 1:
+        if not is_white_turn and self.current_player_index != 1:
             raise ValueError(
                 "FEN indicates black's turn, but current_player_index is not 1"
             )

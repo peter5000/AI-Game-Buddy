@@ -12,7 +12,7 @@ def player_ids() -> list[str]:
 @pytest.fixture
 def valid_state(player_ids: list[str]) -> UltimateTicTacToeState:
     """Provides a basic, valid game state."""
-    return UltimateTicTacToeState(player_ids=player_ids, meta={"curr_player_index": 0})
+    return UltimateTicTacToeState(player_ids=player_ids)
 
 
 class TestUltimateTicTacToeStateValidation:
@@ -69,7 +69,7 @@ class TestUltimateTicTacToeStateValidation:
     ):
         # Create an inconsistent state where meta_board has a winner, but large_board is empty
         valid_state.meta_board[0][0] = "X"
-        valid_state.meta["winner"] = "player1"
+        valid_state.winner = "player1"
 
         # Game is not marked as finished. The validator should catch the inconsistency.
         with pytest.raises(ValidationError, match="Mismatched meta_board"):
