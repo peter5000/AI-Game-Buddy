@@ -50,7 +50,8 @@ export default function UltimateTicTacToePage() {
         const newState: UltimateTicTacToeState = JSON.parse(
             JSON.stringify(gameState)
         );
-        const currentPlayerSymbol = newState.curr_player_index === 0 ? "X" : "O";
+        const currentPlayerSymbol =
+            newState.curr_player_index === 0 ? "X" : "O";
 
         // 1. Place the piece on the board.
         newState.large_board[board_row][board_col][row][col] =

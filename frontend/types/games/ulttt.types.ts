@@ -4,8 +4,7 @@ export type SmallBoard = (CellValue | null)[][];
 export type CellValue = "X" | "O" | "-" | null;
 
 // The main state interface, extending the generic GameState
-export interface UltimateTicTacToeState
-    extends GameState {
+export interface UltimateTicTacToeState extends GameState {
     large_board: SmallBoard[][];
     meta_board: SmallBoard;
     active_board: [number, number] | null;
