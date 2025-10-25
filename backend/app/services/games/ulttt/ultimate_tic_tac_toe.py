@@ -23,9 +23,7 @@ class UltimateTicTacToeSystem(
     def initialize_game(self, player_ids: list[str]) -> UltimateTicTacToeState:
         if len(player_ids) != 2:
             raise ValueError("Ultimate Tic-Tac-Toe requires exactly 2 players.")
-        return UltimateTicTacToeState(
-            player_ids=player_ids
-        )
+        return UltimateTicTacToeState(player_ids=player_ids)
 
     @validate_call
     def make_action(
@@ -39,9 +37,7 @@ class UltimateTicTacToeSystem(
 
         new_state = state.model_copy(deep=True)
         if action.type == "RESIGN":
-            new_state.winner = new_state.player_ids[
-                1 - new_state.curr_player_index
-            ]
+            new_state.winner = new_state.player_ids[1 - new_state.curr_player_index]
             new_state.finished = True
             return new_state
 
@@ -86,10 +82,7 @@ class UltimateTicTacToeSystem(
     def get_valid_actions(
         self, state: UltimateTicTacToeState, player_id: str
     ) -> list[UltimateTicTacToeAction]:
-        if (
-            state.finished
-            or state.player_ids[state.curr_player_index] != player_id
-        ):
+        if state.finished or state.player_ids[state.curr_player_index] != player_id:
             return []
 
         actions = [UltimateTicTacToeAction(type="RESIGN", payload=None)]

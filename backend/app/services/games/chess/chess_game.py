@@ -20,11 +20,7 @@ class ChessSystem(GameSystem[ChessState, ChessAction]):
             raise ValueError("Chess requires 2 players.")
 
         selected_players = random.sample(player_ids, 2)
-        return ChessState(
-            player_ids=selected_players,
-            turn=1,
-            current_player_index=0
-        )
+        return ChessState(player_ids=selected_players, turn=1, current_player_index=0)
 
     def _create_board_from_state(self, state: ChessState) -> chess.Board:
         """Creates a chess board from current state"""
@@ -46,7 +42,7 @@ class ChessSystem(GameSystem[ChessState, ChessAction]):
                 update={
                     "game_result": game_result,
                     "finished": True,
-                    "current_player_index": current_player_index
+                    "current_player_index": current_player_index,
                 },
                 deep=True,
             )
