@@ -73,7 +73,7 @@ class ChessSystem(GameSystem[ChessState, ChessAction]):
             game_id=state.game_id,
             player_ids=state.player_ids,
             turn=state.turn + 1,
-            current_player_index=current_player_index,
+            current_player_index=next_player_index,
             board_fen=board.fen(),
             game_result=game_result,
             move_history=new_move_history,
