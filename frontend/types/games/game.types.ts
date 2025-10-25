@@ -4,14 +4,12 @@ export interface Action<T = { [k: string]: unknown }> {
 }
 
 export interface GameState<
-    MetaType = { [k: string]: unknown },
     PhaseType = Phase,
     PrivateStateType = PrivateStates,
 > {
     game_id?: string;
     player_ids: string[];
     finished?: boolean;
-    meta: MetaType;
     turn?: number | null;
     phase?: PhaseType | null;
     private_state?: PrivateStateType | null;
