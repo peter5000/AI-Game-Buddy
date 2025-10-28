@@ -27,6 +27,8 @@ interface GameContainerProps {
     roomId: string;
 }
 
+// TODO: Listen to game state updates from websocket and update the game component accordingly
+
 export function GameContainer({
     title,
     description,
