@@ -1,5 +1,6 @@
 // import { Chat } from "./chat";
 import { GameContainer } from "../game-container";
+import { WebSocketProvider } from "../websocket-provider";
 import { Invite } from "./invite";
 import { Players } from "./players";
 import { Room as RoomType } from "@/types/room.types";
@@ -23,12 +24,14 @@ export function Room({ room_state }: RoomProps) {
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 max-w-7xl mx-auto px-4 py-8">
-            <GameContainer title={room_state.gameType} description={room_state.gameType} children="actual_game_placeholder"/>
-            <div>
-                <Players users={[...room_state.users]} creatorId={room_state.creatorId} />
-                <Invite roomId={room_state.roomId} />
-                {/* <Chat /> */}
-            </div>
+            <WebSocketProvider>
+                <GameContainer title={room_state.gameType} description={room_state.gameType} children="actual_game_placeholder"/>
+                <div>
+                    <Players users={[...room_state.users]} creatorId={room_state.creatorId} />
+                    <Invite roomId={room_state.roomId} />
+                    {/* <Chat /> */}
+                </div>
+            </WebSocketProvider>
         </div>
     );
 }
