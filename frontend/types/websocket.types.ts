@@ -1,31 +1,28 @@
-export type WebSocketMessage =
-    | { type: "game_update"; payload: unknown }
-    | { type: "player_joined"; payload: { userId: string; username: string } }
-    | { type: "move_made"; payload: unknown }
-    | { type: "game_over"; payload: unknown }
-    | { type: "error"; payload: { message: string } };
+import { z } from "zod";
 
-export type WebSocketSendMessage =
-    | { type: "game_action"; payload: GameActionPayload }
-    | { type: "chat_message"; payload: unknown };
+import { ActionSchema } from "./games/game.types";
 
-export type GameActionPayload = {
-    room_id: string;
-    game_type: string;
-    action: GameAction;
-};
+export const WebSocketMessageSchema = z.discriminatedUnion("type", [
+    z.object({
+        type: z.literal("game_update"),
+        payload: z.unknown(),
+    }),
+    z.object({
+        type: z.literal("chat_message"),
+        payload: z.unknown(),
+    }),
+]);
 
-export type GameAction = {
-    type: string;
-    payload: Record<string, unknown>;
-};
+export const WebSocketSendMessageSchema = z.discriminatedUnion("type", [
+    z.object({
+        type: z.literal("game_action"),
+        payload: z.custom<typeof ActionSchema>(),
+    }),
+    z.object({
+        type: z.literal("chat_message"),
+        payload: z.unknown(),
+    }),
+]);
 
-export type WebSocketStatus = "disconnected" | "connecting" | "connected";
-
-export interface WebSocketContextType {
-    sendMessage: (message: WebSocketSendMessage) => void;
-    lastMessage: WebSocketMessage | null;
-    status: WebSocketStatus;
-    error: string | null;
-    readyState: WebSocket["readyState"] | null;
-}
+export type WebSocketMessage = z.infer<typeof WebSocketMessageSchema>;
+export type WebSocketSendMessage = z.infer<typeof WebSocketSendMessageSchema>;

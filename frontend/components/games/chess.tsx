@@ -9,13 +9,14 @@ import {
 } from "react-chessboard";
 import { Chess, Square } from "chess.js";
 
-import { GameAction } from "@/types/websocket.types";
+import { tryCatchSync } from "@/lib/utils";
+import { ChessAction } from "@/types/games/chess.types";
 
 type PlayerColor = "w" | "b" | "spectator";
 
 type ChessGameProps = {
     fen: string;
-    onMove: (action: GameAction) => void; // e.g., "e2e4"
+    onMove: (action: ChessAction) => void; // e.g., "e2e4"
     playerColor: PlayerColor;
 };
 
@@ -90,40 +91,37 @@ export default function ChessGame({
         to: string,
         promotion?: PromotionPiece
     ) => {
-        let move = null;
-        try {
-            // This move mutates the local 'game' instance for instant feedback
-            move = game.move({
+        const [_move, error] = tryCatchSync(() =>
+            game.move({
                 from,
                 to,
                 promotion: promotion || "q",
-            });
-        } catch {
-            // Invalid move, do nothing
+            })
+        );
+
+        // If the move is invalid, game.move throws and tryCatchSync catches it
+        if (error) {
             setSelectedSquare(null);
             setHighlightedSquares({});
             return false;
         }
 
-        if (move) {
-            // Update the visual board position
-            setBoardPosition(game.fen());
+        // If the move is valid, 'move' will not be null
+        // Update the visual board position
+        setBoardPosition(game.fen());
 
-            // Create action object
-            const action: GameAction = {
-                type: "MAKE_MOVE",
-                payload: {
-                    move: from + to + (promotion || ""),
-                },
-            };
+        const action: ChessAction = {
+            type: "MAKE_MOVE",
+            payload: {
+                move: from + to + (promotion || ""),
+            },
+        };
 
-            // Pass the entire action object to the parent
-            onMove(action);
-        }
+        onMove(action);
 
         setSelectedSquare(null);
         setHighlightedSquares({});
-        return !!move;
+        return true;
     };
 
     const handlePieceDrag = ({ square, piece }: PieceHandlerArgs) => {

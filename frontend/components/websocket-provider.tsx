@@ -9,10 +9,11 @@ import React, {
     useRef,
     useState,
 } from "react";
+import camelcaseKeys from "camelcase-keys";
+import snakecaseKeys from "snakecase-keys";
 
 import { useAuth } from "@/hooks/use-auth";
 
-// Define the shape of the context value
 type ConnectionStatus = "connecting" | "connected" | "disconnected";
 const WEBSOCKET_URL = process.env.NEXT_PUBLIC_WEBSOCKET_URL;
 
@@ -62,9 +63,23 @@ export const WebSocketProvider = ({ children }: WebSocketProviderProps) => {
             };
 
             ws.current.onmessage = (event: MessageEvent) => {
-                const message = JSON.parse(event.data);
+                const rawMessage = JSON.parse(event.data);
+                let convertedMessage = rawMessage;
+
+                // If a payload exists, convert its keys to camelCase
+                if (rawMessage.payload) {
+                    convertedMessage = {
+                        ...rawMessage,
+                        payload: camelcaseKeys(rawMessage.payload, {
+                            deep: true,
+                        }),
+                    };
+                }
+
                 window.dispatchEvent(
-                    new CustomEvent("websocket-message", { detail: message })
+                    new CustomEvent("websocket-message", {
+                        detail: convertedMessage,
+                    })
                 );
             };
 
@@ -112,10 +127,26 @@ export const WebSocketProvider = ({ children }: WebSocketProviderProps) => {
         };
     }, [isAuthenticated]);
 
-    // Function to send messages
     const sendMessage = (message: Record<string, unknown>) => {
         if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-            ws.current.send(JSON.stringify(message));
+            let messageToSend = message;
+
+            // If a payload exists, convert its keys to snake_case
+            const payload = message.payload;
+            if (
+                payload &&
+                typeof payload === "object" &&
+                !Array.isArray(payload)
+            ) {
+                messageToSend = {
+                    ...message,
+                    payload: snakecaseKeys(payload as Record<string, unknown>, {
+                        deep: true,
+                    }),
+                };
+            }
+
+            ws.current.send(JSON.stringify(messageToSend));
         } else {
             console.error("Cannot send message: WebSocket is not connected.");
         }

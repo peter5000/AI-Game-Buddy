@@ -10,10 +10,10 @@ import {
 // --- Component Props ---
 type Props = {
     gameState: UltimateTicTacToeState;
-    onMakeMove: (action: UltimateTicTacToeAction) => void;
+    onMove: (action: UltimateTicTacToeAction) => void;
 };
 
-export function UltimateBoard({ gameState, onMakeMove }: Props) {
+export function UltimateBoard({ gameState, onMove }: Props) {
     const { large_board, meta_board, active_board } = gameState;
 
     return (
@@ -25,10 +25,12 @@ export function UltimateBoard({ gameState, onMakeMove }: Props) {
 
                     const isBoardActive =
                         active_board !== null &&
+                        active_board !== undefined &&
                         active_board[0] === board_row &&
                         active_board[1] === board_col;
 
-                    const canPlayAnywhere = active_board === null;
+                    const canPlayAnywhere =
+                        active_board === null || active_board === undefined;
 
                     // A board is clickable if the game hasn't finished, the board hasn't been won,
                     // and either it's the active board or any board is playable.
@@ -43,7 +45,7 @@ export function UltimateBoard({ gameState, onMakeMove }: Props) {
                         const row = Math.floor(cellIndex / 3);
                         const col = cellIndex % 3;
 
-                        onMakeMove({
+                        onMove({
                             type: "PLACE_MARKER",
                             payload: { board_row, board_col, row, col },
                         });

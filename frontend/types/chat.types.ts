@@ -1,13 +1,18 @@
-export interface Chat {
-    id: string;
-    room_id: string | null;
-    users: string[];
-    bots: string[];
-    chat_log: ChatMessage[];
-}
+import { z } from "zod";
 
-export interface ChatMessage {
-    sender: string;
-    message: string;
-    timestamp: Date;
-}
+export const ChatMessageSchema = z.object({
+    sender: z.string(),
+    message: z.string(),
+    timestamp: z.coerce.date(),
+});
+
+export const ChatSchema = z.object({
+    id: z.string().uuid(),
+    room_id: z.string().uuid().nullable(),
+    users: z.array(z.string().uuid()),
+    bots: z.array(z.string()),
+    chat_log: z.array(ChatMessageSchema),
+});
+
+export type Chat = z.infer<typeof ChatSchema>;
+export type ChatMessage = z.infer<typeof ChatMessageSchema>;

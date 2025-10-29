@@ -1,32 +1,41 @@
-export interface Action<T = { [k: string]: unknown }> {
-    type: string;
-    payload: T | null;
-}
+import { z } from "zod";
 
-export interface GameState<
-    PhaseType = Phase,
-    PrivateStateType = PrivateStates,
-> {
-    game_id?: string;
-    player_ids: string[];
-    finished?: boolean;
-    turn?: number | null;
-    phase?: PhaseType | null;
-    private_state?: PrivateStateType | null;
-}
+export const PhaseSchema = z
+    .object({
+        current: z.string(),
+        available_phases: z
+            .array(z.string())
+            .min(1, "Available phases list must not be empty"),
+        _current_index: z.number().int().optional(),
+    })
+    .refine((data) => data.available_phases.includes(data.current), {
+        message: "Current phase must be one of the available phases.",
+        path: ["current"],
+    });
 
-export interface Phase {
-    current: string;
-    /**
-     * @minItems 1
-     */
-    available_phases: [string, ...string[]];
-    _current_index: number;
-}
+const privateStateT = z.unknown();
 
-export interface PrivateStates {
-    states: {
-        [k: string]: unknown;
-    };
-    [k: string]: unknown;
-}
+export const PrivateStatesSchema = z.object({
+    states: z.record(z.string(), privateStateT),
+});
+
+export const ActionSchema = z.object({
+    type: z.string(),
+    payload: z.record(z.string(), z.any()).nullable(),
+});
+
+export const GameStateSchema = z.object({
+    game_id: z.string().uuid("Game ID must be a valid UUID string"),
+    player_ids: z.array(z.string()),
+    finished: z.boolean().default(false),
+    turn: z.number().int().min(0).nullable(),
+    phase: PhaseSchema.nullable(),
+    private_state: PrivateStatesSchema.nullable(),
+});
+
+export type Phase = z.infer<typeof PhaseSchema>;
+export type PrivateStates<T = unknown> = z.infer<typeof PrivateStatesSchema> & {
+    states: Record<string, T>;
+};
+export type Action = z.infer<typeof ActionSchema>;
+export type GameState = z.infer<typeof GameStateSchema>;
