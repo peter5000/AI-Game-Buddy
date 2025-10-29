@@ -8,7 +8,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Gamepad2 } from "lucide-react";
 
 import { signupUser } from "@/api/account.api";
-import { ApiError } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -22,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/use-auth";
+import { tryCatch } from "@/lib/utils";
 
 export default function SignUpPage() {
     const { isAuthenticated, isLoading: isAuthLoading } = useAuth({
@@ -59,28 +59,25 @@ export default function SignUpPage() {
         setIsLoading(true);
         setError(null); // Clear previous errors on a new submission
 
-        try {
-            // Capture the returned user object on successful signup
-            const user = await signupUser({
+        const [user, error] = await tryCatch(
+            signupUser({
                 username: formData.username,
                 email: formData.email,
                 password: formData.password,
-            });
+            })
+        );
 
-            // Immediately sign the user in by updating the query cache
+        setIsLoading(false);
+
+        // Handle the error case
+        if (error) {
+            setError(error.message);
+            return;
+        }
+
+        if (user) {
             queryClient.setQueryData(["user"], user);
-
-            // Redirect to the main application page, not the sign-in page
             router.push("/");
-        } catch (error: unknown) {
-            if (error instanceof ApiError) {
-                setError(error.message);
-            } else if (error instanceof Error) {
-                setError(error.message);
-            } else {
-                setError("An unexpected error occurred");
-            }
-            setIsLoading(false);
         }
     };
 

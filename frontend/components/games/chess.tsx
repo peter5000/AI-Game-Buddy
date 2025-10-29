@@ -9,7 +9,6 @@ import {
 } from "react-chessboard";
 import { Chess, Square } from "chess.js";
 
-import { tryCatchSync } from "@/lib/utils";
 import { ChessAction } from "@/types/games/chess.types";
 
 type PlayerColor = "w" | "b" | "spectator";
@@ -91,23 +90,20 @@ export default function ChessGame({
         to: string,
         promotion?: PromotionPiece
     ) => {
-        const [_move, error] = tryCatchSync(() =>
+        try {
             game.move({
                 from,
                 to,
                 promotion: promotion || "q",
-            })
-        );
-
-        // If the move is invalid, game.move throws and tryCatchSync catches it
-        if (error) {
+            });
+        } catch {
+            // If the move is invalid, game.move throws an error
             setSelectedSquare(null);
             setHighlightedSquares({});
             return false;
         }
 
-        // If the move is valid, 'move' will not be null
-        // Update the visual board position
+        // If the move is valid, update the visual board position
         setBoardPosition(game.fen());
 
         const action: ChessAction = {

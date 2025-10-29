@@ -1,6 +1,8 @@
 import camelcaseKeys from "camelcase-keys";
 import snakecaseKeys from "snakecase-keys";
 
+import { tryCatch } from "@/lib/utils";
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export class ApiError extends Error {
@@ -48,28 +50,22 @@ export async function apiRequest<T>(
     // If we get a 401 (unauthorized) and it's not a refresh request,
     // try to refresh the token automatically.
     if (response.status === 401 && !endpoint.includes("/accounts/refresh")) {
-        try {
-            const refreshResponse = await fetch(
-                `${API_BASE_URL}/accounts/refresh`,
-                {
-                    method: "POST",
-                    credentials: "include",
-                    headers: { "Content-Type": "application/json" },
-                }
-            );
+        // Use tryCatch for the nested refresh logic
+        const [refreshOk, refreshError] = await tryCatch(
+            fetch(`${API_BASE_URL}/accounts/refresh`, {
+                method: "POST",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+            })
+        );
 
-            if (refreshResponse.ok) {
-                // If refresh was successful, retry the original request.
-                response = await fetch(url, config);
-            } else {
-                // If the refresh itself fails, the session is truly expired.
-                // Throw an error to be caught by React Query.
-                return handleSessionExpired();
-            }
-        } catch {
-            // If the fetch call for refresh fails (e.g., network error), also throw.
+        // If the refresh call itself failed or the response was not ok
+        if (refreshError || !refreshOk?.ok) {
             return handleSessionExpired();
         }
+
+        // If refresh was successful, retry the original request
+        response = await fetch(url, config);
     }
 
     // Handle responses with no content

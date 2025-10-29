@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Chess } from "chess.js";
 
 import ChessGame from "@/components/games/chess";
-import { GameAction } from "@/types/websocket.types";
+import { ChessAction } from "@/types/games/chess.types";
 
 // Define the types for clarity and type safety
 type PlayerColor = "w" | "b" | "spectator";
@@ -35,9 +35,14 @@ const ChessTestPage = () => {
      * Handles a move from the ChessGame component, validates it, and updates the game state.
      * @param action - The action payload with in UCI format (e.g., "e2e4").
      */
-    const handleMove = (action: GameAction) => {
+    const handleMove = (action: ChessAction) => {
         // Extract the move from the action payload (assuming UCI format)
-        const move = (action?.payload as Record<string, unknown>)?.move;
+        const move =
+            action?.payload &&
+            typeof action.payload === "object" &&
+            "move" in action.payload
+                ? (action.payload as { move?: string }).move
+                : undefined;
 
         // Create a new Chess.js instance based on the current FEN
         const game = new Chess(gameState.fen);

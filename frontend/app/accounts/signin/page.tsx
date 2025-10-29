@@ -8,7 +8,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Gamepad2 } from "lucide-react";
 
 import { signinUser } from "@/api/account.api";
-import { ApiError } from "@/api/client";
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -21,6 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/use-auth";
+import { tryCatch } from "@/lib/utils";
 
 export default function SignInPage() {
     const { isAuthenticated, isLoading: isAuthLoading } = useAuth({
@@ -52,26 +52,27 @@ export default function SignInPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (isLoading) return;
+
         setIsLoading(true);
         setError(null);
 
-        try {
-            const user = await signinUser({
+        const [user, error] = await tryCatch(
+            signinUser({
                 identifier: formData.identifier,
                 password: formData.password,
-            });
-            queryClient.setQueryData(["user"], user);
+            })
+        );
 
+        setIsLoading(false);
+
+        if (error) {
+            setError(error.message);
+            return;
+        }
+
+        if (user) {
+            queryClient.setQueryData(["user"], user);
             router.push("/");
-        } catch (error: unknown) {
-            if (error instanceof ApiError) {
-                setError(error.message);
-            } else if (error instanceof Error) {
-                setError(error.message);
-            } else {
-                setError("An unexpected error occurred");
-            }
-            setIsLoading(false);
         }
     };
 
